@@ -1,0 +1,65 @@
+export type InvoiceStatus = "draft" | "sent" | "paid" | "cancelled";
+
+export interface InvoiceLineRecord {
+  id: string;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  line_total: number;
+  sort_order: number;
+}
+
+export interface InvoiceRecord {
+  id: string;
+  invoice_number: string;
+  customer_name: string;
+  customer_email: string | null;
+  customer_address: string | null;
+  customer_id: string | null;
+  invoice_date: string;
+  due_date: string | null;
+  status: InvoiceStatus;
+  subtotal: number;
+  notes: string | null;
+  sales_record_id: string | null;
+  created_by_name: string | null;
+  lines: InvoiceLineRecord[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InvoiceLineInput {
+  description: string;
+  quantity: number;
+  unitPrice: number;
+}
+
+export interface InvoiceSummary {
+  openCount: number;
+  unpaidTotal: number;
+}
+
+export type BillingLineSource = "yardage" | "treatment";
+
+export interface BillingLinePreview {
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  source: BillingLineSource;
+  treatmentId?: string;
+}
+
+export interface BillingPreview {
+  customerId: string;
+  customerName: string;
+  customerEmail: string | null;
+  customerAddress: string | null;
+  periodStart: string;
+  periodEnd: string;
+  dayCount: number;
+  totalHead: number;
+  lines: BillingLinePreview[];
+  warnings: string[];
+  subtotal: number;
+  treatmentIds: string[];
+}

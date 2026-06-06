@@ -1,0 +1,1 @@
+-- See RUN_THIS_IN_SUPABASE.sql (identical — use that file in SQL Editor)
