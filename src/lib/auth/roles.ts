@@ -29,3 +29,8 @@ export function canRecordSales(role: string | undefined | null): boolean {
 export function canDeductInventoryOnSale(role: string | undefined | null): boolean {
   return canWriteInventory(role);
 }
+
+/** Bulk CSV/PDF exports and invoice PDF download (reports.export permission). */
+export function canExportReports(role: string | undefined | null): boolean {
+  return Boolean(role && FINANCE_ROLES.has(role));
+}

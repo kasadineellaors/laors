@@ -3,6 +3,7 @@ import Link from "next/link";
 import { requireOnboardedUser } from "@/lib/auth/session";
 import { canDeductInventoryOnSale } from "@/lib/auth/roles";
 import { listCustomerOptions } from "@/lib/customers/queries";
+import { getSeedstockAnimal } from "@/lib/seedstock/queries";
 import { listCattleGroups } from "@/lib/inventory/queries";
 import { getRanchOptions, getTreePickerOptions } from "@/lib/locations/options";
 import { SaleForm } from "@/components/sales/sale-form";
@@ -11,10 +12,28 @@ export const metadata: Metadata = {
   title: "Record Sale — LAORS",
 };
 
-export default async function NewSalePage() {
+export default async function NewSalePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ animalId?: string }>;
+}) {
+  const { animalId } = await searchParams;
   const session = await requireOnboardedUser();
   const orgId = session.organization!.id;
   const canDeduct = canDeductInventoryOnSale(session.membership?.system_role);
+
+  const prefillAnimal = animalId
+    ? await getSeedstockAnimal(orgId, animalId).then((a) =>
+        a
+          ? {
+              id: a.id,
+              tagNumber: a.tag_number,
+              name: a.name,
+              animalType: a.animal_type,
+            }
+          : null,
+      )
+    : null;
 
   const [locations, groups, categories, customerOptions] = await Promise.all([
     getTreePickerOptions(orgId).then((nodes) =>
@@ -35,10 +54,15 @@ export default async function NewSalePage() {
   return (
     <div className="space-y-6">
       <div>
-        <Link href="/sales" className="text-sm font-medium text-olive hover:underline">
-          ← Sales
+        <Link
+          href={prefillAnimal ? `/seedstock/animals/${prefillAnimal.id}` : "/sales"}
+          className="text-sm font-medium text-olive hover:underline"
+        >
+          {prefillAnimal ? `← ${prefillAnimal.tagNumber}` : "← Sales"}
         </Link>
-        <h1 className="mt-1 text-2xl font-bold text-charcoal">Record sale</h1>
+        <h1 className="mt-1 text-2xl font-bold text-charcoal">
+          {prefillAnimal ? `Sell ${prefillAnimal.tagNumber}` : "Record sale"}
+        </h1>
       </div>
       <SaleForm
         orgId={orgId}
@@ -47,6 +71,7 @@ export default async function NewSalePage() {
         categoryOptions={categories}
         customerOptions={customerOptions}
         canDeductInventory={canDeduct}
+        prefillAnimal={prefillAnimal ?? undefined}
       />
     </div>
   );

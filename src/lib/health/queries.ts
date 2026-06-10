@@ -95,6 +95,7 @@ async function enrichTreatments(
     id: r.id as string,
     product_name: r.product_name as string,
     treatment_type: (r.treatment_type as string | null) ?? null,
+    reason: (r.reason as string | null) ?? null,
     head_count: (r.head_count as number | null) ?? null,
     treatment_date: r.treatment_date as string,
     notes: (r.notes as string | null) ?? null,

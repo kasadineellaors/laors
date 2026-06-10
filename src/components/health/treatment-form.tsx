@@ -6,6 +6,7 @@ import type { SelectOption } from "@/lib/locations/options";
 import type { OrgMemberOption } from "@/lib/tasks/types";
 import type { MedicineOption } from "@/lib/medicine/types";
 import type { TreatmentRecord } from "@/lib/health/types";
+import { TREATMENT_TYPES } from "@/lib/health/constants";
 import { createTreatment, updateTreatment } from "@/lib/actions/health";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,6 +47,7 @@ export function TreatmentForm({
   const [locationId, setLocationId] = useState(treatment?.location_id ?? "");
   const [administeredTo, setAdministeredTo] = useState(treatment?.administered_by ?? "");
   const [notes, setNotes] = useState(treatment?.notes ?? "");
+  const [reason, setReason] = useState(treatment?.reason ?? "");
   const [medicineItemId, setMedicineItemId] = useState(treatment?.medicine_item_id ?? "");
   const [quantityUsed, setQuantityUsed] = useState(
     treatment?.quantity_used != null ? String(treatment.quantity_used) : "",
@@ -86,6 +88,7 @@ export function TreatmentForm({
       locationId: locationId || undefined,
       administeredTo: administeredTo || undefined,
       notes: notes || undefined,
+      reason: reason || undefined,
       medicineItemId: medicineItemId || undefined,
       quantityUsed: parsedQty,
     };
@@ -100,6 +103,7 @@ export function TreatmentForm({
           locationId: locationId || null,
           administeredTo: administeredTo || null,
           notes: notes || null,
+          reason: reason || null,
           medicineItemId: medicineItemId || null,
           quantityUsed: parsedQty ?? null,
         })
@@ -175,11 +179,29 @@ export function TreatmentForm({
         ) : null}
         <div>
           <Label htmlFor="type">Type (optional)</Label>
-          <Input
+          <select
             id="type"
             value={treatmentType}
             onChange={(e) => setTreatmentType(e.target.value)}
-            placeholder="Vaccine, deworm, antibiotic"
+            className={selectClass}
+          >
+            <option value="">Select type</option>
+            {TREATMENT_TYPES.map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <Label htmlFor="reason">Reason for treatment (optional)</Label>
+          <textarea
+            id="reason"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            rows={3}
+            placeholder="Why are you treating — symptoms, pull, protocol, etc."
+            className="flex w-full rounded-lg border-2 border-border bg-surface px-4 py-3 text-base"
           />
         </div>
         <div className="grid grid-cols-2 gap-3">

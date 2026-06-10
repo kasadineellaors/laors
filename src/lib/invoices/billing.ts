@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getCustomer } from "@/lib/customers/queries";
-import type { BillingLinePreview, BillingPreview } from "./types";
+import { computeCustomerHeadDays } from "@/lib/invoices/head-days";
+import type { BillingLinePreview, BillingPreview, GroupHeadDaysBreakdown } from "./types";
 
 function daysInclusive(start: string, end: string): number {
   const s = new Date(`${start}T12:00:00`);
@@ -38,20 +39,22 @@ export async function buildBillingPreview(
   const groupIds = (groups ?? []).map((g) => g.id);
   const groupNames = new Map((groups ?? []).map((g) => [g.id, g.name]));
 
-  let totalHead = 0;
-  if (groupIds.length > 0) {
-    const { data: counts } = await supabase
-      .from("group_inventory_counts")
-      .select("head_count")
-      .eq("organization_id", orgId)
-      .in("cattle_group_id", groupIds);
-
-    totalHead = (counts ?? []).reduce((s, c) => s + c.head_count, 0);
-  }
+  const headDaysResult = await computeCustomerHeadDays(orgId, customerId, periodStart, periodEnd);
+  const totalHead = headDaysResult.avgHead;
+  const totalHeadDays = headDaysResult.totalHeadDays;
+  const headDaysBreakdown: GroupHeadDaysBreakdown[] = headDaysResult.groups.map((g) => ({
+    groupId: g.groupId,
+    groupName: g.groupName,
+    headDays: g.headDays,
+    avgHead: g.avgHead,
+    headAtStart: g.headAtStart,
+    headAtEnd: g.headAtEnd,
+  }));
 
   const lines: BillingLinePreview[] = [];
   const warnings: string[] = [];
   const treatmentIds: string[] = [];
+  const feedingRecordIds: string[] = [];
 
   if (groupIds.length === 0) {
     warnings.push(
@@ -60,17 +63,20 @@ export async function buildBillingPreview(
   }
 
   const yardageRate = customer.yardage_rate_per_head_day;
-  if (yardageRate != null && yardageRate > 0 && totalHead > 0 && dayCount > 0) {
-    const headDays = totalHead * dayCount;
+  if (yardageRate != null && yardageRate > 0 && totalHeadDays > 0) {
+    const avgLabel =
+      headDaysBreakdown.length > 1
+        ? `avg ${totalHead} head × ${dayCount} days`
+        : `${totalHead} avg head × ${dayCount} days`;
     lines.push({
-      description: `Yardage — ${totalHead} head × ${dayCount} days`,
-      quantity: headDays,
+      description: `Yardage — ${avgLabel} (${totalHeadDays} head-days)`,
+      quantity: totalHeadDays,
       unitPrice: yardageRate,
       source: "yardage",
     });
-  } else if (yardageRate != null && yardageRate > 0 && totalHead === 0) {
-    warnings.push("Yardage rate set but no head on linked groups.");
-  } else if (yardageRate == null && totalHead > 0) {
+  } else if (yardageRate != null && yardageRate > 0 && totalHeadDays === 0) {
+    warnings.push("Yardage rate set but no head-days in period on linked groups.");
+  } else if (yardageRate == null && totalHeadDays > 0) {
     warnings.push("No yardage rate on customer — set one in Setup → Customers.");
   }
 
@@ -155,10 +161,95 @@ export async function buildBillingPreview(
       });
       treatmentIds.push(t.id as string);
     }
+
+    const feedRes = await supabase
+      .from("feeding_records")
+      .select("id, fed_at, cattle_group_id, feed_ration_id, quantity, invoiced_at, feeding_context")
+      .eq("organization_id", orgId)
+      .eq("is_active", true)
+      .eq("feeding_context", "general")
+      .gte("fed_at", periodStart)
+      .lte("fed_at", periodEnd)
+      .in("cattle_group_id", groupIds)
+      .is("invoiced_at", null)
+      .order("fed_at");
+
+    let feedings: Array<{
+      id: string;
+      fed_at: string;
+      cattle_group_id: string | null;
+      feed_ration_id: string;
+      quantity: number;
+    }> | null = feedRes.data;
+
+    if (feedRes.error?.message.includes("feeding_records")) {
+      feedings = [];
+    } else if (
+      feedRes.error?.message.includes("feeding_context") ||
+      feedRes.error?.message.includes("invoiced_at")
+    ) {
+      if (feedRes.error.message.includes("invoiced_at")) {
+        warnings.push("Run supabase/RUN_PHASE10.sql to prevent double-billing feed.");
+      }
+      const fallbackFeed = await supabase
+        .from("feeding_records")
+        .select("id, fed_at, cattle_group_id, feed_ration_id, quantity")
+        .eq("organization_id", orgId)
+        .eq("is_active", true)
+        .gte("fed_at", periodStart)
+        .lte("fed_at", periodEnd)
+        .in("cattle_group_id", groupIds)
+        .order("fed_at");
+      feedings = fallbackFeed.data;
+    }
+
+    const rationIds = [
+      ...new Set((feedings ?? []).map((f) => f.feed_ration_id).filter(Boolean)),
+    ] as string[];
+
+    const { data: rations } = rationIds.length
+      ? await supabase.from("feed_rations").select("id, name, unit, price_per_unit").in("id", rationIds)
+      : { data: [] };
+
+    const rationPrices = new Map(
+      (rations ?? []).map((r) => [
+        r.id,
+        r.price_per_unit != null ? Number(r.price_per_unit) : null,
+      ]),
+    );
+    const rationNames = new Map((rations ?? []).map((r) => [r.id, { name: r.name, unit: r.unit }]));
+
+    const feedMarkup = customer.feed_markup_percent ?? 0;
+    const feedMarkupFactor = 1 + feedMarkup / 100;
+
+    for (const f of feedings ?? []) {
+      const pricePerUnit = rationPrices.get(f.feed_ration_id);
+      const ration = rationNames.get(f.feed_ration_id);
+      if (pricePerUnit == null) {
+        warnings.push(
+          `${ration?.name ?? "Feed"} (${f.fed_at}): no ration price — set in Feed → Rations.`,
+        );
+        continue;
+      }
+
+      const unitPrice = roundMoney(pricePerUnit * feedMarkupFactor);
+      const groupName = f.cattle_group_id ? groupNames.get(f.cattle_group_id) : null;
+      const markupNote = feedMarkup > 0 ? ` incl. ${feedMarkup}% markup` : "";
+      const unitLabel = ration?.unit ?? "unit";
+
+      lines.push({
+        description: `Feed — ${ration?.name ?? "Ration"}${groupName ? ` — ${groupName}` : ""} (${f.fed_at}, ${Number(f.quantity)} ${unitLabel})${markupNote}`,
+        quantity: Number(f.quantity),
+        unitPrice,
+        source: "feeding",
+        feedingRecordId: f.id,
+      });
+      feedingRecordIds.push(f.id);
+    }
   }
 
   if (lines.length === 0 && warnings.length === 0) {
-    warnings.push("No billable yardage or treatments in this period.");
+    warnings.push("No billable yardage, treatments, or feed in this period.");
   }
 
   const subtotal = roundMoney(
@@ -174,9 +265,12 @@ export async function buildBillingPreview(
     periodEnd,
     dayCount,
     totalHead,
+    totalHeadDays,
+    headDaysBreakdown,
     lines,
     warnings,
     subtotal,
     treatmentIds,
+    feedingRecordIds,
   };
 }

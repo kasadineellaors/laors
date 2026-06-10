@@ -15,7 +15,7 @@ import {
 
 const initialState: AuthActionState = {};
 
-export function LoginForm() {
+export function LoginForm({ redirectTo }: { redirectTo?: string }) {
   const [passwordState, passwordAction, passwordPending] = useActionState(
     signIn,
     initialState,
@@ -33,6 +33,7 @@ export function LoginForm() {
           <CardDescription>Use the email and password for your account.</CardDescription>
         </CardHeader>
         <form action={passwordAction} className="space-y-4">
+          {redirectTo ? <input type="hidden" name="redirect" value={redirectTo} /> : null}
           <div>
             <Label htmlFor="email">Email</Label>
             <Input

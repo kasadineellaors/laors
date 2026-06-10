@@ -69,9 +69,18 @@ async function enrichSales(
   ] as string[];
   const profileIds = [...new Set(rows.map((r) => r.created_by).filter(Boolean))] as string[];
   const customerIds = [...new Set(rows.map((r) => r.customer_id).filter(Boolean))] as string[];
+  const animalIds = [
+    ...new Set(rows.map((r) => r.individual_animal_id).filter(Boolean)),
+  ] as string[];
 
-  const [{ data: groups }, { data: locations }, { data: categories }, { data: profiles }, { data: customers }] =
-    await Promise.all([
+  const [
+    { data: groups },
+    { data: locations },
+    { data: categories },
+    { data: profiles },
+    { data: customers },
+    { data: animals },
+  ] = await Promise.all([
       groupIds.length
         ? supabase.from("cattle_groups").select("id, name").in("id", groupIds)
         : Promise.resolve({ data: [] }),
@@ -87,6 +96,9 @@ async function enrichSales(
       customerIds.length
         ? supabase.from("customers").select("id, name").in("id", customerIds)
         : Promise.resolve({ data: [] }),
+      animalIds.length
+        ? supabase.from("individual_animals").select("id, tag_number").in("id", animalIds)
+        : Promise.resolve({ data: [] }),
     ]);
 
   const groupNames = new Map((groups ?? []).map((g) => [g.id, g.name]));
@@ -95,6 +107,7 @@ async function enrichSales(
     (profiles ?? []).map((p) => [p.id, p.full_name?.trim() || "Team member"]),
   );
   const customerNames = new Map((customers ?? []).map((c) => [c.id, c.name]));
+  const animalTags = new Map((animals ?? []).map((a) => [a.id, a.tag_number]));
 
   const locRows = (locations ?? []) as LocationRow[];
   const allLocs =
@@ -122,6 +135,11 @@ async function enrichSales(
     buyer_name: (r.buyer_name as string | null) ?? null,
     customer_id: (r.customer_id as string | null) ?? null,
     customer_name: r.customer_id ? customerNames.get(r.customer_id as string) ?? null : null,
+    individual_animal_id: (r.individual_animal_id as string | null) ?? null,
+    individual_animal_tag: r.individual_animal_id
+      ? animalTags.get(r.individual_animal_id as string) ?? null
+      : null,
+    seedstock_sale_type: (r.seedstock_sale_type as SaleRecord["seedstock_sale_type"]) ?? null,
     head_count: r.head_count as number,
     total_amount: r.total_amount != null ? Number(r.total_amount) : null,
     price_per_head: r.price_per_head != null ? Number(r.price_per_head) : null,
@@ -142,4 +160,33 @@ async function enrichSales(
     created_at: r.created_at as string,
     updated_at: r.updated_at as string,
   }));
+}
+
+export async function listSeedstockSales(orgId: string, limit = 50): Promise<SaleRecord[]> {
+  const supabase = await createClient();
+  const { data: rows, error } = await supabase
+    .from("sales_records")
+    .select("*")
+    .eq("organization_id", orgId)
+    .eq("is_active", true)
+    .not("individual_animal_id", "is", null)
+    .order("sale_date", { ascending: false })
+    .limit(limit);
+
+  if (error || !rows?.length) return [];
+  return enrichSales(orgId, rows);
+}
+
+export async function listSalesForAnimal(orgId: string, animalId: string): Promise<SaleRecord[]> {
+  const supabase = await createClient();
+  const { data: rows, error } = await supabase
+    .from("sales_records")
+    .select("*")
+    .eq("organization_id", orgId)
+    .eq("individual_animal_id", animalId)
+    .eq("is_active", true)
+    .order("sale_date", { ascending: false });
+
+  if (error || !rows?.length) return [];
+  return enrichSales(orgId, rows);
 }

@@ -151,13 +151,13 @@ export function InvoiceForm({ orgId, invoice, customerOptions = [], onSuccess }:
             </select>
             {selectedCustomer ? (
               <p className="mt-1 text-xs text-charcoal/60">
+                {selectedCustomer.email
+                  ? selectedCustomer.email
+                  : "No email — add one in Customers to send invoices"}
+                {" · "}
                 {selectedCustomer.yardage_rate_per_head_day != null
                   ? `Yardage $${selectedCustomer.yardage_rate_per_head_day}/hd/day`
                   : "No yardage rate"}
-                {" · "}
-                {selectedCustomer.medicine_markup_percent != null
-                  ? `${selectedCustomer.medicine_markup_percent}% medicine markup`
-                  : "No medicine markup"}
               </p>
             ) : null}
           </div>
@@ -174,7 +174,13 @@ export function InvoiceForm({ orgId, invoice, customerOptions = [], onSuccess }:
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label htmlFor="email">Email</Label>
-            <Input id="email" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} />
+            <Input
+              id="email"
+              type="email"
+              value={customerEmail}
+              onChange={(e) => setCustomerEmail(e.target.value)}
+              placeholder="billing@customer.com"
+            />
           </div>
           <div>
             <Label htmlFor="status">Status</Label>

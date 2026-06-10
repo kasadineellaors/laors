@@ -7,6 +7,10 @@ import type { InvoiceLineInput, InvoiceStatus } from "@/lib/invoices/types";
 import { buildBillingPreview } from "@/lib/invoices/billing";
 import { getCustomer } from "@/lib/customers/queries";
 import { getSale } from "@/lib/sales/queries";
+import { getInvoicePrintData } from "@/lib/invoices/queries";
+import { invoicePdfBase64 } from "@/lib/invoices/pdf";
+import { isValidEmail, normalizeEmail } from "@/lib/email/validate";
+import { isInvoiceEmailConfigured, sendEmail } from "@/lib/email/resend";
 
 type InvoiceUpdate = Database["public"]["Tables"]["invoices"]["Update"];
 
@@ -240,6 +244,22 @@ export async function createInvoiceFromBilling(
     }
   }
 
+  if (result.invoiceId && previewResult.feedingRecordIds.length > 0) {
+    try {
+      const { supabase } = await requireInvoiceWriter(orgId);
+      await supabase
+        .from("feeding_records")
+        .update({
+          invoiced_at: new Date().toISOString(),
+          invoice_id: result.invoiceId,
+        })
+        .eq("organization_id", orgId)
+        .in("id", previewResult.feedingRecordIds);
+    } catch {
+      // invoice created; feeding flags optional until RUN_PHASE10.sql applied
+    }
+  }
+
   return result;
 }
 
@@ -344,6 +364,87 @@ export async function updateInvoiceStatus(
   status: InvoiceStatus,
 ): Promise<InvoiceActionState> {
   return updateInvoice(orgId, invoiceId, { status });
+}
+
+export async function sendInvoice(
+  orgId: string,
+  invoiceId: string,
+): Promise<InvoiceActionState> {
+  if (!isInvoiceEmailConfigured()) {
+    return {
+      error:
+        "Invoice email is not configured. Add RESEND_API_KEY and INVOICE_FROM_EMAIL to your environment, then retry.",
+    };
+  }
+
+  try {
+    const { supabase } = await requireInvoiceWriter(orgId);
+    const printData = await getInvoicePrintData(orgId, invoiceId);
+    if (!printData) return { error: "Invoice not found" };
+
+    let recipientEmail = printData.invoice.customer_email?.trim() || null;
+
+    if (!recipientEmail && printData.invoice.customer_id) {
+      const customer = await getCustomer(orgId, printData.invoice.customer_id);
+      recipientEmail = customer?.email?.trim() || null;
+      if (recipientEmail) {
+        await supabase
+          .from("invoices")
+          .update({ customer_email: recipientEmail })
+          .eq("id", invoiceId)
+          .eq("organization_id", orgId);
+        printData.invoice.customer_email = recipientEmail;
+      }
+    }
+
+    if (!recipientEmail) {
+      return {
+        error:
+          "No customer email on this invoice. Add an email on the customer profile or edit the invoice, then retry.",
+      };
+    }
+
+    const normalized = normalizeEmail(recipientEmail);
+    if (!isValidEmail(normalized)) {
+      return { error: "Customer email is not valid" };
+    }
+
+    const orgName = printData.org.name;
+    const subject = `Invoice ${printData.invoice.invoice_number} from ${orgName}`;
+    const total = printData.invoice.subtotal.toLocaleString(undefined, {
+      style: "currency",
+      currency: "USD",
+    });
+    const html = `
+      <p>Hello,</p>
+      <p>Please find attached invoice <strong>${printData.invoice.invoice_number}</strong> from <strong>${orgName}</strong>.</p>
+      <p>Amount due: <strong>${total}</strong></p>
+      <p>Thank you.</p>
+    `.trim();
+
+    const pdfBase64 = invoicePdfBase64(printData);
+    const result = await sendEmail({
+      to: normalized,
+      subject,
+      html,
+      attachments: [
+        {
+          filename: `${printData.invoice.invoice_number}.pdf`,
+          content: pdfBase64,
+        },
+      ],
+    });
+
+    if (!result.ok) return { error: result.error };
+
+    const statusResult = await updateInvoice(orgId, invoiceId, { status: "sent" });
+    if (statusResult.error) return statusResult;
+
+    revalidatePath(`/invoices/${invoiceId}`);
+    return { success: `Invoice emailed to ${normalized}` };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to send invoice" };
+  }
 }
 
 export async function archiveInvoice(orgId: string, invoiceId: string): Promise<InvoiceActionState> {

@@ -33,18 +33,23 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/login") ||
     pathname.startsWith("/signup") ||
     pathname.startsWith("/forgot-password");
+  const isResetPassword = pathname.startsWith("/reset-password");
   const isAuthCallback = pathname.startsWith("/auth/callback");
   const isProtectedRoute =
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/onboarding") ||
     pathname.startsWith("/setup") ||
     pathname.startsWith("/cattle") ||
+    pathname.startsWith("/cow-calf") ||
+    pathname.startsWith("/seedstock") ||
+    pathname.startsWith("/feed") ||
     pathname.startsWith("/jobs") ||
     pathname.startsWith("/health") ||
     pathname.startsWith("/sales") ||
     pathname.startsWith("/time") ||
     pathname.startsWith("/invoices") ||
     pathname.startsWith("/weather") ||
+    pathname.startsWith("/calendar") ||
     pathname.startsWith("/app");
 
   if (!user && isProtectedRoute) {
@@ -52,6 +57,16 @@ export async function updateSession(request: NextRequest) {
     loginUrl.pathname = "/login";
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
+  }
+
+  if (isResetPassword) {
+    if (!user) {
+      const loginUrl = request.nextUrl.clone();
+      loginUrl.pathname = "/login";
+      loginUrl.searchParams.set("error", "reset_session_expired");
+      return NextResponse.redirect(loginUrl);
+    }
+    return supabaseResponse;
   }
 
   if (user && (isAuthRoute || pathname === "/")) {

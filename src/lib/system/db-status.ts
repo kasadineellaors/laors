@@ -62,6 +62,78 @@ export async function getDbSetupIssues(): Promise<DbSetupIssue[]> {
       message: "Customers / billing catalog are not set up",
       fix: "Run supabase/RUN_PHASE6.sql or RUN_ALL_PHASES.sql",
     },
+    {
+      id: "phase8-cow-calf",
+      probe: async () => {
+        const { error } = await supabase.from("calving_records").select("id").limit(1);
+        return !error;
+      },
+      message: "Cow-calf / calving is not set up",
+      fix: "Run supabase/RUN_PHASE8.sql or supabase db push",
+    },
+    {
+      id: "phase9-breeding",
+      probe: async () => {
+        const { error } = await supabase.from("breeding_records").select("id").limit(1);
+        return !error;
+      },
+      message: "Breeding records are not set up",
+      fix: "Run supabase/RUN_PHASE9.sql or supabase db push",
+    },
+    {
+      id: "phase10-feed",
+      probe: async () => {
+        const { error } = await supabase.from("feed_rations").select("id").limit(1);
+        return !error;
+      },
+      message: "Feed rations / feeding log are not set up",
+      fix: "Run supabase/RUN_PHASE10.sql or supabase db push",
+    },
+    {
+      id: "phase13-calendar",
+      probe: async () => {
+        const { error } = await supabase.from("calendar_events").select("id").limit(1);
+        return !error;
+      },
+      message: "Ranch calendar is not set up",
+      fix: "Run supabase/RUN_PHASE13.sql or supabase db push",
+    },
+    {
+      id: "phase14-seedstock",
+      probe: async () => {
+        const { error } = await supabase
+          .from("individual_animals")
+          .select("registry_context")
+          .limit(1);
+        return !error;
+      },
+      message: "Seedstock registry fields are not set up",
+      fix: "Run supabase/RUN_PHASE14.sql or supabase db push",
+    },
+    {
+      id: "phase15-seedstock-breeding-sales",
+      probe: async () => {
+        const { error } = await supabase
+          .from("breeding_records")
+          .select("breeding_context, dam_id")
+          .limit(1);
+        return !error;
+      },
+      message: "Seedstock breeding and sales links are not set up",
+      fix: "Run supabase/RUN_PHASE15.sql or supabase db push",
+    },
+    {
+      id: "phase16-maternal-intelligence",
+      probe: async () => {
+        const { error } = await supabase
+          .from("exposure_records")
+          .select("id")
+          .limit(1);
+        return !error;
+      },
+      message: "Maternal intelligence tables are not set up",
+      fix: "Run supabase/RUN_PHASE16.sql or supabase db push",
+    },
   ];
 
   for (const check of checks) {

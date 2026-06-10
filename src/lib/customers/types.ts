@@ -6,6 +6,7 @@ export interface CustomerRecord {
   address: string | null;
   yardage_rate_per_head_day: number | null;
   medicine_markup_percent: number | null;
+  feed_markup_percent: number | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -18,4 +19,5 @@ export interface CustomerOption {
   address: string | null;
   yardage_rate_per_head_day: number | null;
   medicine_markup_percent: number | null;
+  feed_markup_percent: number | null;
 }

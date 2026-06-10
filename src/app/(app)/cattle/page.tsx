@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { requireOnboardedUser } from "@/lib/auth/session";
 import { canWriteInventory } from "@/lib/auth/roles";
+import { hasCowCalfMode } from "@/lib/cow-calf/constants";
 import { listCattleGroups } from "@/lib/inventory/queries";
 import { getRanchTotalHeadCount } from "@/lib/locations/rollups";
 import { CattleGroupsList } from "@/components/inventory/cattle-groups-list";
 import { Button } from "@/components/ui/button";
+import type { OperationMode } from "@/types/auth";
 
 export const metadata: Metadata = {
   title: "Cattle — LAORS",
@@ -14,6 +16,8 @@ export const metadata: Metadata = {
 export default async function CattlePage() {
   const session = await requireOnboardedUser();
   const orgId = session.organization!.id;
+  const modes = (session.organization!.enabled_modes ?? []) as OperationMode[];
+  const showCowCalf = hasCowCalfMode(modes);
   const canManageCattle = canWriteInventory(session.membership?.system_role);
 
   const [groups, totalHead] = await Promise.all([
@@ -53,6 +57,14 @@ export default async function CattlePage() {
           View-only — managers record moves and count changes.
         </p>
       )}
+
+      {showCowCalf ? (
+        <Link href="/cow-calf">
+          <Button variant="secondary" fullWidth size="lg">
+            Cow-Calf — Calving & Bulls
+          </Button>
+        </Link>
+      ) : null}
 
       <CattleGroupsList groups={groups} />
     </div>

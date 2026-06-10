@@ -271,7 +271,7 @@ export function OnboardingWizard({
           </CardHeader>
           <form onSubmit={handleModesSubmit} className="space-y-4">
             <div className="space-y-3">
-              {OPERATION_MODES.filter((m) => m !== "seedstock").map((mode) => (
+              {OPERATION_MODES.map((mode) => (
                 <button
                   key={mode}
                   type="button"

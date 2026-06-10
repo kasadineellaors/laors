@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { requireOnboardedUser } from "@/lib/auth/session";
 import { canManageInvoices, canManageTeam } from "@/lib/auth/roles";
+import { hasCowCalfMode } from "@/lib/cow-calf/constants";
+import { hasSeedstockMode } from "@/lib/seedstock/constants";
+import type { OperationMode } from "@/types/auth";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 const SETUP_LINKS = [
@@ -48,6 +51,38 @@ const SETUP_LINKS = [
     managerOnly: true,
   },
   {
+    href: "/setup/exports",
+    title: "Export Records",
+    description: "Download treatments, feed, sales, and more as CSV or PDF",
+    managerOnly: false,
+  },
+  {
+    href: "/setup/preferences",
+    title: "Ranch Preferences",
+    description: "Shared calendar and other optional features",
+    managerOnly: true,
+  },
+  {
+    href: "/cow-calf",
+    title: "Cow-Calf",
+    description: "Calving, breeding, feed, and bull registry",
+    managerOnly: false,
+    cowCalfOnly: true,
+  },
+  {
+    href: "/seedstock",
+    title: "Seedstock",
+    description: "Individual registry, pedigree, EPDs, and sales",
+    managerOnly: false,
+    seedstockOnly: true,
+  },
+  {
+    href: "/feed",
+    title: "Feed",
+    description: "Rations, daily feed log, and stocker billing",
+    managerOnly: false,
+  },
+  {
     href: "/health",
     title: "Health",
     description: "Treatments and medicine catalog",
@@ -78,8 +113,13 @@ export default async function SetupPage() {
   const session = await requireOnboardedUser();
   const isManager = canManageTeam(session.membership?.system_role);
   const canFinance = canManageInvoices(session.membership?.system_role);
+  const modes = (session.organization!.enabled_modes ?? []) as OperationMode[];
+  const showCowCalf = hasCowCalfMode(modes);
+  const showSeedstock = hasSeedstockMode(modes);
 
   const links = SETUP_LINKS.filter((link) => {
+    if ("cowCalfOnly" in link && link.cowCalfOnly && !showCowCalf) return false;
+    if ("seedstockOnly" in link && link.seedstockOnly && !showSeedstock) return false;
     if (link.managerOnly && !isManager) return false;
     if (link.finance && !canFinance) return false;
     return true;

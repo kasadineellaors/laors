@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import type { InvoiceLineRecord, InvoiceRecord, InvoiceStatus, InvoiceSummary } from "./types";
+import type { InvoiceOrgInfo, InvoicePrintData } from "./print-types";
 
 export async function listInvoices(orgId: string, limit = 50): Promise<InvoiceRecord[]> {
   const supabase = await createClient();
@@ -14,6 +15,32 @@ export async function listInvoices(orgId: string, limit = 50): Promise<InvoiceRe
 
   if (error || !rows?.length) return [];
   return enrichInvoices(orgId, rows);
+}
+
+export async function getInvoicePrintData(orgId: string, id: string): Promise<InvoicePrintData | null> {
+  const invoice = await getInvoice(orgId, id);
+  if (!invoice) return null;
+
+  const supabase = await createClient();
+  const { data: org } = await supabase
+    .from("organizations")
+    .select("name, address_line1, address_line2, city, state, zip, phone")
+    .eq("id", orgId)
+    .maybeSingle();
+
+  if (!org) return null;
+
+  const orgInfo: InvoiceOrgInfo = {
+    name: org.name,
+    addressLine1: org.address_line1,
+    addressLine2: org.address_line2,
+    city: org.city,
+    state: org.state,
+    zip: org.zip,
+    phone: org.phone,
+  };
+
+  return { invoice, org: orgInfo };
 }
 
 export async function getInvoice(orgId: string, id: string): Promise<InvoiceRecord | null> {

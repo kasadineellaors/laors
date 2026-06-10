@@ -2,6 +2,7 @@ export interface TreatmentRecord {
   id: string;
   product_name: string;
   treatment_type: string | null;
+  reason: string | null;
   head_count: number | null;
   treatment_date: string;
   notes: string | null;

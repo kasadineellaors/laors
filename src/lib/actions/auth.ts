@@ -71,7 +71,7 @@ export async function signUp(
     return redirectAfterAuth();
   }
 
-  redirect("/onboarding");
+  redirect(`/signup/check-email?email=${encodeURIComponent(parsed.data.email)}`);
 }
 
 export async function signIn(
@@ -92,7 +92,16 @@ export async function signIn(
 
   if (error) return { error: error.message };
 
-  return redirectAfterAuth();
+  const redirectTo = formData.get("redirect");
+  if (
+    typeof redirectTo === "string" &&
+    redirectTo.startsWith("/") &&
+    !redirectTo.startsWith("//")
+  ) {
+    redirect(redirectTo);
+  }
+
+  redirect("/dashboard");
 }
 
 export async function signInWithMagicLink(
@@ -129,11 +138,33 @@ export async function resetPassword(
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${appUrl}/auth/callback?next=/login`,
+    redirectTo: `${appUrl}/auth/callback?next=/reset-password`,
   });
 
   if (error) return { error: error.message };
   return { success: "Password reset link sent. Check your email." };
+}
+
+export async function updatePassword(
+  _prev: AuthActionState,
+  formData: FormData,
+): Promise<AuthActionState> {
+  const password = formData.get("password");
+  const confirm = formData.get("confirmPassword");
+
+  if (typeof password !== "string" || password.length < 8) {
+    return { error: "Password must be at least 8 characters" };
+  }
+  if (password !== confirm) {
+    return { error: "Passwords do not match" };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.updateUser({ password });
+
+  if (error) return { error: error.message };
+
+  redirect("/dashboard");
 }
 
 export async function signOut() {

@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { applySaleHeadDelta } from "@/lib/actions/inventory";
+import type { SeedstockSaleType } from "@/lib/seedstock/constants";
 import type { Database } from "@/types/database";
 
 type SaleUpdate = Database["public"]["Tables"]["sales_records"]["Update"];
@@ -22,10 +23,14 @@ function formatDbError(message: string): string {
   return message;
 }
 
-function revalidateSales() {
+function revalidateSales(animalId?: string) {
   revalidatePath("/sales");
   revalidatePath("/dashboard");
   revalidatePath("/cattle");
+  if (animalId) {
+    revalidatePath("/seedstock");
+    revalidatePath(`/seedstock/animals/${animalId}`);
+  }
 }
 
 async function requireMember(orgId: string) {
@@ -81,6 +86,8 @@ export async function createSale(
     pricePerHead?: number;
     financialCategoryId?: string;
     deductFromInventory?: boolean;
+    individualAnimalId?: string;
+    seedstockSaleType?: SeedstockSaleType;
     notes?: string;
   },
 ): Promise<SaleActionState> {
@@ -122,6 +129,8 @@ export async function createSale(
         price_per_head: perHead,
         financial_category_id: input.financialCategoryId || null,
         inventory_deducted: Boolean(input.deductFromInventory && input.cattleGroupId),
+        individual_animal_id: input.individualAnimalId || null,
+        seedstock_sale_type: input.seedstockSaleType || null,
         notes: input.notes?.trim() || null,
         created_by: user.id,
       })
@@ -140,7 +149,15 @@ export async function createSale(
       return { error: formatDbError(error.message) };
     }
 
-    revalidateSales();
+    if (input.individualAnimalId && input.seedstockSaleType === "live_animal") {
+      await supabase
+        .from("individual_animals")
+        .update({ status: "sold" })
+        .eq("id", input.individualAnimalId)
+        .eq("organization_id", orgId);
+    }
+
+    revalidateSales(input.individualAnimalId);
     return { success: "Sale recorded", saleId: data.id };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Failed" };

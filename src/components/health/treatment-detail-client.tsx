@@ -7,6 +7,7 @@ import type { SelectOption } from "@/lib/locations/options";
 import type { OrgMemberOption } from "@/lib/tasks/types";
 import type { MedicineOption } from "@/lib/medicine/types";
 import type { TreatmentRecord } from "@/lib/health/types";
+import { treatmentTypeLabel } from "@/lib/health/constants";
 import { archiveTreatment } from "@/lib/actions/health";
 import { TreatmentForm } from "@/components/health/treatment-form";
 import { Button } from "@/components/ui/button";
@@ -82,7 +83,7 @@ export function TreatmentDetailClient({
       <div className="rounded-xl border border-border bg-surface px-4 py-5">
         <h1 className="text-2xl font-bold text-charcoal">{treatment.product_name}</h1>
         {treatment.treatment_type ? (
-          <p className="mt-1 text-charcoal/70">{treatment.treatment_type}</p>
+          <p className="mt-1 text-charcoal/70">{treatmentTypeLabel(treatment.treatment_type)}</p>
         ) : null}
         <p className="mt-2 text-sm text-charcoal/60">{formatDate(treatment.treatment_date)}</p>
 
@@ -117,6 +118,12 @@ export function TreatmentDetailClient({
               <dd className="font-medium text-charcoal">
                 {treatment.quantity_used} from {treatment.medicine_item_name}
               </dd>
+            </div>
+          ) : null}
+          {treatment.reason ? (
+            <div>
+              <dt className="text-charcoal/50">Reason</dt>
+              <dd className="font-medium text-charcoal">{treatment.reason}</dd>
             </div>
           ) : null}
           {treatment.notes ? (

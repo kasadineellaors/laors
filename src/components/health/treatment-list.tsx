@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { TreatmentRecord } from "@/lib/health/types";
+import { treatmentTypeLabel } from "@/lib/health/constants";
 
 interface TreatmentListProps {
   treatments: TreatmentRecord[];
@@ -35,7 +36,12 @@ export function TreatmentList({ treatments, emptyMessage }: TreatmentListProps) 
               <div>
                 <p className="font-semibold text-charcoal">{t.product_name}</p>
                 {t.treatment_type ? (
-                  <p className="text-sm text-charcoal/70">{t.treatment_type}</p>
+                  <p className="text-sm text-charcoal/70">
+                    {treatmentTypeLabel(t.treatment_type)}
+                  </p>
+                ) : null}
+                {t.reason ? (
+                  <p className="mt-1 line-clamp-2 text-xs text-charcoal/60">{t.reason}</p>
                 ) : null}
               </div>
               <span className="shrink-0 text-xs text-charcoal/50">

@@ -1,9 +1,14 @@
+import type { SeedstockSaleType } from "@/lib/seedstock/constants";
+
 export interface SaleRecord {
   id: string;
   sale_date: string;
   buyer_name: string | null;
   customer_id: string | null;
   customer_name: string | null;
+  individual_animal_id: string | null;
+  individual_animal_tag: string | null;
+  seedstock_sale_type: SeedstockSaleType | null;
   head_count: number;
   total_amount: number | null;
   price_per_head: number | null;

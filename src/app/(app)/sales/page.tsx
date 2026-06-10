@@ -3,6 +3,7 @@ import Link from "next/link";
 import { requireOnboardedUser } from "@/lib/auth/session";
 import { getSalesSummary, listSales } from "@/lib/sales/queries";
 import { SalesList } from "@/components/sales/sales-list";
+import { ExportButtons } from "@/components/export/export-buttons";
 import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = {
@@ -32,9 +33,12 @@ export default async function SalesPage() {
             last 30 days
           </p>
         </div>
-        <Link href="/sales/new">
-          <Button size="lg">+ Sale</Button>
-        </Link>
+        <div className="flex shrink-0 flex-wrap justify-end gap-2">
+          <ExportButtons orgId={orgId} recordType="sales" size="sm" />
+          <Link href="/sales/new">
+            <Button size="lg">+ Sale</Button>
+          </Link>
+        </div>
       </div>
 
       <SalesList

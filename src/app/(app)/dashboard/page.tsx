@@ -16,6 +16,10 @@ import { getDbSetupIssues } from "@/lib/system/db-status";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { OPERATION_MODE_LABELS, type OperationMode } from "@/types/auth";
+import { hasCowCalfMode } from "@/lib/cow-calf/constants";
+import { hasSeedstockMode } from "@/lib/seedstock/constants";
+import { getCalvingSummary } from "@/lib/cow-calf/queries";
+import { isCalendarEnabled } from "@/lib/org/settings";
 import Link from "next/link";
 
 export const metadata: Metadata = {
@@ -30,7 +34,11 @@ export default async function DashboardPage() {
   const showInvoices = canManageInvoices(session.membership?.system_role);
   const role = session.membership?.system_role;
 
-  const [totalHead, tree, openTasks, lowStock, salesSummary, rainfall, invoiceSummary, dbIssues] =
+  const showCowCalf = hasCowCalfMode(modes);
+  const showSeedstock = hasSeedstockMode(modes);
+  const showCalendar = isCalendarEnabled(org);
+
+  const [totalHead, tree, openTasks, lowStock, salesSummary, rainfall, invoiceSummary, dbIssues, calvingSummary] =
     await Promise.all([
     getRanchTotalHeadCount(orgId),
     getLocationTreeWithRollups(orgId),
@@ -40,6 +48,7 @@ export default async function DashboardPage() {
     getRainfallSummary(orgId),
     showInvoices ? getInvoiceSummary(orgId) : Promise.resolve({ openCount: 0, unpaidTotal: 0 }),
     getDbSetupIssues(),
+    showCowCalf ? getCalvingSummary(orgId) : Promise.resolve({ total: 0, live: 0, thisMonth: 0 }),
   ]);
 
   const propertyCount = tree.length;
@@ -103,10 +112,15 @@ export default async function DashboardPage() {
         {[
           { label: "Clock In/Out", href: "/time" },
           { label: "Log Treatment", href: "/health/treatments/new" },
+          { label: "Log Feeding", href: "/feed/log/new" },
           { label: "Move Cattle", href: "/cattle/move" },
           { label: "New Task", href: "/jobs/new" },
           { label: "Record Sale", href: "/sales/new" },
           { label: "Rainfall", href: "/weather/rainfall/new" },
+          ...(showCalendar ? [{ label: "Calendar", href: "/calendar" } as const] : []),
+          ...(showSeedstock ? [{ label: "Seedstock", href: "/seedstock" } as const] : []),
+          ...(showCowCalf ? [{ label: "Log Calving", href: "/cow-calf/calving/new" } as const] : []),
+          ...(showCowCalf ? [{ label: "Log Cow-Calf Feed", href: "/cow-calf/feed/new" } as const] : []),
           ...(showInvoices
             ? [
                 { label: "Generate Invoice", href: "/invoices/generate" } as const,
@@ -173,6 +187,14 @@ export default async function DashboardPage() {
                 })}
               </span>
             </li>
+            {showCowCalf ? (
+              <li className="flex justify-between rounded-lg bg-cream px-3 py-2">
+                <span className="text-charcoal/70">Calves this month</span>
+                <Link href="/cow-calf/calving" className="font-semibold text-olive hover:underline">
+                  {calvingSummary.thisMonth}
+                </Link>
+              </li>
+            ) : null}
             {showInvoices ? (
               <>
                 <li className="flex justify-between rounded-lg bg-cream px-3 py-2">

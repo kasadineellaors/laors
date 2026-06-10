@@ -6,7 +6,7 @@ const HEALTH_LINKS = [
   {
     href: "/health/treatments",
     title: "Treatments",
-    description: "Vaccines, dewormers, and health log",
+    description: "Vaccines, antibiotics, dewormers — with type and reason",
   },
   {
     href: "/health/medicine",

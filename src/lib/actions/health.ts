@@ -58,6 +58,7 @@ export async function createTreatment(
     locationId?: string;
     administeredTo?: string;
     notes?: string;
+    reason?: string;
     medicineItemId?: string;
     quantityUsed?: number;
   },
@@ -85,6 +86,7 @@ export async function createTreatment(
         location_id: input.locationId || null,
         administered_by: input.administeredTo || user.id,
         notes: input.notes?.trim() || null,
+        reason: input.reason?.trim() || null,
         medicine_item_id: input.medicineItemId || null,
         quantity_used: input.quantityUsed ?? null,
         created_by: user.id,
@@ -128,6 +130,7 @@ export async function updateTreatment(
     locationId?: string | null;
     administeredTo?: string | null;
     notes?: string | null;
+    reason?: string | null;
     medicineItemId?: string | null;
     quantityUsed?: number | null;
   },
@@ -167,6 +170,7 @@ export async function updateTreatment(
     if (input.locationId !== undefined) updates.location_id = input.locationId;
     if (input.administeredTo !== undefined) updates.administered_by = input.administeredTo;
     if (input.notes !== undefined) updates.notes = input.notes?.trim() || null;
+    if (input.reason !== undefined) updates.reason = input.reason?.trim() || null;
     if (input.medicineItemId !== undefined) updates.medicine_item_id = input.medicineItemId;
     if (input.quantityUsed !== undefined) updates.quantity_used = input.quantityUsed;
 

@@ -60,6 +60,11 @@ export function SignUpForm() {
             {state.error}
           </p>
         ) : null}
+        {state.success ? (
+          <p className="rounded-lg bg-olive/10 px-4 py-3 text-sm text-olive" role="status">
+            {state.success}
+          </p>
+        ) : null}
         <Button type="submit" fullWidth size="xl" disabled={pending}>
           {pending ? "Creating account…" : "Create Account"}
         </Button>

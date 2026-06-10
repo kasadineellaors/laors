@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { requireOnboardedUser } from "@/lib/auth/session";
-import { canManageInvoices } from "@/lib/auth/roles";
-import { listCustomerOptions } from "@/lib/customers/queries";
-import { getInvoice } from "@/lib/invoices/queries";
+import { canExportReports, canManageInvoices } from "@/lib/auth/roles";
+import { getCustomer, listCustomerOptions } from "@/lib/customers/queries";
+import { isInvoiceEmailConfigured } from "@/lib/email/resend";
+import { getInvoicePrintData } from "@/lib/invoices/queries";
 import { InvoiceDetailClient } from "@/components/invoices/invoice-detail-client";
 
 export const metadata: Metadata = {
@@ -19,17 +20,27 @@ export default async function InvoiceDetailPage({
   const session = await requireOnboardedUser();
   const orgId = session.organization!.id;
 
-  const invoice = await getInvoice(orgId, id);
-  if (!invoice) notFound();
+  const printData = await getInvoicePrintData(orgId, id);
+  if (!printData) notFound();
 
   const canEdit = canManageInvoices(session.membership?.system_role);
+  const canDownloadPdf = canExportReports(session.membership?.system_role);
   const customerOptions = canEdit ? await listCustomerOptions(orgId) : [];
+
+  let recipientEmail = printData.invoice.customer_email?.trim() || "";
+  if (!recipientEmail && printData.invoice.customer_id) {
+    const customer = await getCustomer(orgId, printData.invoice.customer_id);
+    recipientEmail = customer?.email?.trim() || "";
+  }
 
   return (
     <InvoiceDetailClient
       orgId={orgId}
-      invoice={invoice}
+      printData={printData}
       canEdit={canEdit}
+      canDownloadPdf={canDownloadPdf}
+      emailConfigured={isInvoiceEmailConfigured()}
+      recipientEmail={recipientEmail}
       customerOptions={customerOptions}
     />
   );

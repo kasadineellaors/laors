@@ -27,8 +27,12 @@ function formatRate(value: number | null) {
 export function CustomersClient({ orgId, customers }: CustomersClientProps) {
   const router = useRouter();
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
   const [yardageRate, setYardageRate] = useState("");
   const [markupPercent, setMarkupPercent] = useState("");
+  const [feedMarkupPercent, setFeedMarkupPercent] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -38,15 +42,23 @@ export function CustomersClient({ orgId, customers }: CustomersClientProps) {
     setError(null);
     const result = await createCustomer(orgId, {
       name,
+      email: email || undefined,
+      phone: phone || undefined,
+      address: address || undefined,
       yardageRatePerHeadDay: yardageRate || undefined,
       medicineMarkupPercent: markupPercent || undefined,
+      feedMarkupPercent: feedMarkupPercent || undefined,
     });
     setLoading(false);
     if (result.error) setError(result.error);
     else {
       setName("");
+      setEmail("");
+      setPhone("");
+      setAddress("");
       setYardageRate("");
       setMarkupPercent("");
+      setFeedMarkupPercent("");
       router.refresh();
     }
   }
@@ -57,7 +69,7 @@ export function CustomersClient({ orgId, customers }: CustomersClientProps) {
         <CardHeader>
           <CardTitle>Customers</CardTitle>
           <CardDescription>
-            Yardage and medicine markup rates feed into invoicing — tap Edit to update
+            Yardage, medicine, and feed markup rates feed into invoicing — tap Edit to update
           </CardDescription>
         </CardHeader>
         <ul className="space-y-2">
@@ -68,9 +80,11 @@ export function CustomersClient({ orgId, customers }: CustomersClientProps) {
               <SetupEditableRow
                 key={c.id}
                 badge={
-                  c.yardage_rate_per_head_day != null
-                    ? `$${c.yardage_rate_per_head_day}/hd/day`
-                    : undefined
+                  c.email?.trim()
+                    ? c.email
+                    : c.yardage_rate_per_head_day != null
+                      ? `$${c.yardage_rate_per_head_day}/hd/day`
+                      : undefined
                 }
                 fields={[
                   { key: "name", label: "Name", value: c.name },
@@ -89,6 +103,12 @@ export function CustomersClient({ orgId, customers }: CustomersClientProps) {
                     value: formatRate(c.medicine_markup_percent),
                     placeholder: "15",
                   },
+                  {
+                    key: "feedMarkupPercent",
+                    label: "Feed markup (%)",
+                    value: formatRate(c.feed_markup_percent),
+                    placeholder: "10",
+                  },
                   { key: "notes", label: "Notes", value: c.notes ?? "" },
                 ]}
                 onSave={async (values) => {
@@ -99,6 +119,7 @@ export function CustomersClient({ orgId, customers }: CustomersClientProps) {
                     address: values.address || null,
                     yardageRatePerHeadDay: values.yardageRate ?? null,
                     medicineMarkupPercent: values.markupPercent ?? null,
+                    feedMarkupPercent: values.feedMarkupPercent ?? null,
                     notes: values.notes || null,
                   });
                   if (!result.error) router.refresh();
@@ -125,6 +146,27 @@ export function CustomersClient({ orgId, customers }: CustomersClientProps) {
             <Label htmlFor="name">Name</Label>
             <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
+          <div>
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="billing@customer.com"
+            />
+            <p className="mt-1 text-xs text-charcoal/60">Used when you send invoices to this customer</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label htmlFor="phone">Phone</Label>
+              <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+            </div>
+            <div>
+              <Label htmlFor="address">Address</Label>
+              <Input id="address" value={address} onChange={(e) => setAddress(e.target.value)} />
+            </div>
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label htmlFor="yardage">Yardage ($/head/day)</Label>
@@ -150,6 +192,18 @@ export function CustomersClient({ orgId, customers }: CustomersClientProps) {
                 placeholder="15"
               />
             </div>
+          </div>
+          <div>
+            <Label htmlFor="feedMarkup">Feed markup (%)</Label>
+            <Input
+              id="feedMarkup"
+              type="number"
+              min={0}
+              step="0.01"
+              value={feedMarkupPercent}
+              onChange={(e) => setFeedMarkupPercent(e.target.value)}
+              placeholder="10"
+            />
           </div>
           {error ? (
             <p className="text-sm text-rust" role="alert">

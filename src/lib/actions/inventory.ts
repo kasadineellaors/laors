@@ -113,8 +113,76 @@ function revalidateInventory() {
   revalidatePath("/cattle");
   revalidatePath("/cattle/move");
   revalidatePath("/cattle/moves");
+  revalidatePath("/cow-calf");
   revalidatePath("/dashboard");
   revalidatePath("/setup/locations");
+}
+
+/** Add or remove head for a specific classification within a group. */
+export async function applyClassificationHeadDelta(
+  orgId: string,
+  groupId: string,
+  classificationId: string,
+  delta: number,
+  notes?: string,
+): Promise<ActionState> {
+  if (delta === 0) return { success: "No change" };
+
+  try {
+    const { supabase, user } = await requireOrgAccess(orgId);
+
+    const { data: existing } = await supabase
+      .from("group_inventory_counts")
+      .select("head_count")
+      .eq("cattle_group_id", groupId)
+      .eq("classification_id", classificationId)
+      .maybeSingle();
+
+    const previous = existing?.head_count ?? 0;
+    const newCount = previous + delta;
+    if (newCount < 0) {
+      return { error: `Not enough head in classification (have ${previous})` };
+    }
+
+    if (newCount === 0) {
+      await supabase
+        .from("group_inventory_counts")
+        .delete()
+        .eq("cattle_group_id", groupId)
+        .eq("classification_id", classificationId);
+    } else if (existing) {
+      const { error } = await supabase
+        .from("group_inventory_counts")
+        .update({ head_count: newCount })
+        .eq("cattle_group_id", groupId)
+        .eq("classification_id", classificationId);
+      if (error) return { error: error.message };
+    } else {
+      const { error } = await supabase.from("group_inventory_counts").insert({
+        organization_id: orgId,
+        cattle_group_id: groupId,
+        classification_id: classificationId,
+        head_count: newCount,
+      });
+      if (error) return { error: error.message };
+    }
+
+    await supabase.from("inventory_adjustments").insert({
+      organization_id: orgId,
+      cattle_group_id: groupId,
+      classification_id: classificationId,
+      previous_count: previous,
+      new_count: newCount,
+      delta,
+      notes: notes?.trim() || null,
+      created_by: user.id,
+    });
+
+    revalidateInventory();
+    return { success: "Head count updated" };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed" };
+  }
 }
 
 function formatDbError(message: string): string {

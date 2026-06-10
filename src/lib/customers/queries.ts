@@ -14,6 +14,8 @@ function mapCustomer(row: Record<string, unknown>): CustomerRecord {
         : null,
     medicine_markup_percent:
       row.medicine_markup_percent != null ? Number(row.medicine_markup_percent) : null,
+    feed_markup_percent:
+      row.feed_markup_percent != null ? Number(row.feed_markup_percent) : null,
     notes: (row.notes as string | null) ?? null,
     created_at: row.created_at as string,
     updated_at: row.updated_at as string,
@@ -42,6 +44,7 @@ export async function listCustomerOptions(orgId: string): Promise<CustomerOption
     address: c.address,
     yardage_rate_per_head_day: c.yardage_rate_per_head_day,
     medicine_markup_percent: c.medicine_markup_percent,
+    feed_markup_percent: c.feed_markup_percent,
   }));
 }
 

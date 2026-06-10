@@ -72,3 +72,26 @@ body {
   min-height: 48px;
   min-width: 48px;
 }
+
+@media print {
+  header,
+  nav,
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: white;
+  }
+
+  main {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+
+  .invoice-document {
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+}

@@ -2,6 +2,7 @@ import { LaorsLogo } from "@/components/brand/laors-logo";
 import { AppNav } from "@/components/app/app-nav";
 import { signOut } from "@/lib/actions/auth";
 import { requireOnboardedUser } from "@/lib/auth/session";
+import { isCalendarEnabled } from "@/lib/org/settings";
 import { Button } from "@/components/ui/button";
 
 export default async function AppLayout({
@@ -10,6 +11,7 @@ export default async function AppLayout({
   children: React.ReactNode;
 }) {
   const session = await requireOnboardedUser();
+  const calendarEnabled = isCalendarEnabled(session.organization);
 
   return (
     <div className="flex min-h-full flex-col bg-cream">
@@ -32,7 +34,7 @@ export default async function AppLayout({
         {children}
       </main>
       <nav className="sticky bottom-0 border-t border-border bg-surface px-2 py-2">
-        <AppNav />
+        <AppNav calendarEnabled={calendarEnabled} />
       </nav>
     </div>
   );

@@ -103,8 +103,8 @@ export function GenerateInvoiceClient({ orgId, customerOptions }: GenerateInvoic
         <CardHeader>
           <CardTitle>Billing period</CardTitle>
           <CardDescription>
-            Yardage uses current head on groups linked to this customer. Medicine lines come from
-            treatments in the period with catalog pricing and markup.
+            Yardage uses average daily head across the billing period. Medicine and feed lines
+            come from treatments and feed log on customer-linked groups (with markup rates).
           </CardDescription>
         </CardHeader>
         <div className="space-y-4">
@@ -134,6 +134,10 @@ export function GenerateInvoiceClient({ orgId, customerOptions }: GenerateInvoic
                 {selectedCustomer.medicine_markup_percent != null
                   ? `${selectedCustomer.medicine_markup_percent}% medicine markup`
                   : "No medicine markup"}
+                {" · "}
+                {selectedCustomer.feed_markup_percent != null
+                  ? `${selectedCustomer.feed_markup_percent}% feed markup`
+                  : "No feed markup"}
               </p>
             ) : null}
           </div>
@@ -174,10 +178,40 @@ export function GenerateInvoiceClient({ orgId, customerOptions }: GenerateInvoic
           <CardHeader>
             <CardTitle>Preview</CardTitle>
             <CardDescription>
-              {preview.totalHead} head · {preview.dayCount} days · {preview.lines.length} line
-              {preview.lines.length === 1 ? "" : "s"}
+              {preview.totalHeadDays.toLocaleString()} head-days · {preview.dayCount} days ·{" "}
+              {preview.lines.length} line{preview.lines.length === 1 ? "" : "s"}
             </CardDescription>
           </CardHeader>
+          {preview.headDaysBreakdown.length > 0 ? (
+            <div className="mb-4 overflow-x-auto rounded-lg border border-border">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-charcoal/5 text-left text-xs text-charcoal/60">
+                    <th className="px-3 py-2 font-medium">Group</th>
+                    <th className="px-3 py-2 font-medium text-right">Start</th>
+                    <th className="px-3 py-2 font-medium text-right">End</th>
+                    <th className="px-3 py-2 font-medium text-right">Avg hd</th>
+                    <th className="px-3 py-2 font-medium text-right">Head-days</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {preview.headDaysBreakdown.map((row) => (
+                    <tr key={row.groupId} className="border-b border-border last:border-0">
+                      <td className="px-3 py-2 font-medium text-charcoal">{row.groupName}</td>
+                      <td className="px-3 py-2 text-right text-charcoal/70">{row.headAtStart}</td>
+                      <td className="px-3 py-2 text-right text-charcoal/70">{row.headAtEnd}</td>
+                      <td className="px-3 py-2 text-right text-charcoal/70">
+                        {row.avgHead.toFixed(1)}
+                      </td>
+                      <td className="px-3 py-2 text-right font-medium text-olive">
+                        {row.headDays.toLocaleString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
           {preview.warnings.length > 0 ? (
             <ul className="mb-4 space-y-1 rounded-lg bg-rust/10 px-3 py-2 text-sm text-rust">
               {preview.warnings.map((w) => (

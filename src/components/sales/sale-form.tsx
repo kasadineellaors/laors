@@ -5,11 +5,20 @@ import { useRouter } from "next/navigation";
 import type { CustomerOption } from "@/lib/customers/types";
 import type { SelectOption } from "@/lib/locations/options";
 import type { SaleRecord } from "@/lib/sales/types";
+import type { SeedstockSaleType } from "@/lib/seedstock/constants";
+import { SEEDSTOCK_SALE_TYPE_LABELS } from "@/lib/seedstock/constants";
 import { createSale, updateSale } from "@/lib/actions/sales";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
+interface PrefillAnimal {
+  id: string;
+  tagNumber: string;
+  name?: string | null;
+  animalType?: string;
+}
 
 interface SaleFormProps {
   orgId: string;
@@ -18,6 +27,7 @@ interface SaleFormProps {
   categoryOptions: SelectOption[];
   customerOptions?: CustomerOption[];
   canDeductInventory?: boolean;
+  prefillAnimal?: PrefillAnimal;
   sale?: SaleRecord;
   onSuccess?: () => void;
 }
@@ -29,6 +39,7 @@ export function SaleForm({
   categoryOptions,
   customerOptions = [],
   canDeductInventory = false,
+  prefillAnimal,
   sale,
   onSuccess,
 }: SaleFormProps) {
@@ -42,7 +53,12 @@ export function SaleForm({
   const [buyerName, setBuyerName] = useState(sale?.buyer_name ?? "");
   const [groupId, setGroupId] = useState(sale?.cattle_group_id ?? "");
   const [locationId, setLocationId] = useState(sale?.location_id ?? "");
-  const [headCount, setHeadCount] = useState(sale != null ? String(sale.head_count) : "");
+  const [headCount, setHeadCount] = useState(
+    sale != null ? String(sale.head_count) : prefillAnimal ? "1" : "",
+  );
+  const [seedstockSaleType, setSeedstockSaleType] = useState<SeedstockSaleType>(
+    prefillAnimal?.animalType === "bull" ? "semen" : "live_animal",
+  );
   const [totalAmount, setTotalAmount] = useState(
     sale?.total_amount != null ? String(sale.total_amount) : "",
   );
@@ -106,7 +122,10 @@ export function SaleForm({
       totalAmount: parsedTotal,
       pricePerHead: parsedPerHead,
       financialCategoryId: categoryId || undefined,
-      deductFromInventory: canDeductInventory && deductInventory && Boolean(groupId),
+      deductFromInventory:
+        canDeductInventory && deductInventory && Boolean(groupId) && !prefillAnimal,
+      individualAnimalId: prefillAnimal?.id,
+      seedstockSaleType: prefillAnimal ? seedstockSaleType : undefined,
       notes: notes || undefined,
     });
 
@@ -131,10 +150,29 @@ export function SaleForm({
         <CardDescription>
           {isEdit
             ? "Head count cannot be changed — archive and re-enter if needed."
-            : "Log cattle sold and optionally deduct from a group."}
+            : prefillAnimal
+              ? `Recording a sale for ${prefillAnimal.tagNumber}${prefillAnimal.name ? ` (${prefillAnimal.name})` : ""}.`
+              : "Log cattle sold and optionally deduct from a group."}
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit} className="space-y-4">
+        {prefillAnimal && !isEdit ? (
+          <div>
+            <Label htmlFor="seedstockSaleType">Sale type</Label>
+            <select
+              id="seedstockSaleType"
+              value={seedstockSaleType}
+              onChange={(e) => setSeedstockSaleType(e.target.value as SeedstockSaleType)}
+              className={selectClass}
+            >
+              {(Object.keys(SEEDSTOCK_SALE_TYPE_LABELS) as SeedstockSaleType[]).map((key) => (
+                <option key={key} value={key}>
+                  {SEEDSTOCK_SALE_TYPE_LABELS[key]}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : null}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label htmlFor="date">Sale date</Label>
@@ -194,7 +232,7 @@ export function SaleForm({
             placeholder="Buyer or market name"
           />
         </div>
-        {!isEdit && groupOptions.length > 0 ? (
+        {!isEdit && !prefillAnimal && groupOptions.length > 0 ? (
           <div>
             <Label htmlFor="group">Cattle group (optional)</Label>
             <select

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { requireOnboardedUser } from "@/lib/auth/session";
 import { listTreatments } from "@/lib/health/queries";
 import { TreatmentList } from "@/components/health/treatment-list";
+import { ExportButtons } from "@/components/export/export-buttons";
 import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = {
@@ -21,7 +22,8 @@ export default async function TreatmentsPage() {
           <h1 className="text-2xl font-bold text-charcoal">Treatments</h1>
           <p className="text-charcoal/70">Vaccines, dewormers, and health records</p>
         </div>
-        <div className="flex shrink-0 gap-2">
+        <div className="flex shrink-0 flex-wrap justify-end gap-2">
+          <ExportButtons orgId={orgId} recordType="treatments" size="sm" />
           <Link href="/health/medicine">
             <Button variant="outline" size="lg">
               Medicine

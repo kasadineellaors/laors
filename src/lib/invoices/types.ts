@@ -39,7 +39,7 @@ export interface InvoiceSummary {
   unpaidTotal: number;
 }
 
-export type BillingLineSource = "yardage" | "treatment";
+export type BillingLineSource = "yardage" | "treatment" | "feeding";
 
 export interface BillingLinePreview {
   description: string;
@@ -47,6 +47,16 @@ export interface BillingLinePreview {
   unitPrice: number;
   source: BillingLineSource;
   treatmentId?: string;
+  feedingRecordId?: string;
+}
+
+export interface GroupHeadDaysBreakdown {
+  groupId: string;
+  groupName: string;
+  headDays: number;
+  avgHead: number;
+  headAtStart: number;
+  headAtEnd: number;
 }
 
 export interface BillingPreview {
@@ -58,8 +68,11 @@ export interface BillingPreview {
   periodEnd: string;
   dayCount: number;
   totalHead: number;
+  totalHeadDays: number;
+  headDaysBreakdown: GroupHeadDaysBreakdown[];
   lines: BillingLinePreview[];
   warnings: string[];
   subtotal: number;
   treatmentIds: string[];
+  feedingRecordIds: string[];
 }

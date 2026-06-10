@@ -6,6 +6,7 @@ import Link from "next/link";
 import type { CustomerOption } from "@/lib/customers/types";
 import type { SelectOption } from "@/lib/locations/options";
 import type { SaleRecord } from "@/lib/sales/types";
+import { SEEDSTOCK_SALE_TYPE_LABELS } from "@/lib/seedstock/constants";
 import { archiveSale } from "@/lib/actions/sales";
 import { createInvoiceFromSale } from "@/lib/actions/invoices";
 import { SaleForm } from "@/components/sales/sale-form";
@@ -109,6 +110,33 @@ export function SaleDetailClient({
         <p className="text-sm text-charcoal/60">{formatDate(sale.sale_date)}</p>
 
         <dl className="mt-6 space-y-3 text-sm">
+          {sale.seedstock_sale_type ? (
+            <div>
+              <dt className="text-charcoal/50">Sale type</dt>
+              <dd className="font-medium text-charcoal">
+                {SEEDSTOCK_SALE_TYPE_LABELS[sale.seedstock_sale_type]}
+              </dd>
+            </div>
+          ) : null}
+          {sale.individual_animal_id && sale.individual_animal_tag ? (
+            <div>
+              <dt className="text-charcoal/50">Animal</dt>
+              <dd>
+                <Link
+                  href={`/seedstock/animals/${sale.individual_animal_id}`}
+                  className="font-medium text-olive hover:underline"
+                >
+                  {sale.individual_animal_tag}
+                </Link>
+              </dd>
+            </div>
+          ) : null}
+          {sale.customer_name ? (
+            <div>
+              <dt className="text-charcoal/50">Customer</dt>
+              <dd className="font-medium text-charcoal">{sale.customer_name}</dd>
+            </div>
+          ) : null}
           {sale.price_per_head != null ? (
             <div>
               <dt className="text-charcoal/50">Per head</dt>
