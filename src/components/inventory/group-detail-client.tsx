@@ -4,12 +4,21 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { CattleGroupSummary } from "@/lib/inventory/types";
+import type {
+  LotOperationalSummary,
+  MortalityRecord,
+  ProcessingEventRecord,
+} from "@/lib/lots/types";
+import { PROCESSING_TYPE_LABELS } from "@/lib/lots/types";
 import type { SelectOption } from "@/lib/locations/options";
 import {
   archiveCattleGroup,
   setGroupHeadCount,
   updateCattleGroup,
 } from "@/lib/actions/inventory";
+import { closeLot } from "@/lib/actions/lots";
+import { LotSummaryPanel } from "@/components/lots/lot-summary-panel";
+import { LotQuickActions } from "@/components/lots/lot-quick-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,15 +27,25 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 interface GroupDetailClientProps {
   orgId: string;
   group: CattleGroupSummary;
+  lotSummary: LotOperationalSummary;
+  processingEvents: ProcessingEventRecord[];
+  mortalityRecords: MortalityRecord[];
   adjustmentReasonOptions: SelectOption[];
   ownershipOptions: SelectOption[];
   customerOptions: SelectOption[];
   canManageCattle: boolean;
 }
 
+function money(n: number) {
+  return n.toLocaleString(undefined, { style: "currency", currency: "USD" });
+}
+
 export function GroupDetailClient({
   orgId,
   group,
+  lotSummary,
+  processingEvents,
+  mortalityRecords,
   adjustmentReasonOptions,
   ownershipOptions,
   customerOptions,
@@ -43,6 +62,7 @@ export function GroupDetailClient({
   const [adjustReasonId, setAdjustReasonId] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [closing, setClosing] = useState(false);
 
   async function saveMeta() {
     setLoading(true);
@@ -92,47 +112,94 @@ export function GroupDetailClient({
     else router.push("/cattle");
   }
 
+  async function handleCloseLot() {
+    if (!window.confirm(`Close lot "${group.lot_number || group.name}"?`)) return;
+    setClosing(true);
+    setError(null);
+    const result = await closeLot(orgId, group.id);
+    setClosing(false);
+    if (result.error) setError(result.error);
+    else router.refresh();
+  }
+
   return (
     <div className="space-y-6">
       <div>
         <Link href="/cattle" className="text-sm font-medium text-olive hover:underline">
-          ← Cattle
+          ← Lots & cattle
         </Link>
-        <h1 className="mt-1 text-2xl font-bold text-charcoal">{group.name}</h1>
-        <p className="text-charcoal/70">{group.location_breadcrumb ?? "No location"}</p>
-        {group.ownership_group_name ? (
-          <p className="text-sm text-charcoal/60">Owner: {group.ownership_group_name}</p>
-        ) : null}
-        {group.customer_name ? (
-          <p className="text-sm text-charcoal/60">Billing customer: {group.customer_name}</p>
-        ) : null}
-        <p className="mt-1 text-3xl font-bold text-olive">{group.total_head} head</p>
+        <p className="mt-1 text-sm text-charcoal/60">{group.location_breadcrumb ?? "No location"}</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        {canManageCattle ? (
-          <Link href={`/cattle/move?from=${group.id}`}>
-            <Button fullWidth size="lg">
-              Move Cattle
-            </Button>
-          </Link>
-        ) : null}
-        {canManageCattle ? (
-          <Button
-            variant="outline"
-            size="lg"
-            fullWidth
-            onClick={() => setEditingMeta((v) => !v)}
-          >
-            Edit Group
-          </Button>
-        ) : null}
+      <LotSummaryPanel
+        group={group}
+        summary={lotSummary}
+        canManage={canManageCattle}
+        onCloseLot={canManageCattle ? handleCloseLot : undefined}
+        closing={closing}
+      />
+
+      {canManageCattle ? <LotQuickActions orgId={orgId} groupId={group.id} /> : null}
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <MiniStat label="Feed cost" value={money(lotSummary.estimated_feed_cost)} />
+        <MiniStat label="Medicine" value={money(lotSummary.estimated_medicine_cost)} />
+        <MiniStat label="Processing" value={money(lotSummary.processing_cost)} />
+        <MiniStat label="Deaths" value={String(lotSummary.deaths)} />
       </div>
+
+      {processingEvents.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Processing history</CardTitle>
+          </CardHeader>
+          <ul className="divide-y divide-border px-4 pb-4">
+            {processingEvents.map((e) => (
+              <li key={e.id} className="flex justify-between py-2 text-sm">
+                <span>
+                  {e.processed_at} ·{" "}
+                  {PROCESSING_TYPE_LABELS[e.processing_type]} · {e.head_count} hd
+                </span>
+                <span className="font-semibold tabular-nums">{money(e.total_cost)}</span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      ) : null}
+
+      {mortalityRecords.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Death loss</CardTitle>
+          </CardHeader>
+          <ul className="divide-y divide-border px-4 pb-4">
+            {mortalityRecords.map((d) => (
+              <li key={d.id} className="flex justify-between py-2 text-sm">
+                <span>
+                  {d.died_at} · {d.head_count} hd
+                  {d.cause ? ` · ${d.cause}` : ""}
+                </span>
+                {d.value_lost != null ? (
+                  <span className="font-semibold tabular-nums text-rust">
+                    {money(d.value_lost)}
+                  </span>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </Card>
+      ) : null}
+
+      {canManageCattle ? (
+        <Button variant="outline" size="lg" fullWidth onClick={() => setEditingMeta((v) => !v)}>
+          Edit lot details
+        </Button>
+      ) : null}
 
       {canManageCattle && editingMeta ? (
         <Card>
           <CardHeader>
-            <CardTitle>Edit group</CardTitle>
+            <CardTitle>Edit lot</CardTitle>
           </CardHeader>
           <div className="space-y-3">
             <div>
@@ -170,7 +237,7 @@ export function GroupDetailClient({
                   onChange={(e) => setCustomerId(e.target.value)}
                   className="flex h-12 w-full rounded-lg border-2 border-border bg-surface px-4 text-base"
                 >
-                  <option value="">None — not on a customer invoice</option>
+                  <option value="">None</option>
                   {customerOptions.map((c) => (
                     <option key={c.value} value={c.value}>
                       {c.label}
@@ -194,7 +261,7 @@ export function GroupDetailClient({
       <Card>
         <CardHeader>
           <CardTitle>Head count</CardTitle>
-          <CardDescription>Total head in this group</CardDescription>
+          <CardDescription>Current inventory in this lot</CardDescription>
         </CardHeader>
         {editingCount ? (
           <div className="space-y-3">
@@ -256,9 +323,18 @@ export function GroupDetailClient({
 
       {canManageCattle ? (
         <Button variant="danger" fullWidth onClick={handleArchive} disabled={loading}>
-          Archive Group
+          Archive lot
         </Button>
       ) : null}
+    </div>
+  );
+}
+
+function MiniStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-border bg-surface px-3 py-2">
+      <p className="text-xs text-charcoal/60">{label}</p>
+      <p className="text-base font-bold tabular-nums text-charcoal">{value}</p>
     </div>
   );
 }

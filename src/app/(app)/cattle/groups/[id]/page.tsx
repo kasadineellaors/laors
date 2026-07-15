@@ -4,11 +4,16 @@ import { requireOnboardedUser } from "@/lib/auth/session";
 import { listCustomerOptions } from "@/lib/customers/queries";
 import { canWriteInventory } from "@/lib/auth/roles";
 import { getCattleGroup } from "@/lib/inventory/queries";
+import {
+  getLotOperationalSummary,
+  listMortalityRecords,
+  listProcessingEvents,
+} from "@/lib/lots/queries";
 import { getRanchOptions } from "@/lib/locations/options";
 import { GroupDetailClient } from "@/components/inventory/group-detail-client";
 
 export const metadata: Metadata = {
-  title: "Cattle Group — LAORS",
+  title: "Lot Detail — LAORS",
 };
 
 export default async function CattleGroupPage({
@@ -20,16 +25,32 @@ export default async function CattleGroupPage({
   const session = await requireOnboardedUser();
   const orgId = session.organization!.id;
 
-  const [group, adjustmentReasons, ownershipOptions, customerOptions] = await Promise.all([
-    getCattleGroup(orgId, id),
+  const group = await getCattleGroup(orgId, id);
+  if (!group) notFound();
+
+  const [
+    adjustmentReasons,
+    ownershipOptions,
+    customerOptions,
+    lotSummary,
+    processingEvents,
+    mortalityRecords,
+  ] = await Promise.all([
     getRanchOptions(orgId, "adjustment_reasons"),
     getRanchOptions(orgId, "ownership_groups"),
     listCustomerOptions(orgId).then((rows) =>
       rows.map((c) => ({ value: c.id, label: c.name })),
     ),
+    getLotOperationalSummary(
+      orgId,
+      id,
+      group.landed_cost,
+      group.opened_at ?? group.arrival_date ?? group.purchase_date,
+      group.total_head,
+    ),
+    listProcessingEvents(orgId, id),
+    listMortalityRecords(orgId, id),
   ]);
-
-  if (!group) notFound();
 
   const canManageCattle = canWriteInventory(session.membership?.system_role);
 
@@ -37,6 +58,9 @@ export default async function CattleGroupPage({
     <GroupDetailClient
       orgId={orgId}
       group={group}
+      lotSummary={lotSummary}
+      processingEvents={processingEvents}
+      mortalityRecords={mortalityRecords}
       adjustmentReasonOptions={adjustmentReasons}
       ownershipOptions={ownershipOptions}
       customerOptions={customerOptions}

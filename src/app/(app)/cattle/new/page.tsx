@@ -8,7 +8,7 @@ import { getRanchOptions, getTreePickerOptions } from "@/lib/locations/options";
 import { CreateGroupForm } from "@/components/inventory/create-group-form";
 
 export const metadata: Metadata = {
-  title: "New Group — LAORS",
+  title: "Receive Lot — LAORS",
 };
 
 export default async function NewCattleGroupPage() {
@@ -32,9 +32,9 @@ export default async function NewCattleGroupPage() {
     <div className="space-y-6">
       <div>
         <Link href="/cattle" className="text-sm font-medium text-olive hover:underline">
-          ← Cattle
+          ← Lots & cattle
         </Link>
-        <h1 className="mt-1 text-2xl font-bold text-charcoal">New cattle group</h1>
+        <h1 className="mt-1 text-2xl font-bold text-charcoal">Receive lot</h1>
       </div>
       <CreateGroupForm
         orgId={orgId}

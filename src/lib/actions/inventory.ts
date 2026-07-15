@@ -199,30 +199,58 @@ function formatDbError(message: string): string {
 
 export async function createCattleGroup(
   orgId: string,
-  name: string,
-  locationId: string,
-  headCount: number,
-  notes?: string,
-  ownershipGroupId?: string,
-  customerId?: string,
+  input: {
+    name: string;
+    locationId: string;
+    headCount: number;
+    notes?: string;
+    ownershipGroupId?: string;
+    customerId?: string;
+    lotNumber?: string;
+    enterpriseType?: string;
+    purchaseDate?: string;
+    arrivalDate?: string;
+    payWeightLbs?: number;
+    purchasePricePerLb?: number;
+    landedCost?: number;
+    sellerName?: string;
+    sourceName?: string;
+  },
 ): Promise<ActionState & { groupId?: string }> {
   try {
     const { supabase } = await requireOrgAccess(orgId);
-    const trimmed = name.trim();
+    const trimmed = input.name.trim();
     if (!trimmed) return { error: "Group name is required" };
-    if (headCount <= 0) return { error: "Enter a head count greater than zero" };
+    if (input.headCount <= 0) return { error: "Enter a head count greater than zero" };
 
     const defaultClassId = await getDefaultHeadClassificationId(orgId);
+    const avgWeight =
+      input.payWeightLbs && input.headCount
+        ? input.payWeightLbs / input.headCount
+        : null;
 
     const { data: group, error: groupError } = await supabase
       .from("cattle_groups")
       .insert({
         organization_id: orgId,
         name: trimmed,
-        location_id: locationId,
-        ownership_group_id: ownershipGroupId || null,
-        customer_id: customerId || null,
-        notes: notes?.trim() || null,
+        location_id: input.locationId,
+        ownership_group_id: input.ownershipGroupId || null,
+        customer_id: input.customerId || null,
+        notes: input.notes?.trim() || null,
+        lot_number: input.lotNumber?.trim() || null,
+        enterprise_type: input.enterpriseType || "stocker",
+        lot_status: "receiving",
+        opened_at: input.arrivalDate || input.purchaseDate || new Date().toISOString().slice(0, 10),
+        purchase_date: input.purchaseDate || null,
+        arrival_date: input.arrivalDate || null,
+        starting_head: input.headCount,
+        pay_weight_lbs: input.payWeightLbs ?? null,
+        avg_weight_lbs: avgWeight,
+        purchase_price_per_lb: input.purchasePricePerLb ?? null,
+        landed_cost: input.landedCost ?? null,
+        seller_name: input.sellerName?.trim() || null,
+        source_name: input.sourceName?.trim() || null,
       })
       .select("id")
       .single();
@@ -235,7 +263,7 @@ export async function createCattleGroup(
       organization_id: orgId,
       cattle_group_id: group.id,
       classification_id: defaultClassId,
-      head_count: headCount,
+      head_count: input.headCount,
     });
     if (error) return { error: error.message };
 
@@ -254,6 +282,16 @@ export async function updateCattleGroup(
     notes?: string | null;
     ownershipGroupId?: string | null;
     customerId?: string | null;
+    lotNumber?: string | null;
+    enterpriseType?: string;
+    lotStatus?: string;
+    purchaseDate?: string | null;
+    arrivalDate?: string | null;
+    payWeightLbs?: number | null;
+    purchasePricePerLb?: number | null;
+    landedCost?: number | null;
+    sellerName?: string | null;
+    sourceName?: string | null;
   },
 ): Promise<ActionState> {
   try {
@@ -263,6 +301,16 @@ export async function updateCattleGroup(
       notes?: string | null;
       ownership_group_id?: string | null;
       customer_id?: string | null;
+      lot_number?: string | null;
+      enterprise_type?: string;
+      lot_status?: string;
+      purchase_date?: string | null;
+      arrival_date?: string | null;
+      pay_weight_lbs?: number | null;
+      purchase_price_per_lb?: number | null;
+      landed_cost?: number | null;
+      seller_name?: string | null;
+      source_name?: string | null;
     } = {};
     if (data.name !== undefined) updates.name = data.name.trim();
     if (data.notes !== undefined) updates.notes = data.notes?.trim() || null;
@@ -272,6 +320,18 @@ export async function updateCattleGroup(
     if (data.customerId !== undefined) {
       updates.customer_id = data.customerId;
     }
+    if (data.lotNumber !== undefined) updates.lot_number = data.lotNumber?.trim() || null;
+    if (data.enterpriseType !== undefined) updates.enterprise_type = data.enterpriseType;
+    if (data.lotStatus !== undefined) updates.lot_status = data.lotStatus;
+    if (data.purchaseDate !== undefined) updates.purchase_date = data.purchaseDate;
+    if (data.arrivalDate !== undefined) updates.arrival_date = data.arrivalDate;
+    if (data.payWeightLbs !== undefined) updates.pay_weight_lbs = data.payWeightLbs;
+    if (data.purchasePricePerLb !== undefined) {
+      updates.purchase_price_per_lb = data.purchasePricePerLb;
+    }
+    if (data.landedCost !== undefined) updates.landed_cost = data.landedCost;
+    if (data.sellerName !== undefined) updates.seller_name = data.sellerName?.trim() || null;
+    if (data.sourceName !== undefined) updates.source_name = data.sourceName?.trim() || null;
 
     const { error } = await supabase
       .from("cattle_groups")

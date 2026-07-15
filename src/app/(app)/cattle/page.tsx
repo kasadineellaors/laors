@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import type { OperationMode } from "@/types/auth";
 
 export const metadata: Metadata = {
-  title: "Cattle — LAORS",
+  title: "Lots & Cattle — LAORS",
 };
 
 export default async function CattlePage() {
@@ -29,12 +29,12 @@ export default async function CattlePage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-charcoal">Cattle</h1>
+          <h1 className="text-2xl font-bold text-charcoal">Lots & cattle</h1>
           <p className="text-charcoal/70">{totalHead} head ranch-wide</p>
         </div>
         {canManageCattle ? (
           <Link href="/cattle/new">
-            <Button size="lg">+ Group</Button>
+            <Button size="lg">+ Receive lot</Button>
           </Link>
         ) : null}
       </div>

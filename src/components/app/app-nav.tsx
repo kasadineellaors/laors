@@ -6,9 +6,9 @@ import { usePathname } from "next/navigation";
 const BASE_NAV = [
   { href: "/dashboard", label: "Home", match: (p: string) => p === "/dashboard" },
   { href: "/cattle", label: "Cattle", match: (p: string) => p.startsWith("/cattle") },
-  { href: "/jobs", label: "Jobs", match: (p: string) => p.startsWith("/jobs") },
+  { href: "/feed", label: "Feed", match: (p: string) => p.startsWith("/feed") },
   { href: "/health", label: "Health", match: (p: string) => p.startsWith("/health") },
-  { href: "/time", label: "Time", match: (p: string) => p.startsWith("/time") },
+  { href: "/jobs", label: "Jobs", match: (p: string) => p.startsWith("/jobs") },
 ] as const;
 
 const CALENDAR_NAV = {
@@ -24,6 +24,7 @@ const MORE_NAV = {
     p.startsWith("/setup") ||
     p.startsWith("/sales") ||
     p.startsWith("/invoices") ||
+    p.startsWith("/time") ||
     p.startsWith("/weather"),
 } as const;
 

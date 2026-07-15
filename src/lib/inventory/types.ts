@@ -18,6 +18,20 @@ export interface CattleGroupSummary {
   ownership_group_name: string | null;
   customer_id: string | null;
   customer_name: string | null;
+  lot_number: string | null;
+  enterprise_type: string;
+  lot_status: string;
+  opened_at: string | null;
+  closed_at: string | null;
+  purchase_date: string | null;
+  arrival_date: string | null;
+  starting_head: number | null;
+  pay_weight_lbs: number | null;
+  avg_weight_lbs: number | null;
+  purchase_price_per_lb: number | null;
+  landed_cost: number | null;
+  seller_name: string | null;
+  source_name: string | null;
 }
 
 export interface MoveLineInput {

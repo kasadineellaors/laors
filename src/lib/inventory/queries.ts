@@ -10,7 +10,9 @@ export async function listCattleGroups(orgId: string): Promise<CattleGroupSummar
     await Promise.all([
       supabase
         .from("cattle_groups")
-        .select("id, name, location_id, notes, ownership_group_id, customer_id")
+        .select(
+          "id, name, location_id, notes, ownership_group_id, customer_id, lot_number, enterprise_type, lot_status, opened_at, closed_at, purchase_date, arrival_date, starting_head, pay_weight_lbs, avg_weight_lbs, purchase_price_per_lb, landed_cost, seller_name, source_name",
+        )
         .eq("organization_id", orgId)
         .eq("is_active", true)
         .order("name"),
@@ -89,6 +91,21 @@ export async function listCattleGroups(orgId: string): Promise<CattleGroupSummar
         : null,
       customer_id: g.customer_id,
       customer_name: g.customer_id ? customerNames.get(g.customer_id) ?? null : null,
+      lot_number: g.lot_number ?? null,
+      enterprise_type: g.enterprise_type ?? "stocker",
+      lot_status: g.lot_status ?? "active",
+      opened_at: g.opened_at ?? null,
+      closed_at: g.closed_at ?? null,
+      purchase_date: g.purchase_date ?? null,
+      arrival_date: g.arrival_date ?? null,
+      starting_head: g.starting_head != null ? Number(g.starting_head) : null,
+      pay_weight_lbs: g.pay_weight_lbs != null ? Number(g.pay_weight_lbs) : null,
+      avg_weight_lbs: g.avg_weight_lbs != null ? Number(g.avg_weight_lbs) : null,
+      purchase_price_per_lb:
+        g.purchase_price_per_lb != null ? Number(g.purchase_price_per_lb) : null,
+      landed_cost: g.landed_cost != null ? Number(g.landed_cost) : null,
+      seller_name: g.seller_name ?? null,
+      source_name: g.source_name ?? null,
     };
   });
 }

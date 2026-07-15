@@ -99,6 +99,15 @@ export async function getDbSetupIssues(): Promise<DbSetupIssue[]> {
       fix: "Run supabase/RUN_PHASE17.sql or supabase db push",
     },
     {
+      id: "phase18-lots",
+      probe: async () => {
+        const { error } = await supabase.from("processing_events").select("id").limit(1);
+        return !error;
+      },
+      message: "Lot processing / mortality tables are not set up",
+      fix: "Run supabase/RUN_PHASE18.sql or supabase db push",
+    },
+    {
       id: "phase13-calendar",
       probe: async () => {
         const { error } = await supabase.from("calendar_events").select("id").limit(1);
