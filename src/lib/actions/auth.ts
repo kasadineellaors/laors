@@ -1,5 +1,6 @@
 "use server";
 
+import { getAppUrl } from "@/lib/auth/app-url";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirectAfterAuth, slugify } from "@/lib/auth/session";
@@ -53,7 +54,7 @@ export async function signUp(
   }
 
   const supabase = await createClient();
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const appUrl = await getAppUrl();
 
   const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
@@ -71,7 +72,34 @@ export async function signUp(
     return redirectAfterAuth();
   }
 
-  redirect(`/signup/check-email?email=${encodeURIComponent(parsed.data.email)}`);
+  const emailParam = encodeURIComponent(parsed.data.email);
+  if (data.user?.identities?.length === 0) {
+    redirect(`/signup/check-email?email=${emailParam}&existing=1`);
+  }
+
+  redirect(`/signup/check-email?email=${emailParam}`);
+}
+
+export async function resendSignUpConfirmation(
+  _prev: AuthActionState,
+  formData: FormData,
+): Promise<AuthActionState> {
+  const email = formData.get("email");
+  if (typeof email !== "string" || !z.string().email().safeParse(email).success) {
+    return { error: "Enter a valid email" };
+  }
+
+  const supabase = await createClient();
+  const appUrl = await getAppUrl();
+
+  const { error } = await supabase.auth.resend({
+    type: "signup",
+    email,
+    options: { emailRedirectTo: `${appUrl}/auth/callback` },
+  });
+
+  if (error) return { error: error.message };
+  return { success: "Confirmation email sent. Check your inbox and spam folder." };
 }
 
 export async function signIn(
@@ -90,7 +118,15 @@ export async function signIn(
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
 
-  if (error) return { error: error.message };
+  if (error) {
+    if (error.message.toLowerCase().includes("email not confirmed")) {
+      return {
+        error:
+          "Confirm your email first. Check your inbox (and spam), or sign up again and use Resend confirmation.",
+      };
+    }
+    return { error: error.message };
+  }
 
   const redirectTo = formData.get("redirect");
   if (
@@ -114,7 +150,7 @@ export async function signInWithMagicLink(
   }
 
   const supabase = await createClient();
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const appUrl = await getAppUrl();
 
   const { error } = await supabase.auth.signInWithOtp({
     email,
@@ -135,7 +171,7 @@ export async function resetPassword(
   }
 
   const supabase = await createClient();
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const appUrl = await getAppUrl();
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${appUrl}/auth/callback?next=/reset-password`,

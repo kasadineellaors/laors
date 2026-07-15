@@ -79,6 +79,28 @@ Open [http://localhost:3000](http://localhost:3000).
 3. Run `supabase db push` against production project (or paste `RUN_ALL_PHASES.sql`)
 4. Add production URL to Supabase Auth redirect allowlist
 
+### Supabase auth emails (sign-up, password reset)
+
+Sign-up verification is sent by **Supabase Auth**, not the app's Resend invoice integration. In [Supabase Dashboard](https://supabase.com/dashboard) → your project:
+
+1. **Authentication → URL Configuration**
+   - Site URL: `https://laorsranch.com` (or your live domain)
+   - Redirect URLs: `https://laorsranch.com/auth/callback`, `https://laors.vercel.app/auth/callback`, and `http://localhost:3000/auth/callback` for local dev
+2. **Authentication → Providers → Email** — Email provider enabled; **Confirm email** on for production
+3. **Authentication → SMTP** — Enable custom SMTP (Supabase's built-in mailer is rate-limited and often lands in spam)
+
+**Resend SMTP (recommended if you already use Resend for invoices):**
+
+| Field | Value |
+|---|---|
+| Host | `smtp.resend.com` |
+| Port | `465` |
+| Username | `resend` |
+| Password | Your `RESEND_API_KEY` |
+| Sender | `auth@laorsranch.com` (must be a verified domain in Resend) |
+
+Set `NEXT_PUBLIC_APP_URL=https://laorsranch.com` in Vercel. After deploy, the sign-up check-email page includes **Resend confirmation email**.
+
 ## Ship checklist (current release)
 
 Before cow-calf work, LAORS supports:
@@ -106,6 +128,7 @@ Before cow-calf work, LAORS supports:
 | Team invite not emailed | Add service role key; or invite saved as pending in Setup → Team |
 | Worker sale “deduct inventory” fails | Only managers can deduct head — workers log sale without deduct |
 | Login loops or fails after sign-in | Ensure `NEXT_PUBLIC_APP_URL` matches your site; add URL to Supabase Auth allowlist |
+| Sign-up confirmation email never arrives | Configure **Supabase → Authentication → SMTP** (Resend recommended); add production URLs to Auth allowlist; use **Resend confirmation** on the check-email page |
 
 ## Security
 

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ResendConfirmationForm } from "@/components/auth/resend-confirmation-form";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -10,10 +11,10 @@ export const metadata: Metadata = {
 export default async function SignUpCheckEmailPage({
   searchParams,
 }: {
-  searchParams: Promise<{ email?: string; error?: string }>;
+  searchParams: Promise<{ email?: string; error?: string; existing?: string }>;
 }) {
-  const { email, error } = await searchParams;
-  const displayEmail = email?.trim() || "your email address";
+  const { email, error, existing } = await searchParams;
+  const displayEmail = email?.trim() || "";
 
   return (
     <>
@@ -32,11 +33,23 @@ export default async function SignUpCheckEmailPage({
         <CardHeader>
           <CardTitle>One more step</CardTitle>
           <CardDescription>
-            We sent a confirmation link to{" "}
-            <span className="font-semibold text-charcoal">{displayEmail}</span>
+            {displayEmail ? (
+              <>
+                We sent a confirmation link to{" "}
+                <span className="font-semibold text-charcoal">{displayEmail}</span>
+              </>
+            ) : (
+              "We sent a confirmation link to your email address."
+            )}
           </CardDescription>
         </CardHeader>
         <div className="space-y-4 px-4 pb-4 text-base text-charcoal/80">
+          {existing === "1" ? (
+            <p className="rounded-lg bg-tan-light/40 px-4 py-3 text-sm text-charcoal/70">
+              An account with this email may already exist. If you never confirmed it, use the
+              button below to send a fresh confirmation email.
+            </p>
+          ) : null}
           {error === "link_failed" ? (
             <p className="rounded-lg bg-rust/10 px-4 py-3 text-sm text-rust">
               That confirmation link didn&apos;t work. Wait for a fresh email after signing up,
@@ -52,6 +65,7 @@ export default async function SignUpCheckEmailPage({
             Don&apos;t see the email? Check your spam or junk folder. It can take a minute or
             two to arrive.
           </p>
+          {displayEmail ? <ResendConfirmationForm email={displayEmail} /> : null}
           <Link href="/login">
             <Button type="button" fullWidth size="xl">
               Go to sign in
