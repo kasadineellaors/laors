@@ -1,7 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
+import { resolveRationUnitPrice } from "./costing";
 import type {
   FeedItemOption,
   FeedItemRecord,
+  FeedPurchaseRecord,
   FeedRationIngredient,
   FeedStockAdjustment,
 } from "./inventory-types";
@@ -92,6 +94,37 @@ export async function listFeedStockAdjustments(
   }));
 }
 
+export async function listFeedPurchases(
+  orgId: string,
+  itemId: string,
+  limit = 20,
+): Promise<FeedPurchaseRecord[]> {
+  const supabase = await createClient();
+  const { data: rows } = await supabase
+    .from("feed_purchases")
+    .select("*")
+    .eq("organization_id", orgId)
+    .eq("feed_item_id", itemId)
+    .eq("is_active", true)
+    .order("purchased_at", { ascending: false })
+    .limit(limit);
+
+  if (!rows?.length) return [];
+
+  return rows.map((r) => ({
+    id: r.id,
+    feed_item_id: r.feed_item_id,
+    purchased_at: r.purchased_at,
+    vendor_name: r.vendor_name,
+    quantity: Number(r.quantity),
+    unit_cost: Number(r.unit_cost),
+    total_cost: Number(r.total_cost),
+    invoice_ref: r.invoice_ref,
+    notes: r.notes,
+    created_at: r.created_at,
+  }));
+}
+
 export async function listRationIngredients(
   orgId: string,
   rationId: string,
@@ -99,7 +132,7 @@ export async function listRationIngredients(
   const supabase = await createClient();
   const { data: rows } = await supabase
     .from("feed_ration_ingredients")
-    .select("id, feed_ration_id, feed_item_id, quantity_per_ration_unit")
+    .select("id, feed_ration_id, feed_item_id, quantity_per_ration_unit, inclusion_percent")
     .eq("organization_id", orgId)
     .eq("feed_ration_id", rationId);
 
@@ -108,7 +141,7 @@ export async function listRationIngredients(
   const itemIds = [...new Set(rows.map((r) => r.feed_item_id))];
   const { data: items } = await supabase
     .from("feed_items")
-    .select("id, name, unit")
+    .select("id, name, unit, price_per_unit")
     .in("id", itemIds);
 
   const itemById = new Map((items ?? []).map((i) => [i.id, i]));
@@ -122,6 +155,64 @@ export async function listRationIngredients(
       feed_item_name: item?.name ?? "Feedstuff",
       feed_item_unit: item?.unit ?? "",
       quantity_per_ration_unit: Number(r.quantity_per_ration_unit),
+      inclusion_percent:
+        r.inclusion_percent != null ? Number(r.inclusion_percent) : null,
+      price_per_unit: item?.price_per_unit != null ? Number(item.price_per_unit) : null,
     };
   });
+}
+
+export async function getRationUnitPrices(
+  orgId: string,
+  rationIds: string[],
+): Promise<Map<string, number>> {
+  const prices = new Map<string, number>();
+  if (!rationIds.length) return prices;
+
+  const supabase = await createClient();
+  const { data: rations } = await supabase
+    .from("feed_rations")
+    .select("id, price_per_unit")
+    .eq("organization_id", orgId)
+    .in("id", rationIds);
+
+  const rationPrice = new Map(
+    (rations ?? []).map((r) => [
+      r.id,
+      r.price_per_unit != null ? Number(r.price_per_unit) : null,
+    ]),
+  );
+
+  const { data: ingredientRows } = await supabase
+    .from("feed_ration_ingredients")
+    .select("feed_ration_id, feed_item_id, quantity_per_ration_unit")
+    .eq("organization_id", orgId)
+    .in("feed_ration_id", rationIds);
+
+  const itemIds = [...new Set((ingredientRows ?? []).map((r) => r.feed_item_id))];
+  const { data: items } = itemIds.length
+    ? await supabase.from("feed_items").select("id, price_per_unit").in("id", itemIds)
+    : { data: [] };
+
+  const itemPrice = new Map(
+    (items ?? []).map((i) => [i.id, i.price_per_unit != null ? Number(i.price_per_unit) : 0]),
+  );
+
+  const ingredientsByRation = new Map<string, Array<{ quantity_per_ration_unit: number; price_per_unit: number | null }>>();
+  for (const row of ingredientRows ?? []) {
+    const list = ingredientsByRation.get(row.feed_ration_id) ?? [];
+    list.push({
+      quantity_per_ration_unit: Number(row.quantity_per_ration_unit),
+      price_per_unit: itemPrice.get(row.feed_item_id) ?? null,
+    });
+    ingredientsByRation.set(row.feed_ration_id, list);
+  }
+
+  for (const rationId of rationIds) {
+    const manual = rationPrice.get(rationId) ?? null;
+    const ingredients = ingredientsByRation.get(rationId) ?? [];
+    prices.set(rationId, resolveRationUnitPrice(manual, ingredients));
+  }
+
+  return prices;
 }

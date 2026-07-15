@@ -9,8 +9,10 @@ import { createFeedRation, updateFeedRation } from "@/lib/actions/feed";
 import {
   RationIngredientBuilder,
   linesFromIngredients,
+  detectIngredientMode,
   parseIngredientLines,
   type IngredientLine,
+  type IngredientBuildMode,
 } from "@/components/feed/ration-ingredient-builder";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,8 +49,11 @@ export function RationForm({
     ingredients.length > 0
       ? linesFromIngredients(ingredients)
       : feedItems.length > 0
-        ? [{ feedItemId: feedItems[0].id, quantityPerRationUnit: "" }]
+        ? [{ feedItemId: feedItems[0].id, quantityPerRationUnit: "", inclusionPercent: "" }]
         : [],
+  );
+  const [ingredientMode, setIngredientMode] = useState<IngredientBuildMode>(
+    ingredients.length > 0 ? detectIngredientMode(ingredients) : "percent",
   );
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -65,7 +70,15 @@ export function RationForm({
       return;
     }
 
-    const parsedIngredients = parseIngredientLines(ingredientLines);
+    const parsedIngredients = parseIngredientLines(ingredientLines, ingredientMode);
+    if (ingredientMode === "percent") {
+      const total = parsedIngredients.reduce((s, i) => s + (i.inclusionPercent ?? 0), 0);
+      if (parsedIngredients.length > 0 && Math.abs(total - 100) >= 0.5) {
+        setError("Inclusion percentages must total 100%");
+        setLoading(false);
+        return;
+      }
+    }
 
     const result = isEdit
       ? await updateFeedRation(orgId, ration!.id, {
@@ -151,6 +164,8 @@ export function RationForm({
           rationUnit={unit}
           lines={ingredientLines}
           onChange={setIngredientLines}
+          mode={ingredientMode}
+          onModeChange={setIngredientMode}
         />
 
         <div>

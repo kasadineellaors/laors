@@ -1573,6 +1573,8 @@ export interface Database {
           delta: number;
           adjustment_type: string;
           feeding_record_id: string | null;
+          feed_purchase_id: string | null;
+          unit_cost: number | null;
           notes: string | null;
           created_by: string | null;
           created_at: string;
@@ -1586,10 +1588,51 @@ export interface Database {
           delta: number;
           adjustment_type: string;
           feeding_record_id?: string | null;
+          feed_purchase_id?: string | null;
+          unit_cost?: number | null;
           notes?: string | null;
           created_by?: string | null;
         };
         Update: Record<string, never>;
+        Relationships: [];
+      };
+      feed_purchases: {
+        Row: {
+          id: string;
+          organization_id: string;
+          feed_item_id: string;
+          purchased_at: string;
+          vendor_name: string | null;
+          quantity: number;
+          unit_cost: number;
+          total_cost: number;
+          invoice_ref: string | null;
+          notes: string | null;
+          feed_stock_adjustment_id: string | null;
+          created_by: string | null;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          feed_item_id: string;
+          purchased_at?: string;
+          vendor_name?: string | null;
+          quantity: number;
+          unit_cost: number;
+          total_cost: number;
+          invoice_ref?: string | null;
+          notes?: string | null;
+          feed_stock_adjustment_id?: string | null;
+          created_by?: string | null;
+          is_active?: boolean;
+        };
+        Update: {
+          is_active?: boolean;
+          notes?: string | null;
+        };
         Relationships: [];
       };
       feed_ration_ingredients: {
@@ -1599,6 +1642,7 @@ export interface Database {
           feed_ration_id: string;
           feed_item_id: string;
           quantity_per_ration_unit: number;
+          inclusion_percent: number | null;
           created_at: string;
         };
         Insert: {
@@ -1607,9 +1651,11 @@ export interface Database {
           feed_ration_id: string;
           feed_item_id: string;
           quantity_per_ration_unit: number;
+          inclusion_percent?: number | null;
         };
         Update: {
           quantity_per_ration_unit?: number;
+          inclusion_percent?: number | null;
         };
         Relationships: [];
       };

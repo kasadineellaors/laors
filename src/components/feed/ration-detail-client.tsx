@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { FeedRationRecord } from "@/lib/feed/types";
 import type { FeedItemOption, FeedRationIngredient } from "@/lib/feed/inventory-types";
+import { computeRationRecipeCost, resolveRationUnitPrice } from "@/lib/feed/costing";
 import { archiveFeedRation } from "@/lib/actions/feed";
 import { RationForm } from "@/components/feed/ration-form";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,9 @@ export function RationDetailClient({
     if (result.error) setError(result.error);
     else router.push("/feed/rations");
   }
+
+  const recipeCost = computeRationRecipeCost(ingredients);
+  const billRate = resolveRationUnitPrice(ration.price_per_unit, ingredients);
 
   if (editing) {
     return (
@@ -72,18 +76,30 @@ export function RationDetailClient({
           <div>
             <dt className="text-charcoal/50">Bill at</dt>
             <dd className="font-medium text-charcoal">
-              {ration.price_per_unit != null
-                ? `$${ration.price_per_unit}/${ration.unit}`
-                : "Not set — add for invoicing"}
+              {billRate > 0
+                ? `$${billRate.toFixed(2)}/${ration.unit}`
+                : "Not set — add recipe or manual price"}
+              {ration.price_per_unit == null && recipeCost > 0 ? " (from recipe)" : ""}
             </dd>
           </div>
+          {recipeCost > 0 ? (
+            <div>
+              <dt className="text-charcoal/50">Recipe cost</dt>
+              <dd className="font-medium text-charcoal">
+                ${recipeCost.toFixed(2)}/{ration.unit}
+              </dd>
+            </div>
+          ) : null}
           {ingredients.length > 0 ? (
             <div>
               <dt className="text-charcoal/50">Recipe per 1 {ration.unit}</dt>
               <dd className="mt-1 space-y-1">
                 {ingredients.map((i) => (
                   <p key={i.id} className="font-medium text-charcoal">
-                    {i.quantity_per_ration_unit} {i.feed_item_unit} {i.feed_item_name}
+                    {i.inclusion_percent != null
+                      ? `${i.inclusion_percent}%`
+                      : `${i.quantity_per_ration_unit}`}{" "}
+                    {i.feed_item_unit} {i.feed_item_name}
                   </p>
                 ))}
               </dd>

@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import type { FeedItemRecord, FeedStockAdjustment } from "@/lib/feed/inventory-types";
+import type { FeedItemRecord, FeedPurchaseRecord, FeedStockAdjustment } from "@/lib/feed/inventory-types";
 import { adjustFeedStock, archiveFeedItem } from "@/lib/actions/feed-inventory";
 import { FeedItemForm } from "@/components/feed/feed-item-form";
+import { FeedPurchaseForm } from "@/components/feed/feed-purchase-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +15,7 @@ interface FeedItemDetailClientProps {
   orgId: string;
   item: FeedItemRecord;
   adjustments: FeedStockAdjustment[];
+  purchases: FeedPurchaseRecord[];
 }
 
 function formatWhen(iso: string) {
@@ -29,10 +31,11 @@ export function FeedItemDetailClient({
   orgId,
   item,
   adjustments,
+  purchases,
 }: FeedItemDetailClientProps) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
-  const [adjustMode, setAdjustMode] = useState<"receive" | "use" | null>(null);
+  const [adjustMode, setAdjustMode] = useState<"receive" | "use" | "purchase" | null>(null);
   const [adjustQty, setAdjustQty] = useState("");
   const [adjustNotes, setAdjustNotes] = useState("");
   const [loading, setLoading] = useState(false);
@@ -99,6 +102,7 @@ export function FeedItemDetailClient({
         <h1 className="text-2xl font-bold text-charcoal">{item.name}</h1>
         <p className="text-sm text-charcoal/60">
           {item.quantity_on_hand} {item.unit} on hand
+          {item.price_per_unit != null ? ` · avg $${item.price_per_unit.toFixed(2)}/${item.unit}` : ""}
           {item.reorder_at != null ? ` · alert below ${item.reorder_at}` : ""}
         </p>
         {item.is_low_stock ? (
@@ -113,11 +117,11 @@ export function FeedItemDetailClient({
           variant="secondary"
           size="lg"
           onClick={() => {
-            setAdjustMode("receive");
+            setAdjustMode("purchase");
             setError(null);
           }}
         >
-          Receive stock
+          Record purchase
         </Button>
         <Button
           variant="secondary"
@@ -131,7 +135,20 @@ export function FeedItemDetailClient({
         </Button>
       </div>
 
-      {adjustMode ? (
+      {adjustMode === "purchase" ? (
+        <FeedPurchaseForm
+          orgId={orgId}
+          itemId={item.id}
+          unit={item.unit}
+          onSuccess={() => {
+            setAdjustMode(null);
+            router.refresh();
+          }}
+          onCancel={() => setAdjustMode(null)}
+        />
+      ) : null}
+
+      {adjustMode === "receive" || adjustMode === "use" ? (
         <div className="space-y-3 rounded-xl border border-border p-4">
           <Label htmlFor="adjQty">Quantity ({item.unit})</Label>
           <Input
@@ -177,6 +194,27 @@ export function FeedItemDetailClient({
           Archive
         </Button>
       </div>
+
+      {purchases.length > 0 ? (
+        <div>
+          <h2 className="mb-3 text-lg font-semibold text-charcoal">Purchase history</h2>
+          <ul className="space-y-2 text-sm">
+            {purchases.map((p) => (
+              <li key={p.id} className="rounded-lg border border-border px-3 py-2">
+                <span className="font-medium">{p.purchased_at}</span>
+                {": "}
+                {p.quantity} {item.unit} for $
+                {p.total_cost.toFixed(2)}
+                <span className="block text-xs text-charcoal/50">
+                  ${p.unit_cost.toFixed(4)}/{item.unit}
+                  {p.vendor_name ? ` · ${p.vendor_name}` : ""}
+                  {p.invoice_ref ? ` · #${p.invoice_ref}` : ""}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       {adjustments.length > 0 ? (
         <div>

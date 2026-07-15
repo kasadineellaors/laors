@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type { Database } from "@/types/database";
 import type { FeedAdjustmentType } from "@/lib/feed/inventory-types";
+import { weightedAverageCost } from "@/lib/feed/costing";
 
 export type FeedInventoryActionState = {
   error?: string;
@@ -12,13 +13,15 @@ export type FeedInventoryActionState = {
   itemId?: string;
 };
 
-const DB_HINT = "Run supabase/RUN_PHASE17.sql in Supabase SQL Editor, then retry.";
+const DB_HINT = "Run supabase/RUN_PHASE19.sql in Supabase SQL Editor, then retry.";
 
 function formatDbError(message: string): string {
   if (
     message.includes("feed_items") ||
     message.includes("feed_stock") ||
     message.includes("feed_ration_ingredients") ||
+    message.includes("feed_purchases") ||
+    message.includes("inclusion_percent") ||
     message.includes("schema cache")
   ) {
     return `${message} — ${DB_HINT}`;
@@ -63,8 +66,8 @@ export async function applyFeedDelta(
   feedItemId: string,
   delta: number,
   adjustmentType: FeedAdjustmentType,
-  options?: { feedingRecordId?: string; notes?: string },
-): Promise<{ error?: string }> {
+  options?: { feedingRecordId?: string; notes?: string; unitCost?: number },
+): Promise<{ error?: string; adjustmentId?: string }> {
   const { data: item, error: fetchError } = await supabase
     .from("feed_items")
     .select("quantity_on_hand")
@@ -88,7 +91,7 @@ export async function applyFeedDelta(
 
   if (updateError) return { error: formatDbError(updateError.message) };
 
-  const { error: adjError } = await supabase.from("feed_stock_adjustments").insert({
+  const { data: adj, error: adjError } = await supabase.from("feed_stock_adjustments").insert({
     organization_id: orgId,
     feed_item_id: feedItemId,
     previous_quantity: previous,
@@ -96,12 +99,13 @@ export async function applyFeedDelta(
     delta,
     adjustment_type: adjustmentType,
     feeding_record_id: options?.feedingRecordId ?? null,
+    unit_cost: options?.unitCost ?? null,
     notes: options?.notes?.trim() || null,
     created_by: userId,
-  });
+  }).select("id").single();
 
   if (adjError) return { error: formatDbError(adjError.message) };
-  return {};
+  return { adjustmentId: adj?.id };
 }
 
 export async function createFeedItem(
@@ -181,6 +185,85 @@ export async function updateFeedItem(
   }
 }
 
+export async function recordFeedPurchase(
+  orgId: string,
+  itemId: string,
+  input: {
+    purchasedAt?: string;
+    vendorName?: string;
+    quantity: number;
+    totalCost: number;
+    invoiceRef?: string;
+    notes?: string;
+  },
+): Promise<FeedInventoryActionState> {
+  if (!input.quantity || input.quantity <= 0) return { error: "Enter quantity received" };
+  if (!input.totalCost || input.totalCost < 0) return { error: "Enter total cost" };
+
+  try {
+    const { supabase, user } = await requireMember(orgId);
+    const { data: item, error: fetchError } = await supabase
+      .from("feed_items")
+      .select("quantity_on_hand, price_per_unit")
+      .eq("id", itemId)
+      .eq("organization_id", orgId)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (fetchError) return { error: formatDbError(fetchError.message) };
+    if (!item) return { error: "Feedstuff not found" };
+
+    const currentQty = Number(item.quantity_on_hand);
+    const currentPrice = item.price_per_unit != null ? Number(item.price_per_unit) : null;
+    const unitCost = input.totalCost / input.quantity;
+    const newAvgPrice = weightedAverageCost(currentQty, currentPrice, input.quantity, unitCost);
+
+    const stockResult = await applyFeedDelta(
+      supabase,
+      orgId,
+      user.id,
+      itemId,
+      input.quantity,
+      "receive",
+      {
+        notes: input.notes?.trim() || `Purchase${input.vendorName ? ` — ${input.vendorName}` : ""}`,
+        unitCost,
+      },
+    );
+    if (stockResult.error) return { error: stockResult.error };
+
+    const { error: priceError } = await supabase
+      .from("feed_items")
+      .update({ price_per_unit: newAvgPrice })
+      .eq("id", itemId)
+      .eq("organization_id", orgId);
+
+    if (priceError) return { error: formatDbError(priceError.message) };
+
+    const { error: purchaseError } = await supabase.from("feed_purchases").insert({
+      organization_id: orgId,
+      feed_item_id: itemId,
+      purchased_at: input.purchasedAt || new Date().toISOString().slice(0, 10),
+      vendor_name: input.vendorName?.trim() || null,
+      quantity: input.quantity,
+      unit_cost: unitCost,
+      total_cost: input.totalCost,
+      invoice_ref: input.invoiceRef?.trim() || null,
+      notes: input.notes?.trim() || null,
+      feed_stock_adjustment_id: stockResult.adjustmentId ?? null,
+      created_by: user.id,
+    });
+
+    if (purchaseError) return { error: formatDbError(purchaseError.message) };
+
+    revalidateFeedInventory();
+    revalidatePath(`/feed/inventory/${itemId}`);
+    return { success: "Purchase recorded", itemId };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
 export async function adjustFeedStock(
   orgId: string,
   itemId: string,
@@ -236,7 +319,11 @@ export async function archiveFeedItem(
 export async function saveFeedRationIngredients(
   orgId: string,
   rationId: string,
-  ingredients: Array<{ feedItemId: string; quantityPerRationUnit: number }>,
+  ingredients: Array<{
+    feedItemId: string;
+    quantityPerRationUnit: number;
+    inclusionPercent?: number | null;
+  }>,
 ): Promise<FeedInventoryActionState> {
   try {
     const { supabase, user } = await requireMember(orgId);
@@ -266,6 +353,7 @@ export async function saveFeedRationIngredients(
           feed_ration_id: rationId,
           feed_item_id: i.feedItemId,
           quantity_per_ration_unit: i.quantityPerRationUnit,
+          inclusion_percent: i.inclusionPercent ?? null,
         })),
       );
       if (error) return { error: formatDbError(error.message) };

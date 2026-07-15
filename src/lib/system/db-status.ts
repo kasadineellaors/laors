@@ -108,6 +108,15 @@ export async function getDbSetupIssues(): Promise<DbSetupIssue[]> {
       fix: "Run supabase/RUN_PHASE18.sql or supabase db push",
     },
     {
+      id: "phase19-feed-purchases",
+      probe: async () => {
+        const { error } = await supabase.from("feed_purchases").select("id").limit(1);
+        return !error;
+      },
+      message: "Feed purchases / % ration inclusion are not set up",
+      fix: "Run supabase/RUN_PHASE19.sql or supabase/RUN_ALL_UPDATES.sql",
+    },
+    {
       id: "phase13-calendar",
       probe: async () => {
         const { error } = await supabase.from("calendar_events").select("id").limit(1);

@@ -41,9 +41,25 @@ export interface FeedRationIngredient {
   feed_item_name: string;
   feed_item_unit: string;
   quantity_per_ration_unit: number;
+  inclusion_percent: number | null;
+  price_per_unit: number | null;
 }
 
 export interface FeedRationIngredientInput {
   feedItemId: string;
   quantityPerRationUnit: number;
+  inclusionPercent?: number | null;
+}
+
+export interface FeedPurchaseRecord {
+  id: string;
+  feed_item_id: string;
+  purchased_at: string;
+  vendor_name: string | null;
+  quantity: number;
+  unit_cost: number;
+  total_cost: number;
+  invoice_ref: string | null;
+  notes: string | null;
+  created_at: string;
 }

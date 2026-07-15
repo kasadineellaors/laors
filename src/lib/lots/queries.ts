@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { getRationUnitPrices } from "@/lib/feed/inventory-queries";
 import type {
   LotOperationalSummary,
   MortalityRecord,
@@ -21,7 +22,6 @@ export async function getLotOperationalSummary(
     { data: processing },
     { data: sales },
     { data: deaths },
-    { data: rations },
   ] = await Promise.all([
     supabase
       .from("feeding_records")
@@ -53,16 +53,12 @@ export async function getLotOperationalSummary(
       .eq("organization_id", orgId)
       .eq("cattle_group_id", groupId)
       .eq("is_active", true),
-    supabase
-      .from("feed_rations")
-      .select("id, price_per_unit")
-      .eq("organization_id", orgId)
-      .eq("is_active", true),
   ]);
 
-  const rationPrice = new Map(
-    (rations ?? []).map((r) => [r.id, r.price_per_unit != null ? Number(r.price_per_unit) : 0]),
-  );
+  const rationIds = [
+    ...new Set((feedings ?? []).map((f) => f.feed_ration_id).filter(Boolean)),
+  ] as string[];
+  const rationPrice = await getRationUnitPrices(orgId, rationIds);
 
   const medicineIds = [
     ...new Set((treatments ?? []).map((t) => t.medicine_item_id).filter(Boolean)),
