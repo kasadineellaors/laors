@@ -1,6 +1,8 @@
 "use server";
 
 import { getAppUrl } from "@/lib/auth/app-url";
+import { createSignUpConfirmationLink } from "@/lib/auth/confirmation-link";
+import { isAuthEmailConfigured, sendSignUpConfirmationEmail } from "@/lib/email/auth-emails";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirectAfterAuth, slugify } from "@/lib/auth/session";
@@ -39,6 +41,66 @@ function formatDbError(message: string): string {
   return message;
 }
 
+async function deliverSignUpConfirmation(input: {
+  email: string;
+  password?: string;
+  fullName?: string;
+}): Promise<AuthActionState | { delivered: true; existingAccount?: boolean; sessionReady?: boolean }> {
+  const appUrl = await getAppUrl();
+  const redirectTo = `${appUrl}/auth/callback`;
+
+  if (isAuthEmailConfigured()) {
+    const link = await createSignUpConfirmationLink({
+      email: input.email,
+      password: input.password,
+      fullName: input.fullName,
+      redirectTo,
+    });
+
+    if (!link.ok) {
+      if (link.existingAccount) {
+        return { delivered: true, existingAccount: true };
+      }
+      return { error: link.error };
+    }
+
+    const sent = await sendSignUpConfirmationEmail({
+      to: input.email,
+      fullName: input.fullName,
+      confirmUrl: link.actionLink,
+    });
+    if (!sent.ok) return { error: sent.error };
+    return { delivered: true };
+  }
+
+  const supabase = await createClient();
+  if (input.password) {
+    const { data, error } = await supabase.auth.signUp({
+      email: input.email,
+      password: input.password,
+      options: {
+        data: input.fullName ? { full_name: input.fullName } : undefined,
+        emailRedirectTo: redirectTo,
+      },
+    });
+
+    if (error) return { error: error.message };
+    if (data.session) return { delivered: true, sessionReady: true };
+    if (data.user?.identities?.length === 0) {
+      return { delivered: true, existingAccount: true };
+    }
+    return { delivered: true };
+  }
+
+  const { error } = await supabase.auth.resend({
+    type: "signup",
+    email: input.email,
+    options: { emailRedirectTo: redirectTo },
+  });
+  if (error) return { error: error.message };
+  return { delivered: true };
+}
+
 export async function signUp(
   _prev: AuthActionState,
   formData: FormData,
@@ -53,27 +115,22 @@ export async function signUp(
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  const supabase = await createClient();
-  const appUrl = await getAppUrl();
-
-  const { data, error } = await supabase.auth.signUp({
+  const result = await deliverSignUpConfirmation({
     email: parsed.data.email,
     password: parsed.data.password,
-    options: {
-      data: { full_name: parsed.data.fullName },
-      emailRedirectTo: `${appUrl}/auth/callback`,
-    },
+    fullName: parsed.data.fullName,
   });
 
-  if (error) return { error: error.message };
+  if ("error" in result && result.error) {
+    return { error: result.error };
+  }
 
-  // Email confirmation disabled in dev — session available immediately
-  if (data.session) {
+  if ("delivered" in result && result.sessionReady) {
     return redirectAfterAuth();
   }
 
   const emailParam = encodeURIComponent(parsed.data.email);
-  if (data.user?.identities?.length === 0) {
+  if ("delivered" in result && result.existingAccount) {
     redirect(`/signup/check-email?email=${emailParam}&existing=1`);
   }
 
@@ -89,16 +146,12 @@ export async function resendSignUpConfirmation(
     return { error: "Enter a valid email" };
   }
 
-  const supabase = await createClient();
-  const appUrl = await getAppUrl();
+  const result = await deliverSignUpConfirmation({ email });
 
-  const { error } = await supabase.auth.resend({
-    type: "signup",
-    email,
-    options: { emailRedirectTo: `${appUrl}/auth/callback` },
-  });
+  if ("error" in result && result.error) {
+    return { error: result.error };
+  }
 
-  if (error) return { error: error.message };
   return { success: "Confirmation email sent. Check your inbox and spam folder." };
 }
 

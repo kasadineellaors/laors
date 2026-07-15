@@ -81,25 +81,22 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ### Supabase auth emails (sign-up, password reset)
 
-Sign-up verification is sent by **Supabase Auth**, not the app's Resend invoice integration. In [Supabase Dashboard](https://supabase.com/dashboard) → your project:
+Sign-up confirmations are sent by **LAORS through Resend** when these env vars are set:
+
+- `RESEND_API_KEY`
+- `INVOICE_FROM_EMAIL` or `AUTH_FROM_EMAIL` (verified sender in Resend)
+- `SUPABASE_SERVICE_ROLE_KEY` (server-only — generates the confirmation link)
+
+Without the service role key, LAORS falls back to Supabase's built-in mailer, which is rate-limited and often blocked.
+
+In [Supabase Dashboard](https://supabase.com/dashboard) → your project:
 
 1. **Authentication → URL Configuration**
    - Site URL: `https://laorsranch.com` (or your live domain)
    - Redirect URLs: `https://laorsranch.com/auth/callback`, `https://laors.vercel.app/auth/callback`, and `http://localhost:3000/auth/callback` for local dev
 2. **Authentication → Providers → Email** — Email provider enabled; **Confirm email** on for production
-3. **Authentication → SMTP** — Enable custom SMTP (Supabase's built-in mailer is rate-limited and often lands in spam)
 
-**Resend SMTP (recommended if you already use Resend for invoices):**
-
-| Field | Value |
-|---|---|
-| Host | `smtp.resend.com` |
-| Port | `465` |
-| Username | `resend` |
-| Password | Your `RESEND_API_KEY` |
-| Sender | `auth@laorsranch.com` (must be a verified domain in Resend) |
-
-Set `NEXT_PUBLIC_APP_URL=https://laorsranch.com` in Vercel. After deploy, the sign-up check-email page includes **Resend confirmation email**.
+Set `NEXT_PUBLIC_APP_URL=https://laorsranch.com` in Vercel. Copy `SUPABASE_SERVICE_ROLE_KEY` from **Supabase → Settings → API** into Vercel env vars.
 
 ## Ship checklist (current release)
 
@@ -128,7 +125,7 @@ Before cow-calf work, LAORS supports:
 | Team invite not emailed | Add service role key; or invite saved as pending in Setup → Team |
 | Worker sale “deduct inventory” fails | Only managers can deduct head — workers log sale without deduct |
 | Login loops or fails after sign-in | Ensure `NEXT_PUBLIC_APP_URL` matches your site; add URL to Supabase Auth allowlist |
-| Sign-up confirmation email never arrives | Configure **Supabase → Authentication → SMTP** (Resend recommended); add production URLs to Auth allowlist; use **Resend confirmation** on the check-email page |
+| Sign-up confirmation email never arrives | Add `SUPABASE_SERVICE_ROLE_KEY` to Vercel; verify `RESEND_API_KEY` + sender domain in Resend; add production URLs to Supabase Auth allowlist |
 
 ## Security
 

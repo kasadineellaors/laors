@@ -1,4 +1,5 @@
 type SendEmailInput = {
+  from?: string;
   to: string;
   subject: string;
   html: string;
@@ -11,7 +12,7 @@ export function isInvoiceEmailConfigured(): boolean {
 
 export async function sendEmail(input: SendEmailInput): Promise<{ ok: true } | { ok: false; error: string }> {
   const apiKey = process.env.RESEND_API_KEY?.trim();
-  const from = process.env.INVOICE_FROM_EMAIL?.trim();
+  const from = input.from?.trim() || process.env.INVOICE_FROM_EMAIL?.trim();
 
   if (!apiKey || !from) {
     return {
