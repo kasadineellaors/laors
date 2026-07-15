@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { requireOnboardedUser } from "@/lib/auth/session";
 import { canManageTeam } from "@/lib/auth/roles";
 import { getFeedRation } from "@/lib/feed/queries";
+import { listFeedItemOptions, listRationIngredients } from "@/lib/feed/inventory-queries";
 import { RationDetailClient } from "@/components/feed/ration-detail-client";
 
 export const metadata: Metadata = {
@@ -22,9 +23,20 @@ export default async function RationDetailPage({
   const ration = await getFeedRation(orgId, id);
   if (!ration) notFound();
 
+  const [feedItems, ingredients] = await Promise.all([
+    listFeedItemOptions(orgId),
+    listRationIngredients(orgId, id),
+  ]);
+
   return (
     <div className="space-y-6">
-      <RationDetailClient orgId={orgId} ration={ration} canManage={canManage} />
+      <RationDetailClient
+        orgId={orgId}
+        ration={ration}
+        canManage={canManage}
+        feedItems={feedItems}
+        ingredients={ingredients}
+      />
     </div>
   );
 }

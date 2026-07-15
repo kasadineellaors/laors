@@ -6,6 +6,7 @@ import {
 } from "@/lib/locations/rollups";
 import { countOpenTasks } from "@/lib/tasks/queries";
 import { countLowStockItems } from "@/lib/medicine/queries";
+import { countLowStockFeedItems } from "@/lib/feed/inventory-queries";
 import { getSalesSummary } from "@/lib/sales/queries";
 import { getInvoiceSummary } from "@/lib/invoices/queries";
 import { getRainfallSummary } from "@/lib/weather/queries";
@@ -38,12 +39,13 @@ export default async function DashboardPage() {
   const showSeedstock = hasSeedstockMode(modes);
   const showCalendar = isCalendarEnabled(org);
 
-  const [totalHead, tree, openTasks, lowStock, salesSummary, rainfall, invoiceSummary, dbIssues, calvingSummary] =
+  const [totalHead, tree, openTasks, lowMedicine, lowFeed, salesSummary, rainfall, invoiceSummary, dbIssues, calvingSummary] =
     await Promise.all([
     getRanchTotalHeadCount(orgId),
     getLocationTreeWithRollups(orgId),
     countOpenTasks(orgId),
     countLowStockItems(orgId),
+    countLowStockFeedItems(orgId),
     getSalesSummary(orgId),
     getRainfallSummary(orgId),
     showInvoices ? getInvoiceSummary(orgId) : Promise.resolve({ openCount: 0, unpaidTotal: 0 }),
@@ -52,6 +54,7 @@ export default async function DashboardPage() {
   ]);
 
   const propertyCount = tree.length;
+  const lowStock = lowMedicine + lowFeed;
   const overCapacity = tree.some((n) => (n.capacity_percent ?? 0) > 100);
   const alertCount = (overCapacity ? 1 : 0) + lowStock;
 
@@ -88,11 +91,21 @@ export default async function DashboardPage() {
         ))}
       </div>
 
-      {lowStock > 0 ? (
+      {lowMedicine > 0 ? (
         <div className="rounded-xl border border-rust/30 bg-rust/10 px-4 py-3 text-sm text-rust">
-          {lowStock} medicine item{lowStock === 1 ? "" : "s"} low on stock.{" "}
+          {lowMedicine} medicine item{lowMedicine === 1 ? "" : "s"} low on stock.{" "}
           <Link href="/health/medicine" className="font-semibold underline">
-            Check inventory
+            Check medicine
+          </Link>
+          .
+        </div>
+      ) : null}
+
+      {lowFeed > 0 ? (
+        <div className="rounded-xl border border-rust/30 bg-rust/10 px-4 py-3 text-sm text-rust">
+          {lowFeed} feedstuff item{lowFeed === 1 ? "" : "s"} low on stock.{" "}
+          <Link href="/feed/inventory" className="font-semibold underline">
+            Check feed inventory
           </Link>
           .
         </div>

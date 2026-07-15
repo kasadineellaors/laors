@@ -3,6 +3,7 @@
 import { getAppUrl } from "@/lib/auth/app-url";
 import { createSignUpConfirmationLink } from "@/lib/auth/confirmation-link";
 import { isAuthEmailConfigured, sendSignUpConfirmationEmail } from "@/lib/email/auth-emails";
+import { emailDeliverySetupMessage } from "@/lib/email/setup-status";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirectAfterAuth, slugify } from "@/lib/auth/session";
@@ -71,6 +72,13 @@ async function deliverSignUpConfirmation(input: {
     });
     if (!sent.ok) return { error: sent.error };
     return { delivered: true };
+  }
+
+  if (input.password) {
+    const setupMessage = emailDeliverySetupMessage();
+    if (setupMessage) {
+      return { error: `Cannot send confirmation email. ${setupMessage}` };
+    }
   }
 
   const supabase = await createClient();

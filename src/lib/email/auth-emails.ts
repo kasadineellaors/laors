@@ -56,3 +56,43 @@ export async function sendSignUpConfirmationEmail(input: {
     html: confirmationEmailHtml(input.fullName, input.confirmUrl),
   });
 }
+
+function teamInviteEmailHtml(orgName: string | undefined, inviteUrl: string): string {
+  const ranch = orgName?.trim() || "a LAORS ranch";
+  return `
+    <div style="font-family: system-ui, sans-serif; max-width: 520px; color: #2c2c2c;">
+      <p style="font-size: 18px; font-weight: 600; margin: 0 0 16px;">LAORS</p>
+      <p>You have been invited to join <strong>${ranch}</strong> on LAORS.</p>
+      <p>Click below to accept the invite and set up your account.</p>
+      <p style="margin: 28px 0;">
+        <a href="${inviteUrl}" style="background: #4a5d3b; color: #fff; padding: 14px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+          Accept invite
+        </a>
+      </p>
+      <p style="font-size: 14px; color: #666;">If the button does not work, copy and paste this link into your browser:</p>
+      <p style="font-size: 14px; word-break: break-all;"><a href="${inviteUrl}">${inviteUrl}</a></p>
+    </div>
+  `.trim();
+}
+
+export async function sendTeamInviteEmail(input: {
+  to: string;
+  orgName?: string;
+  inviteUrl: string;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  const from = getAuthFromEmail();
+  if (!from) {
+    return {
+      ok: false,
+      error:
+        "Email sender is not configured. Set AUTH_FROM_EMAIL or INVOICE_FROM_EMAIL in your environment.",
+    };
+  }
+
+  return sendEmail({
+    from,
+    to: input.to,
+    subject: "You are invited to LAORS",
+    html: teamInviteEmailHtml(input.orgName, input.inviteUrl),
+  });
+}

@@ -3,7 +3,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { FeedRationRecord } from "@/lib/feed/types";
+import type { FeedItemOption } from "@/lib/feed/inventory-types";
+import type { FeedRationIngredient } from "@/lib/feed/inventory-types";
 import { createFeedRation, updateFeedRation } from "@/lib/actions/feed";
+import {
+  RationIngredientBuilder,
+  linesFromIngredients,
+  parseIngredientLines,
+  type IngredientLine,
+} from "@/components/feed/ration-ingredient-builder";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,10 +22,18 @@ const UNIT_OPTIONS = ["ton", "lb", "bag", "bale", "flake"];
 interface RationFormProps {
   orgId: string;
   ration?: FeedRationRecord;
+  feedItems: FeedItemOption[];
+  ingredients?: FeedRationIngredient[];
   onSuccess?: () => void;
 }
 
-export function RationForm({ orgId, ration, onSuccess }: RationFormProps) {
+export function RationForm({
+  orgId,
+  ration,
+  feedItems,
+  ingredients = [],
+  onSuccess,
+}: RationFormProps) {
   const router = useRouter();
   const isEdit = Boolean(ration);
 
@@ -27,6 +43,13 @@ export function RationForm({ orgId, ration, onSuccess }: RationFormProps) {
     ration?.price_per_unit != null ? String(ration.price_per_unit) : "",
   );
   const [notes, setNotes] = useState(ration?.notes ?? "");
+  const [ingredientLines, setIngredientLines] = useState<IngredientLine[]>(
+    ingredients.length > 0
+      ? linesFromIngredients(ingredients)
+      : feedItems.length > 0
+        ? [{ feedItemId: feedItems[0].id, quantityPerRationUnit: "" }]
+        : [],
+  );
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -42,18 +65,22 @@ export function RationForm({ orgId, ration, onSuccess }: RationFormProps) {
       return;
     }
 
+    const parsedIngredients = parseIngredientLines(ingredientLines);
+
     const result = isEdit
       ? await updateFeedRation(orgId, ration!.id, {
           name,
           unit,
           pricePerUnit: pricePerUnit.trim() ? price! : null,
           notes: notes || null,
+          ingredients: parsedIngredients,
         })
       : await createFeedRation(orgId, {
           name,
           unit,
           pricePerUnit: price,
           notes: notes || undefined,
+          ingredients: parsedIngredients,
         });
 
     setLoading(false);
@@ -74,7 +101,9 @@ export function RationForm({ orgId, ration, onSuccess }: RationFormProps) {
     <Card>
       <CardHeader>
         <CardTitle>{isEdit ? "Edit ration" : "New feed ration"}</CardTitle>
-        <CardDescription>Name, unit, and price per unit for billing</CardDescription>
+        <CardDescription>
+          Name what you feed, then build it from feedstuff in inventory.
+        </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
@@ -89,7 +118,7 @@ export function RationForm({ orgId, ration, onSuccess }: RationFormProps) {
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label htmlFor="unit">Unit</Label>
+            <Label htmlFor="unit">Fed in units of</Label>
             <select
               id="unit"
               value={unit}
@@ -104,7 +133,7 @@ export function RationForm({ orgId, ration, onSuccess }: RationFormProps) {
             </select>
           </div>
           <div>
-            <Label htmlFor="price">Price per unit ($)</Label>
+            <Label htmlFor="price">Bill at ($/unit)</Label>
             <Input
               id="price"
               type="number"
@@ -112,10 +141,18 @@ export function RationForm({ orgId, ration, onSuccess }: RationFormProps) {
               step="0.0001"
               value={pricePerUnit}
               onChange={(e) => setPricePerUnit(e.target.value)}
-              placeholder="For invoicing"
+              placeholder="Optional"
             />
           </div>
         </div>
+
+        <RationIngredientBuilder
+          feedItems={feedItems}
+          rationUnit={unit}
+          lines={ingredientLines}
+          onChange={setIngredientLines}
+        />
+
         <div>
           <Label htmlFor="notes">Notes</Label>
           <Input id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} />

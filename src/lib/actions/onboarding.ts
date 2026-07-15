@@ -1,7 +1,11 @@
 "use server";
 
+import { getAppUrl } from "@/lib/auth/app-url";
+import { createTeamInviteLink } from "@/lib/auth/invite-link";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isAuthEmailConfigured, sendTeamInviteEmail } from "@/lib/email/auth-emails";
+import { emailDeliverySetupMessage } from "@/lib/email/setup-status";
 import { getSuggestedLocationTypes } from "@/lib/config/defaults";
 import type { OperationMode } from "@/types/auth";
 import { revalidatePath } from "next/cache";
@@ -271,35 +275,22 @@ export async function inviteTeamMember(
     await requireOrgAccess(orgId);
 
     const admin = createAdminClient();
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    const appUrl = await getAppUrl();
+    const redirectTo = `${appUrl}/auth/callback`;
 
-    if (admin) {
-      const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(
-        email,
-        { redirectTo: `${appUrl}/auth/callback` },
-      );
+    const { data: orgRow } = await (admin ?? (await createClient()))
+      .from("organizations")
+      .select("name, settings")
+      .eq("id", orgId)
+      .single();
+    const orgName = orgRow?.name ?? undefined;
 
-      if (!inviteError && invited.user?.id) {
-        const { error: memberError } = await admin.from("organization_members").insert({
-          organization_id: orgId,
-          user_id: invited.user.id,
-          system_role: role,
-          joined_at: new Date().toISOString(),
-        });
+    if (admin && isAuthEmailConfigured()) {
+      const invite = await createTeamInviteLink({ email, redirectTo });
 
-        if (memberError && !memberError.message.includes("duplicate")) {
-          return { error: memberError.message };
-        }
-
-        revalidatePath("/setup/team");
-        return { success: `Invite email sent to ${email}` };
-      }
-
-      if (inviteError?.message.toLowerCase().includes("already")) {
+      if (!invite.ok && invite.existingAccount) {
         const { data: listData } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
-        const existing = listData.users.find(
-          (u) => u.email?.toLowerCase() === email,
-        );
+        const existing = listData.users.find((u) => u.email?.toLowerCase() === email);
         if (existing) {
           const { error: memberError } = await admin.from("organization_members").upsert(
             {
@@ -317,9 +308,30 @@ export async function inviteTeamMember(
         }
       }
 
-      if (inviteError) {
-        return { error: inviteError.message };
+      if (!invite.ok) {
+        return { error: invite.error };
       }
+
+      const sent = await sendTeamInviteEmail({
+        to: email,
+        orgName,
+        inviteUrl: invite.actionLink,
+      });
+      if (!sent.ok) return { error: sent.error };
+
+      const { error: memberError } = await admin.from("organization_members").insert({
+        organization_id: orgId,
+        user_id: invite.userId,
+        system_role: role,
+        joined_at: new Date().toISOString(),
+      });
+
+      if (memberError && !memberError.message.includes("duplicate")) {
+        return { error: memberError.message };
+      }
+
+      revalidatePath("/setup/team");
+      return { success: `Invite email sent to ${email}` };
     }
 
     const { supabase } = await requireOrgAccess(orgId);
@@ -342,8 +354,11 @@ export async function inviteTeamMember(
 
     if (error) return { error: error.message };
     revalidatePath("/setup/team");
+    const setupMessage = emailDeliverySetupMessage();
     return {
-      success: `Invite saved for ${email} — add SUPABASE_SERVICE_ROLE_KEY to send email invites`,
+      success: setupMessage
+        ? `Invite saved for ${email} — ${setupMessage}`
+        : `Invite saved for ${email} — add SUPABASE_SERVICE_ROLE_KEY to send email invites`,
     };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Failed to invite" };

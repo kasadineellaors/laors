@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { FeedRationRecord } from "@/lib/feed/types";
+import type { FeedItemOption, FeedRationIngredient } from "@/lib/feed/inventory-types";
 import { archiveFeedRation } from "@/lib/actions/feed";
 import { RationForm } from "@/components/feed/ration-form";
 import { Button } from "@/components/ui/button";
@@ -12,9 +13,17 @@ interface RationDetailClientProps {
   orgId: string;
   ration: FeedRationRecord;
   canManage: boolean;
+  feedItems: FeedItemOption[];
+  ingredients: FeedRationIngredient[];
 }
 
-export function RationDetailClient({ orgId, ration, canManage }: RationDetailClientProps) {
+export function RationDetailClient({
+  orgId,
+  ration,
+  canManage,
+  feedItems,
+  ingredients,
+}: RationDetailClientProps) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -38,6 +47,8 @@ export function RationDetailClient({ orgId, ration, canManage }: RationDetailCli
         <RationForm
           orgId={orgId}
           ration={ration}
+          feedItems={feedItems}
+          ingredients={ingredients}
           onSuccess={() => {
             setEditing(false);
             router.refresh();
@@ -55,17 +66,31 @@ export function RationDetailClient({ orgId, ration, canManage }: RationDetailCli
 
       <div className="rounded-xl border border-border bg-surface px-4 py-5">
         <h1 className="text-2xl font-bold text-charcoal">{ration.name}</h1>
-        <p className="mt-1 text-charcoal/70 capitalize">{ration.unit}</p>
+        <p className="mt-1 text-charcoal/70 capitalize">Fed in {ration.unit}</p>
 
         <dl className="mt-6 space-y-3 text-sm">
           <div>
-            <dt className="text-charcoal/50">Price per unit</dt>
+            <dt className="text-charcoal/50">Bill at</dt>
             <dd className="font-medium text-charcoal">
               {ration.price_per_unit != null
                 ? `$${ration.price_per_unit}/${ration.unit}`
                 : "Not set — add for invoicing"}
             </dd>
           </div>
+          {ingredients.length > 0 ? (
+            <div>
+              <dt className="text-charcoal/50">Recipe per 1 {ration.unit}</dt>
+              <dd className="mt-1 space-y-1">
+                {ingredients.map((i) => (
+                  <p key={i.id} className="font-medium text-charcoal">
+                    {i.quantity_per_ration_unit} {i.feed_item_unit} {i.feed_item_name}
+                  </p>
+                ))}
+              </dd>
+            </div>
+          ) : (
+            <p className="text-charcoal/60">No inventory recipe — edit to pull from feedstuff.</p>
+          )}
           {ration.notes ? (
             <div>
               <dt className="text-charcoal/50">Notes</dt>

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { requireOnboardedUser } from "@/lib/auth/session";
 import { canManageTeam } from "@/lib/auth/roles";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { getEmailDeliveryStatus } from "@/lib/email/setup-status";
 import { TeamSetupClient } from "@/components/setup/team-setup-client";
 
 export default async function TeamSetupPage() {
@@ -46,7 +46,7 @@ export default async function TeamSetupPage() {
     };
   });
 
-  const hasServiceRole = Boolean(createAdminClient());
+  const emailStatus = getEmailDeliveryStatus();
 
   return (
     <div className="space-y-6">
@@ -61,7 +61,12 @@ export default async function TeamSetupPage() {
         orgId={orgId}
         pendingInvites={pendingInvites}
         members={members}
-        hasServiceRole={hasServiceRole}
+        emailConfigured={emailStatus.configured}
+        emailSetupMessage={
+          emailStatus.configured
+            ? ""
+            : `Add ${emailStatus.missing.join(", ")} to .env.local (or Vercel for production), then restart the dev server.`
+        }
       />
     </div>
   );

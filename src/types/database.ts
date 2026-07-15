@@ -1398,6 +1398,93 @@ export interface Database {
         };
         Relationships: [];
       };
+      feed_items: {
+        Row: {
+          id: string;
+          organization_id: string;
+          name: string;
+          unit: string;
+          quantity_on_hand: number;
+          reorder_at: number | null;
+          price_per_unit: number | null;
+          notes: string | null;
+          created_by: string | null;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          name: string;
+          unit?: string;
+          quantity_on_hand?: number;
+          reorder_at?: number | null;
+          price_per_unit?: number | null;
+          notes?: string | null;
+          created_by?: string | null;
+        };
+        Update: {
+          name?: string;
+          unit?: string;
+          quantity_on_hand?: number;
+          reorder_at?: number | null;
+          price_per_unit?: number | null;
+          notes?: string | null;
+          is_active?: boolean;
+        };
+        Relationships: [];
+      };
+      feed_stock_adjustments: {
+        Row: {
+          id: string;
+          organization_id: string;
+          feed_item_id: string;
+          previous_quantity: number;
+          new_quantity: number;
+          delta: number;
+          adjustment_type: string;
+          feeding_record_id: string | null;
+          notes: string | null;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          feed_item_id: string;
+          previous_quantity: number;
+          new_quantity: number;
+          delta: number;
+          adjustment_type: string;
+          feeding_record_id?: string | null;
+          notes?: string | null;
+          created_by?: string | null;
+        };
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+      feed_ration_ingredients: {
+        Row: {
+          id: string;
+          organization_id: string;
+          feed_ration_id: string;
+          feed_item_id: string;
+          quantity_per_ration_unit: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          feed_ration_id: string;
+          feed_item_id: string;
+          quantity_per_ration_unit: number;
+        };
+        Update: {
+          quantity_per_ration_unit?: number;
+        };
+        Relationships: [];
+      };
       feeding_records: {
         Row: {
           id: string;

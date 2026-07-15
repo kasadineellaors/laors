@@ -3,6 +3,7 @@ import Link from "next/link";
 import { requireOnboardedUser } from "@/lib/auth/session";
 import { canManageTeam } from "@/lib/auth/roles";
 import { redirect } from "next/navigation";
+import { listFeedItemOptions, listRationIngredients } from "@/lib/feed/inventory-queries";
 import { RationForm } from "@/components/feed/ration-form";
 
 export const metadata: Metadata = {
@@ -14,6 +15,7 @@ export default async function NewRationPage() {
   if (!canManageTeam(session.membership?.system_role)) redirect("/feed/rations");
 
   const orgId = session.organization!.id;
+  const feedItems = await listFeedItemOptions(orgId);
 
   return (
     <div className="space-y-6">
@@ -23,7 +25,7 @@ export default async function NewRationPage() {
         </Link>
         <h1 className="mt-1 text-2xl font-bold text-charcoal">New ration</h1>
       </div>
-      <RationForm orgId={orgId} />
+      <RationForm orgId={orgId} feedItems={feedItems} />
     </div>
   );
 }

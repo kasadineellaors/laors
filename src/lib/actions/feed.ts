@@ -1,6 +1,8 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { syncFeedingStock, saveFeedRationIngredients } from "@/lib/actions/feed-inventory";
+import type { FeedRationIngredientInput } from "@/lib/feed/inventory-types";
 import { revalidatePath } from "next/cache";
 import type { Database } from "@/types/database";
 import type { FeedingContext } from "@/lib/feed/types";
@@ -30,6 +32,7 @@ function formatDbError(message: string): string {
 
 function revalidateFeed() {
   revalidatePath("/feed");
+  revalidatePath("/feed/inventory");
   revalidatePath("/feed/rations");
   revalidatePath("/feed/log");
   revalidatePath("/cow-calf");
@@ -72,6 +75,7 @@ export async function createFeedRation(
     unit?: string;
     pricePerUnit?: number;
     notes?: string;
+    ingredients?: FeedRationIngredientInput[];
   },
 ): Promise<FeedActionState> {
   const name = input.name.trim();
@@ -93,6 +97,12 @@ export async function createFeedRation(
       .single();
 
     if (error) return { error: formatDbError(error.message) };
+
+    if (input.ingredients?.length) {
+      const recipe = await saveFeedRationIngredients(orgId, data.id, input.ingredients);
+      if (recipe.error) return { error: recipe.error };
+    }
+
     revalidateFeed();
     return { success: "Ration saved", rationId: data.id };
   } catch (e) {
@@ -108,6 +118,7 @@ export async function updateFeedRation(
     unit?: string;
     pricePerUnit?: number | null;
     notes?: string | null;
+    ingredients?: FeedRationIngredientInput[];
   },
 ): Promise<FeedActionState> {
   try {
@@ -125,6 +136,12 @@ export async function updateFeedRation(
       .eq("organization_id", orgId);
 
     if (error) return { error: formatDbError(error.message) };
+
+    if (input.ingredients !== undefined) {
+      const recipe = await saveFeedRationIngredients(orgId, rationId, input.ingredients);
+      if (recipe.error) return { error: recipe.error };
+    }
+
     revalidateFeed();
     revalidatePath(`/feed/rations/${rationId}`);
     return { success: "Ration updated" };
@@ -163,10 +180,18 @@ export async function createFeeding(
     fedBy?: string;
     notes?: string;
     feedingContext?: FeedingContext;
+    requireLocation?: boolean;
+    requireOwner?: boolean;
   },
 ): Promise<FeedActionState> {
   if (!input.feedRationId) return { error: "Select a feed ration" };
   if (!input.quantity || input.quantity <= 0) return { error: "Enter feed amount" };
+  if (input.requireLocation && !input.locationId) {
+    return { error: "Select which pen you fed" };
+  }
+  if (input.requireOwner && !input.ownershipGroupId) {
+    return { error: "Select who this feed is for" };
+  }
 
   try {
     const { supabase, user } = await requireMember(orgId);
@@ -190,6 +215,20 @@ export async function createFeeding(
       .single();
 
     if (error) return { error: formatDbError(error.message) };
+
+    const stock = await syncFeedingStock(
+      supabase,
+      orgId,
+      user.id,
+      data.id,
+      { rationId: null, quantity: null },
+      { rationId: input.feedRationId, quantity: input.quantity },
+    );
+    if (stock.error) {
+      await supabase.from("feeding_records").delete().eq("id", data.id);
+      return { error: stock.error };
+    }
+
     revalidateFeed();
     return { success: "Feeding logged", feedingId: data.id };
   } catch (e) {
@@ -213,8 +252,32 @@ export async function updateFeeding(
   },
 ): Promise<FeedActionState> {
   try {
-    await requireMember(orgId);
-    const supabase = await createClient();
+    const { supabase, user } = await requireMember(orgId);
+
+    const { data: existing } = await supabase
+      .from("feeding_records")
+      .select("feed_ration_id, quantity")
+      .eq("id", feedingId)
+      .eq("organization_id", orgId)
+      .maybeSingle();
+
+    if (!existing) return { error: "Feeding not found" };
+
+    const nextRationId = input.feedRationId ?? existing.feed_ration_id;
+    const nextQty = input.quantity ?? Number(existing.quantity);
+
+    const stock = await syncFeedingStock(
+      supabase,
+      orgId,
+      user.id,
+      feedingId,
+      {
+        rationId: existing.feed_ration_id,
+        quantity: Number(existing.quantity),
+      },
+      { rationId: nextRationId, quantity: nextQty },
+    );
+    if (stock.error) return { error: stock.error };
 
     const updates: FeedingUpdate = {};
     if (input.feedRationId !== undefined) updates.feed_ration_id = input.feedRationId;
@@ -244,8 +307,30 @@ export async function updateFeeding(
 
 export async function archiveFeeding(orgId: string, feedingId: string): Promise<FeedActionState> {
   try {
-    await requireMember(orgId);
-    const supabase = await createClient();
+    const { supabase, user } = await requireMember(orgId);
+
+    const { data: existing } = await supabase
+      .from("feeding_records")
+      .select("feed_ration_id, quantity")
+      .eq("id", feedingId)
+      .eq("organization_id", orgId)
+      .maybeSingle();
+
+    if (existing) {
+      const stock = await syncFeedingStock(
+        supabase,
+        orgId,
+        user.id,
+        feedingId,
+        {
+          rationId: existing.feed_ration_id,
+          quantity: Number(existing.quantity),
+        },
+        { rationId: null, quantity: null },
+      );
+      if (stock.error) return { error: stock.error };
+    }
+
     const { error } = await supabase
       .from("feeding_records")
       .update({ is_active: false })

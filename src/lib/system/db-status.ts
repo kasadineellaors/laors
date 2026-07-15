@@ -90,6 +90,15 @@ export async function getDbSetupIssues(): Promise<DbSetupIssue[]> {
       fix: "Run supabase/RUN_PHASE10.sql or supabase db push",
     },
     {
+      id: "phase17-feed-inventory",
+      probe: async () => {
+        const { error } = await supabase.from("feed_items").select("id").limit(1);
+        return !error;
+      },
+      message: "Feedstuff inventory is not set up",
+      fix: "Run supabase/RUN_PHASE17.sql or supabase db push",
+    },
+    {
       id: "phase13-calendar",
       probe: async () => {
         const { error } = await supabase.from("calendar_events").select("id").limit(1);

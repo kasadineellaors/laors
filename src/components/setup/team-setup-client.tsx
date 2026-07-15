@@ -13,14 +13,16 @@ interface TeamSetupClientProps {
   orgId: string;
   pendingInvites: Array<{ email: string; role: string }>;
   members: Array<{ name: string; role: string; email: string | null }>;
-  hasServiceRole: boolean;
+  emailConfigured: boolean;
+  emailSetupMessage: string;
 }
 
 export function TeamSetupClient({
   orgId,
   pendingInvites,
   members,
-  hasServiceRole,
+  emailConfigured,
+  emailSetupMessage,
 }: TeamSetupClientProps) {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -47,11 +49,10 @@ export function TeamSetupClient({
 
   return (
     <div className="space-y-6">
-      {!hasServiceRole ? (
+      {!emailConfigured ? (
         <div className="rounded-xl border border-rust/30 bg-rust/10 px-4 py-3 text-sm text-rust">
-          Add <code className="text-xs">SUPABASE_SERVICE_ROLE_KEY</code> to{" "}
-          <code className="text-xs">.env.local</code> to send email invites. Without it,
-          invites are saved as pending only.
+          {emailSetupMessage ||
+            "Email is not configured. Add RESEND_API_KEY, INVOICE_FROM_EMAIL, and SUPABASE_SERVICE_ROLE_KEY to send invites."}
         </div>
       ) : null}
 
