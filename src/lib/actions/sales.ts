@@ -23,10 +23,14 @@ function formatDbError(message: string): string {
   return message;
 }
 
-function revalidateSales(animalId?: string) {
+function revalidateSales(animalId?: string, cattleGroupId?: string) {
   revalidatePath("/sales");
   revalidatePath("/dashboard");
   revalidatePath("/cattle");
+  if (cattleGroupId) {
+    revalidatePath(`/cattle/groups/${cattleGroupId}`);
+    revalidatePath(`/cattle/groups/${cattleGroupId}/closeout`);
+  }
   if (animalId) {
     revalidatePath("/seedstock");
     revalidatePath(`/seedstock/animals/${animalId}`);
@@ -157,7 +161,7 @@ export async function createSale(
         .eq("organization_id", orgId);
     }
 
-    revalidateSales(input.individualAnimalId);
+    revalidateSales(input.individualAnimalId, input.cattleGroupId);
     return { success: "Sale recorded", saleId: data.id };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Failed" };

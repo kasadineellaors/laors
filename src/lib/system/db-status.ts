@@ -117,6 +117,15 @@ export async function getDbSetupIssues(): Promise<DbSetupIssue[]> {
       fix: "Run supabase/RUN_PHASE19.sql or supabase/RUN_ALL_UPDATES.sql",
     },
     {
+      id: "phase20-lot-expenses",
+      probe: async () => {
+        const { error } = await supabase.from("lot_expenses").select("id").limit(1);
+        return !error;
+      },
+      message: "Lot expense ledger is not set up",
+      fix: "Run supabase/RUN_PHASE20.sql or supabase/RUN_THIS_IN_SUPABASE.sql",
+    },
+    {
       id: "phase13-calendar",
       probe: async () => {
         const { error } = await supabase.from("calendar_events").select("id").limit(1);

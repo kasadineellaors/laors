@@ -55,7 +55,8 @@ export default async function LotCloseoutPage({
     summary.estimated_feed_cost +
     summary.estimated_medicine_cost +
     summary.processing_cost +
-    summary.death_value_lost;
+    summary.death_value_lost +
+    summary.other_expenses;
 
   const netProfit = summary.sale_revenue - totalExpenses;
   const profitPerHead =
@@ -134,6 +135,7 @@ export default async function LotCloseoutPage({
           <Dt label="Medicine cost" value={money(summary.estimated_medicine_cost)} />
           <Dt label="Processing events" value={String(processing.length)} />
           <Dt label="Processing cost" value={money(summary.processing_cost)} />
+          <Dt label="Other expenses" value={money(summary.other_expenses)} />
           <Dt label="Mortality records" value={String(deaths.length)} />
         </dl>
       </Card>

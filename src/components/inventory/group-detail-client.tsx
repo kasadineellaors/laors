@@ -9,6 +9,7 @@ import type {
   MortalityRecord,
   ProcessingEventRecord,
 } from "@/lib/lots/types";
+import type { LotExpenseRecord } from "@/lib/expenses/types";
 import { PROCESSING_TYPE_LABELS } from "@/lib/lots/types";
 import type { SelectOption } from "@/lib/locations/options";
 import {
@@ -19,6 +20,7 @@ import {
 import { closeLot } from "@/lib/actions/lots";
 import { LotSummaryPanel } from "@/components/lots/lot-summary-panel";
 import { LotQuickActions } from "@/components/lots/lot-quick-actions";
+import { LotExpensesPanel } from "@/components/lots/lot-expenses-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +32,8 @@ interface GroupDetailClientProps {
   lotSummary: LotOperationalSummary;
   processingEvents: ProcessingEventRecord[];
   mortalityRecords: MortalityRecord[];
+  lotExpenses: LotExpenseRecord[];
+  expenseCategoryOptions: SelectOption[];
   adjustmentReasonOptions: SelectOption[];
   ownershipOptions: SelectOption[];
   customerOptions: SelectOption[];
@@ -46,6 +50,8 @@ export function GroupDetailClient({
   lotSummary,
   processingEvents,
   mortalityRecords,
+  lotExpenses,
+  expenseCategoryOptions,
   adjustmentReasonOptions,
   ownershipOptions,
   customerOptions,
@@ -141,10 +147,19 @@ export function GroupDetailClient({
 
       {canManageCattle ? <LotQuickActions orgId={orgId} groupId={group.id} /> : null}
 
+      <LotExpensesPanel
+        orgId={orgId}
+        groupId={group.id}
+        expenses={lotExpenses}
+        categoryOptions={expenseCategoryOptions}
+        canManage={canManageCattle}
+      />
+
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <MiniStat label="Feed cost" value={money(lotSummary.estimated_feed_cost)} />
         <MiniStat label="Medicine" value={money(lotSummary.estimated_medicine_cost)} />
         <MiniStat label="Processing" value={money(lotSummary.processing_cost)} />
+        <MiniStat label="Other expenses" value={money(lotSummary.other_expenses)} />
         <MiniStat label="Deaths" value={String(lotSummary.deaths)} />
       </div>
 

@@ -758,6 +758,44 @@ export interface Database {
         };
         Relationships: [];
       };
+      lot_expenses: {
+        Row: {
+          id: string;
+          organization_id: string;
+          cattle_group_id: string;
+          financial_category_id: string | null;
+          expense_date: string;
+          amount: number;
+          description: string | null;
+          vendor_name: string | null;
+          notes: string | null;
+          created_by: string | null;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          cattle_group_id: string;
+          financial_category_id?: string | null;
+          expense_date?: string;
+          amount: number;
+          description?: string | null;
+          vendor_name?: string | null;
+          notes?: string | null;
+          created_by?: string | null;
+          is_active?: boolean;
+        };
+        Update: {
+          amount?: number;
+          description?: string | null;
+          vendor_name?: string | null;
+          notes?: string | null;
+          is_active?: boolean;
+        };
+        Relationships: [];
+      };
       inventory_adjustments: {
         Row: {
           id: string;

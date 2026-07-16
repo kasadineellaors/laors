@@ -1,0 +1,98 @@
+"use server";
+
+import { createClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
+
+export type ExpenseActionState = { error?: string; success?: string };
+
+const DB_HINT = "Run supabase/RUN_PHASE20.sql in Supabase SQL Editor, then retry.";
+
+function formatDbError(message: string): string {
+  if (message.includes("lot_expenses") || message.includes("schema cache")) {
+    return `${message} — ${DB_HINT}`;
+  }
+  return message;
+}
+
+function revalidateLotExpense(groupId: string) {
+  revalidatePath("/cattle");
+  revalidatePath(`/cattle/groups/${groupId}`);
+  revalidatePath(`/cattle/groups/${groupId}/closeout`);
+  revalidatePath("/dashboard");
+}
+
+async function requireMember(orgId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const { data: member } = await supabase
+    .from("organization_members")
+    .select("system_role")
+    .eq("organization_id", orgId)
+    .eq("user_id", user.id)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (!member) throw new Error("Not authorized");
+  return { supabase, user };
+}
+
+export async function createLotExpense(
+  orgId: string,
+  groupId: string,
+  input: {
+    expenseDate?: string;
+    amount: number;
+    financialCategoryId?: string;
+    description?: string;
+    vendorName?: string;
+    notes?: string;
+  },
+): Promise<ExpenseActionState> {
+  if (!input.amount || input.amount < 0) return { error: "Enter an amount" };
+
+  try {
+    const { supabase, user } = await requireMember(orgId);
+    const { error } = await supabase.from("lot_expenses").insert({
+      organization_id: orgId,
+      cattle_group_id: groupId,
+      expense_date: input.expenseDate || new Date().toISOString().slice(0, 10),
+      amount: input.amount,
+      financial_category_id: input.financialCategoryId || null,
+      description: input.description?.trim() || null,
+      vendor_name: input.vendorName?.trim() || null,
+      notes: input.notes?.trim() || null,
+      created_by: user.id,
+    });
+
+    if (error) return { error: formatDbError(error.message) };
+    revalidateLotExpense(groupId);
+    return { success: "Expense recorded" };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function archiveLotExpense(
+  orgId: string,
+  expenseId: string,
+  groupId: string,
+): Promise<ExpenseActionState> {
+  try {
+    const { supabase } = await requireMember(orgId);
+    const { error } = await supabase
+      .from("lot_expenses")
+      .update({ is_active: false })
+      .eq("id", expenseId)
+      .eq("organization_id", orgId);
+
+    if (error) return { error: formatDbError(error.message) };
+    revalidateLotExpense(groupId);
+    return { success: "Expense removed" };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed" };
+  }
+}

@@ -79,6 +79,7 @@ export interface LotOperationalSummary {
   sale_revenue: number;
   deaths: number;
   death_value_lost: number;
+  other_expenses: number;
   total_invested: number;
   estimated_cost_per_head: number;
 }

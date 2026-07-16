@@ -9,6 +9,7 @@ import {
   listMortalityRecords,
   listProcessingEvents,
 } from "@/lib/lots/queries";
+import { listLotExpenses } from "@/lib/expenses/queries";
 import { getRanchOptions } from "@/lib/locations/options";
 import { GroupDetailClient } from "@/components/inventory/group-detail-client";
 
@@ -32,15 +33,18 @@ export default async function CattleGroupPage({
     adjustmentReasons,
     ownershipOptions,
     customerOptions,
+    expenseCategoryOptions,
     lotSummary,
     processingEvents,
     mortalityRecords,
+    lotExpenses,
   ] = await Promise.all([
     getRanchOptions(orgId, "adjustment_reasons"),
     getRanchOptions(orgId, "ownership_groups"),
     listCustomerOptions(orgId).then((rows) =>
       rows.map((c) => ({ value: c.id, label: c.name })),
     ),
+    getRanchOptions(orgId, "financial_categories"),
     getLotOperationalSummary(
       orgId,
       id,
@@ -50,6 +54,7 @@ export default async function CattleGroupPage({
     ),
     listProcessingEvents(orgId, id),
     listMortalityRecords(orgId, id),
+    listLotExpenses(orgId, id),
   ]);
 
   const canManageCattle = canWriteInventory(session.membership?.system_role);
@@ -61,6 +66,8 @@ export default async function CattleGroupPage({
       lotSummary={lotSummary}
       processingEvents={processingEvents}
       mortalityRecords={mortalityRecords}
+      lotExpenses={lotExpenses}
+      expenseCategoryOptions={expenseCategoryOptions}
       adjustmentReasonOptions={adjustmentReasons}
       ownershipOptions={ownershipOptions}
       customerOptions={customerOptions}

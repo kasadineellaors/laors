@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getRationUnitPrices } from "@/lib/feed/inventory-queries";
+import { sumLotExpenses } from "@/lib/expenses/queries";
 import type {
   LotOperationalSummary,
   MortalityRecord,
@@ -58,7 +59,10 @@ export async function getLotOperationalSummary(
   const rationIds = [
     ...new Set((feedings ?? []).map((f) => f.feed_ration_id).filter(Boolean)),
   ] as string[];
-  const rationPrice = await getRationUnitPrices(orgId, rationIds);
+  const [rationPrice, otherExpenses] = await Promise.all([
+    getRationUnitPrices(orgId, rationIds),
+    sumLotExpenses(orgId, groupId),
+  ]);
 
   const medicineIds = [
     ...new Set((treatments ?? []).map((t) => t.medicine_item_id).filter(Boolean)),
@@ -108,7 +112,13 @@ export async function getLotOperationalSummary(
   }
 
   const purchase = landedCost ?? 0;
-  const totalInvested = purchase + estimatedFeedCost + estimatedMedicineCost + processingCost;
+  const totalInvested =
+    purchase +
+    estimatedFeedCost +
+    estimatedMedicineCost +
+    processingCost +
+    deathValue +
+    otherExpenses;
   const openDate = openedAt ? new Date(openedAt + "T12:00:00") : new Date();
   const daysOnFeed = Math.max(
     0,
@@ -128,6 +138,7 @@ export async function getLotOperationalSummary(
     sale_revenue: saleRevenue,
     deaths: deathCount,
     death_value_lost: deathValue,
+    other_expenses: otherExpenses,
     total_invested: totalInvested,
     estimated_cost_per_head: totalInvested / headDivisor,
   };

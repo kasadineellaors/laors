@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { syncLotStatusAfterHeadChange } from "@/lib/lots/sync-status";
 import { redirect } from "next/navigation";
 import {
   buildMoveLinesForTotal,
@@ -102,7 +103,11 @@ export async function applySaleHeadDelta(
       created_by: user.id,
     });
 
+    await syncLotStatusAfterHeadChange(supabase, orgId, groupId, newCount);
+
     revalidateInventory();
+    revalidatePath(`/cattle/groups/${groupId}`);
+    revalidatePath(`/cattle/groups/${groupId}/closeout`);
     return { success: "Head count updated" };
   } catch (e) {
     return { error: formatDbError(e instanceof Error ? e.message : "Failed") };
