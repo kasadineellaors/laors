@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { requireOnboardedUser } from "@/lib/auth/session";
 import { canWriteInventory } from "@/lib/auth/roles";
 import { hasCowCalfMode } from "@/lib/cow-calf/constants";
 import { listCattleGroups } from "@/lib/inventory/queries";
 import { getRanchTotalHeadCount } from "@/lib/locations/rollups";
 import { CattleGroupsList } from "@/components/inventory/cattle-groups-list";
-import { Button } from "@/components/ui/button";
+import { CattlePageHeader } from "@/components/inventory/cattle-page-header";
+import { CattleSummaryMetrics } from "@/components/inventory/cattle-summary-metrics";
 import type { OperationMode } from "@/types/auth";
 
 export const metadata: Metadata = {
-  title: "Lots & Cattle — LAORS",
+  title: "Lots — LAORS",
 };
 
 export default async function CattlePage() {
@@ -25,48 +25,32 @@ export default async function CattlePage() {
     getRanchTotalHeadCount(orgId),
   ]);
 
+  const openLots = groups.filter((g) => g.lot_status !== "closed").length;
+  const closedLots = groups.filter((g) => g.lot_status === "closed").length;
+  const unassignedHead = groups
+    .filter((g) => !g.location_id)
+    .reduce((sum, g) => sum + g.total_head, 0);
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-charcoal">Lots & cattle</h1>
-          <p className="text-charcoal/70">{totalHead} head ranch-wide</p>
-        </div>
-        {canManageCattle ? (
-          <Link href="/cattle/new">
-            <Button size="lg">+ Receive lot</Button>
-          </Link>
-        ) : null}
-      </div>
+    <div className="flex min-h-[calc(100dvh-8.5rem)] flex-1 flex-col gap-6 pb-4">
+      <CattlePageHeader
+        totalHead={totalHead}
+        canManageCattle={canManageCattle}
+        showCowCalf={showCowCalf}
+      />
 
-      {canManageCattle ? (
-        <div className="grid grid-cols-2 gap-3">
-          <Link href="/cattle/move">
-            <Button variant="secondary" fullWidth size="lg">
-              Move Cattle
-            </Button>
-          </Link>
-          <Link href="/cattle/moves">
-            <Button variant="outline" fullWidth size="lg">
-              Move History
-            </Button>
-          </Link>
-        </div>
-      ) : (
-        <p className="text-sm text-charcoal/60">
-          View-only — managers record moves and count changes.
-        </p>
-      )}
+      <CattleSummaryMetrics
+        totalHead={totalHead}
+        openLots={openLots}
+        closedLots={closedLots}
+        unassignedHead={unassignedHead > 0 ? unassignedHead : undefined}
+      />
 
-      {showCowCalf ? (
-        <Link href="/cow-calf">
-          <Button variant="secondary" fullWidth size="lg">
-            Cow-Calf — Calving & Bulls
-          </Button>
-        </Link>
-      ) : null}
-
-      <CattleGroupsList groups={groups} />
+      <CattleGroupsList
+        groups={groups}
+        canManageCattle={canManageCattle}
+        className="flex-1"
+      />
     </div>
   );
 }
