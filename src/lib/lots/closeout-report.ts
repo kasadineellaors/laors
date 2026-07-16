@@ -2,7 +2,10 @@ import { getCattleGroup } from "@/lib/inventory/queries";
 import { getLotOperationalSummary } from "@/lib/lots/queries";
 import { shrinkPct } from "@/lib/lots/purchase-weights";
 import { ENTERPRISE_LABELS, LOT_STATUS_LABELS } from "@/lib/lots/types";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import type { Database } from "@/types/database";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type CloseoutRow = { label: string; value: string };
 export type CloseoutSection = { title: string; rows: CloseoutRow[] };
@@ -22,10 +25,19 @@ function money(n: number) {
 export async function getLotCloseoutPrintData(
   orgId: string,
   groupId: string,
+  options?: { publicShare?: boolean },
 ): Promise<LotCloseoutPrintData | null> {
-  const supabase = await createClient();
+  let supabase: SupabaseClient<Database>;
+  if (options?.publicShare) {
+    const admin = createAdminClient();
+    if (!admin) return null;
+    supabase = admin;
+  } else {
+    supabase = await createClient();
+  }
+
   const [group, { data: org }] = await Promise.all([
-    getCattleGroup(orgId, groupId),
+    getCattleGroup(orgId, groupId, supabase),
     supabase.from("organizations").select("name").eq("id", orgId).maybeSingle(),
   ]);
 
@@ -38,6 +50,7 @@ export async function getLotCloseoutPrintData(
     group.opened_at ?? group.arrival_date ?? group.purchase_date,
     group.total_head,
     group.avg_weight_lbs,
+    supabase,
   );
 
   const startingHead =

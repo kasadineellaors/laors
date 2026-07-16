@@ -514,6 +514,38 @@ export interface Database {
         };
         Relationships: [];
       };
+      lot_closeout_shares: {
+        Row: {
+          id: string;
+          organization_id: string;
+          cattle_group_id: string;
+          share_token: string;
+          created_by: string | null;
+          created_at: string;
+          last_emailed_at: string | null;
+          last_emailed_to: string | null;
+          is_active: boolean;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          cattle_group_id: string;
+          share_token: string;
+          created_by?: string | null;
+          created_at?: string;
+          last_emailed_at?: string | null;
+          last_emailed_to?: string | null;
+          is_active?: boolean;
+        };
+        Update: {
+          share_token?: string;
+          created_by?: string | null;
+          last_emailed_at?: string | null;
+          last_emailed_to?: string | null;
+          is_active?: boolean;
+        };
+        Relationships: [];
+      };
       group_inventory_counts: {
         Row: {
           id: string;

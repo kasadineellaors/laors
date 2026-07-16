@@ -1,11 +1,14 @@
 import { createClient } from "@/lib/supabase/server";
+import type { Database } from "@/types/database";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LotExpenseRecord } from "./types";
 
 export async function listLotExpenses(
   orgId: string,
   groupId: string,
+  supabaseClient?: SupabaseClient<Database>,
 ): Promise<LotExpenseRecord[]> {
-  const supabase = await createClient();
+  const supabase = supabaseClient ?? (await createClient());
   const { data: rows } = await supabase
     .from("lot_expenses")
     .select("*")
@@ -42,7 +45,11 @@ export async function listLotExpenses(
   }));
 }
 
-export async function sumLotExpenses(orgId: string, groupId: string): Promise<number> {
-  const expenses = await listLotExpenses(orgId, groupId);
+export async function sumLotExpenses(
+  orgId: string,
+  groupId: string,
+  supabaseClient?: SupabaseClient<Database>,
+): Promise<number> {
+  const expenses = await listLotExpenses(orgId, groupId, supabaseClient);
   return expenses.reduce((sum, e) => sum + e.amount, 0);
 }

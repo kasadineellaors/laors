@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
+import type { Database } from "@/types/database";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { resolveRationUnitPrice } from "./costing";
 import type {
   FeedItemOption,
@@ -166,11 +168,12 @@ export async function listRationIngredients(
 export async function getRationUnitPrices(
   orgId: string,
   rationIds: string[],
+  supabaseClient?: SupabaseClient<Database>,
 ): Promise<Map<string, number>> {
   const prices = new Map<string, number>();
   if (!rationIds.length) return prices;
 
-  const supabase = await createClient();
+  const supabase = supabaseClient ?? (await createClient());
   const { data: rations } = await supabase
     .from("feed_rations")
     .select("id, price_per_unit")

@@ -1,10 +1,15 @@
 import { createClient } from "@/lib/supabase/server";
+import type { Database } from "@/types/database";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { getBreadcrumb } from "@/lib/locations/tree";
 import type { LocationRow } from "@/lib/locations/types";
 import type { CattleGroupSummary, MovementRecord } from "./types";
 
-export async function listCattleGroups(orgId: string): Promise<CattleGroupSummary[]> {
-  const supabase = await createClient();
+export async function listCattleGroups(
+  orgId: string,
+  supabaseClient?: SupabaseClient<Database>,
+): Promise<CattleGroupSummary[]> {
+  const supabase = supabaseClient ?? (await createClient());
 
   const [{ data: groups }, { data: locations }, { data: counts }, { data: classifications }, { data: ownershipGroups }, { data: customers }] =
     await Promise.all([
@@ -115,8 +120,9 @@ export async function listCattleGroups(orgId: string): Promise<CattleGroupSummar
 export async function getCattleGroup(
   orgId: string,
   groupId: string,
+  supabaseClient?: SupabaseClient<Database>,
 ): Promise<CattleGroupSummary | null> {
-  const groups = await listCattleGroups(orgId);
+  const groups = await listCattleGroups(orgId, supabaseClient);
   return groups.find((g) => g.id === groupId) ?? null;
 }
 

@@ -10,6 +10,11 @@ import {
 } from "@/lib/lots/queries";
 import { shrinkPct } from "@/lib/lots/purchase-weights";
 import { ENTERPRISE_LABELS, LOT_STATUS_LABELS } from "@/lib/lots/types";
+import { getAppUrl } from "@/lib/auth/app-url";
+import { getCustomer } from "@/lib/customers/queries";
+import { isInvoiceEmailConfigured } from "@/lib/email/resend";
+import { getCloseoutShareForLot } from "@/lib/lots/closeout-share";
+import { CloseoutSharePanel } from "@/components/lots/closeout-share-panel";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -33,7 +38,7 @@ export default async function LotCloseoutPage({
   const group = await getCattleGroup(orgId, id);
   if (!group) notFound();
 
-  const [summary, processing, deaths] = await Promise.all([
+  const [summary, processing, deaths, closeoutShare, customer] = await Promise.all([
     getLotOperationalSummary(
       orgId,
       id,
@@ -44,7 +49,15 @@ export default async function LotCloseoutPage({
     ),
     listProcessingEvents(orgId, id),
     listMortalityRecords(orgId, id),
+    getCloseoutShareForLot(orgId, id),
+    group.customer_id ? getCustomer(orgId, group.customer_id) : Promise.resolve(null),
   ]);
+
+  const appUrl = await getAppUrl();
+  const initialShareUrl = closeoutShare
+    ? `${appUrl}/share/closeout/${closeoutShare.share_token}`
+    : null;
+  const customerEmail = customer?.email?.trim() || null;
 
   const startingHead = group.starting_head ?? group.total_head + summary.heads_sold + summary.deaths;
   const endingHead = group.total_head;
@@ -105,6 +118,18 @@ export default async function LotCloseoutPage({
           </Button>
         </a>
       </div>
+
+      <CloseoutSharePanel
+        orgId={orgId}
+        groupId={id}
+        lotLabel={group.lot_number || group.name}
+        customerName={group.customer_name}
+        customerEmail={customerEmail}
+        initialShareUrl={initialShareUrl}
+        lastEmailedAt={closeoutShare?.last_emailed_at ?? null}
+        lastEmailedTo={closeoutShare?.last_emailed_to ?? null}
+        emailConfigured={isInvoiceEmailConfigured()}
+      />
 
       <Card>
         <CardHeader>

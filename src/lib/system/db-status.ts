@@ -174,6 +174,18 @@ export async function getDbSetupIssues(): Promise<DbSetupIssue[]> {
       fix: "Run supabase/RUN_PHASE29.sql or supabase/RUN_THIS_IN_SUPABASE.sql",
     },
     {
+      id: "phase30-closeout-share",
+      probe: async () => {
+        const { error } = await supabase
+          .from("lot_closeout_shares")
+          .select("share_token")
+          .limit(1);
+        return !error;
+      },
+      message: "Shareable lot closeout links are not set up",
+      fix: "Run supabase/RUN_PHASE30.sql or supabase/RUN_THIS_IN_SUPABASE.sql",
+    },
+    {
       id: "phase13-calendar",
       probe: async () => {
         const { error } = await supabase.from("calendar_events").select("id").limit(1);

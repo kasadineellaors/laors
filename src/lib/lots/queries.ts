@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
+import type { Database } from "@/types/database";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { getRationUnitPrices } from "@/lib/feed/inventory-queries";
 import { sumLotExpenses } from "@/lib/expenses/queries";
 import type {
@@ -15,8 +17,9 @@ export async function getLotOperationalSummary(
   openedAt: string | null,
   currentHead: number,
   avgWeightInLbs: number | null = null,
+  supabaseClient?: SupabaseClient<Database>,
 ): Promise<LotOperationalSummary> {
-  const supabase = await createClient();
+  const supabase = supabaseClient ?? (await createClient());
 
   const [
     { data: feedings },
@@ -61,8 +64,8 @@ export async function getLotOperationalSummary(
     ...new Set((feedings ?? []).map((f) => f.feed_ration_id).filter(Boolean)),
   ] as string[];
   const [rationPrice, otherExpenses] = await Promise.all([
-    getRationUnitPrices(orgId, rationIds),
-    sumLotExpenses(orgId, groupId),
+    getRationUnitPrices(orgId, rationIds, supabase),
+    sumLotExpenses(orgId, groupId, supabase),
   ]);
 
   const medicineIds = [
