@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { logAuditEvent } from "@/lib/audit/log";
 import { applySaleHeadDelta } from "@/lib/actions/inventory";
 import type { SeedstockSaleType } from "@/lib/seedstock/constants";
 import type { Database } from "@/types/database";
@@ -165,6 +166,17 @@ export async function createSale(
         .eq("id", input.individualAnimalId)
         .eq("organization_id", orgId);
     }
+
+    await logAuditEvent(orgId, {
+      action: "sale.recorded",
+      tableName: "sales_records",
+      recordId: data.id,
+      userId: user.id,
+      newData: {
+        head_count: input.headCount,
+        buyer: input.buyerName?.trim() || null,
+      },
+    });
 
     revalidateSales(input.individualAnimalId, input.cattleGroupId);
     return { success: "Sale recorded", saleId: data.id };

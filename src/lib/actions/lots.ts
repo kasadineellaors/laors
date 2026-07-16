@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { applySaleHeadDelta } from "@/lib/actions/inventory";
 import type { ProcessingType } from "@/lib/lots/types";
+import { logAuditEvent } from "@/lib/audit/log";
 import { revalidatePath } from "next/cache";
 
 export type LotActionState = { error?: string; success?: string };
@@ -51,10 +52,17 @@ async function requireMember(orgId: string) {
 
 export async function closeLot(orgId: string, groupId: string): Promise<LotActionState> {
   try {
-    const { supabase, role } = await requireMember(orgId);
+    const { supabase, role, user } = await requireMember(orgId);
     if (!["owner", "manager"].includes(role)) {
       return { error: "Managers only" };
     }
+
+    const { data: group } = await supabase
+      .from("cattle_groups")
+      .select("lot_number, name")
+      .eq("id", groupId)
+      .eq("organization_id", orgId)
+      .maybeSingle();
 
     const today = new Date().toISOString().slice(0, 10);
     const { error } = await supabase
@@ -64,6 +72,17 @@ export async function closeLot(orgId: string, groupId: string): Promise<LotActio
       .eq("organization_id", orgId);
 
     if (error) return { error: formatDbError(error.message) };
+
+    await logAuditEvent(orgId, {
+      action: "lot.closed",
+      tableName: "cattle_groups",
+      recordId: groupId,
+      userId: user.id,
+      newData: {
+        lot_label: group?.lot_number || group?.name || "Lot",
+      },
+    });
+
     revalidateLot(groupId);
     return { success: "Lot closed" };
   } catch (e) {
@@ -73,7 +92,7 @@ export async function closeLot(orgId: string, groupId: string): Promise<LotActio
 
 export async function reopenLot(orgId: string, groupId: string): Promise<LotActionState> {
   try {
-    const { supabase, role } = await requireMember(orgId);
+    const { supabase, role, user } = await requireMember(orgId);
     if (!["owner", "manager"].includes(role)) {
       return { error: "Managers only" };
     }

@@ -57,6 +57,12 @@ const SETUP_LINKS = [
     managerOnly: false,
   },
   {
+    href: "/setup/audit",
+    title: "Activity Log",
+    description: "Who moved cattle, received lots, recorded sales, and emailed closeouts",
+    managerOnly: true,
+  },
+  {
     href: "/setup/preferences",
     title: "Ranch Preferences",
     description: "Shared calendar and other optional features",

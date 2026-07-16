@@ -10,6 +10,7 @@ import {
 } from "@/lib/inventory/default-classification";
 import { computeAvgWeightIn } from "@/lib/lots/purchase-weights";
 import { listGroupsAtLocation } from "@/lib/inventory/queries";
+import { logAuditEvent } from "@/lib/audit/log";
 import type { ActionState } from "./onboarding";
 
 const DB_PHASE2_HINT =
@@ -226,7 +227,7 @@ export async function createCattleGroup(
   },
 ): Promise<ActionState & { groupId?: string }> {
   try {
-    const { supabase } = await requireOrgAccess(orgId);
+    const { supabase, user } = await requireOrgAccess(orgId);
     const trimmed = input.name.trim();
     if (!trimmed) return { error: "Group name is required" };
     if (input.headCount <= 0) return { error: "Enter a head count greater than zero" };
@@ -277,6 +278,17 @@ export async function createCattleGroup(
       head_count: input.headCount,
     });
     if (error) return { error: error.message };
+
+    await logAuditEvent(orgId, {
+      action: "lot.received",
+      tableName: "cattle_groups",
+      recordId: group.id,
+      userId: user.id,
+      newData: {
+        lot_label: input.lotNumber?.trim() || trimmed,
+        head_count: input.headCount,
+      },
+    });
 
     revalidateInventory();
     return { success: "Group created", groupId: group.id };

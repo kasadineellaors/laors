@@ -1,5 +1,6 @@
 "use server";
 
+import { logAuditEvent } from "@/lib/audit/log";
 import { getAppUrl } from "@/lib/auth/app-url";
 import { getCustomer } from "@/lib/customers/queries";
 import { isValidEmail, normalizeEmail } from "@/lib/email/validate";
@@ -126,6 +127,19 @@ export async function sendCloseoutToCustomer(
     if (!result.ok) return { error: result.error };
 
     await markCloseoutShareEmailed(orgId, groupId, normalized);
+
+    await logAuditEvent(orgId, {
+      action: "closeout.emailed",
+      tableName: "lot_closeout_shares",
+      recordId: share.share_token,
+      userId: user.id,
+      newData: {
+        email: normalized,
+        group_id: groupId,
+        lot_label: printData.lotLabel,
+      },
+    });
+
     revalidatePath(`/cattle/groups/${groupId}/closeout`);
     return { success: `Closeout emailed to ${normalized}`, shareUrl };
   } catch (e) {
