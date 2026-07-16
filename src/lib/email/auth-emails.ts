@@ -1,4 +1,5 @@
 import { sendEmail } from "@/lib/email/resend";
+import { getServiceRoleKey } from "@/lib/supabase/service-role";
 
 export function getAuthFromEmail(): string | null {
   return (
@@ -12,7 +13,7 @@ export function isAuthEmailConfigured(): boolean {
   return Boolean(
     process.env.RESEND_API_KEY?.trim() &&
       getAuthFromEmail() &&
-      process.env.SUPABASE_SERVICE_ROLE_KEY?.trim(),
+      getServiceRoleKey(),
   );
 }
 

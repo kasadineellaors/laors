@@ -1,8 +1,9 @@
 import { getAuthFromEmail } from "@/lib/email/auth-emails";
+import { getServiceRoleKey } from "@/lib/supabase/service-role";
 
 export function getEmailDeliveryStatus(): { configured: boolean; missing: string[] } {
   const missing: string[] = [];
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()) {
+  if (!getServiceRoleKey()) {
     missing.push("SUPABASE_SERVICE_ROLE_KEY");
   }
   if (!process.env.RESEND_API_KEY?.trim()) {
