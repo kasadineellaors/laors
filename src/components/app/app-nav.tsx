@@ -24,6 +24,7 @@ const MORE_NAV = {
     p.startsWith("/setup") ||
     p.startsWith("/sales") ||
     p.startsWith("/invoices") ||
+    p.startsWith("/reports") ||
     p.startsWith("/time") ||
     p.startsWith("/weather"),
 } as const;

@@ -1,0 +1,52 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { requireOnboardedUser } from "@/lib/auth/session";
+import { Button } from "@/components/ui/button";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
+export const metadata: Metadata = {
+  title: "Reports — LAORS",
+};
+
+export default async function ReportsPage() {
+  await requireOnboardedUser();
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-charcoal">Reports</h1>
+        <p className="text-charcoal/70">Monthly operations and enterprise profit views.</p>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>This month</CardTitle>
+            <CardDescription>
+              Feed, sales, purchases, expenses, and head movement for the current month.
+            </CardDescription>
+          </CardHeader>
+          <Link href="/reports/monthly">
+            <Button fullWidth size="lg">
+              Monthly operations
+            </Button>
+          </Link>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>By enterprise</CardTitle>
+            <CardDescription>
+              Stocker, cow-calf, custom-fed, and other enterprises — costs vs sales.
+            </CardDescription>
+          </CardHeader>
+          <Link href="/reports/enterprise">
+            <Button fullWidth size="lg" variant="secondary">
+              Enterprise P&amp;L
+            </Button>
+          </Link>
+        </Card>
+      </div>
+    </div>
+  );
+}

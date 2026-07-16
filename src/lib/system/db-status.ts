@@ -126,6 +126,18 @@ export async function getDbSetupIssues(): Promise<DbSetupIssue[]> {
       fix: "Run supabase/RUN_PHASE20.sql or supabase/RUN_THIS_IN_SUPABASE.sql",
     },
     {
+      id: "phase21-feed-snapshots",
+      probe: async () => {
+        const { error } = await supabase
+          .from("feeding_records")
+          .select("unit_cost_snapshot")
+          .limit(1);
+        return !error;
+      },
+      message: "Feed cost snapshots / reports columns are not set up",
+      fix: "Run supabase/RUN_PHASE21.sql or supabase/RUN_THIS_IN_SUPABASE.sql",
+    },
+    {
       id: "phase13-calendar",
       probe: async () => {
         const { error } = await supabase.from("calendar_events").select("id").limit(1);

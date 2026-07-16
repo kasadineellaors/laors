@@ -26,7 +26,7 @@ export async function getLotOperationalSummary(
   ] = await Promise.all([
     supabase
       .from("feeding_records")
-      .select("quantity, feed_ration_id")
+      .select("quantity, feed_ration_id, total_feed_cost")
       .eq("organization_id", orgId)
       .eq("cattle_group_id", groupId)
       .eq("is_active", true),
@@ -76,8 +76,12 @@ export async function getLotOperationalSummary(
 
   let estimatedFeedCost = 0;
   for (const f of feedings ?? []) {
-    const price = rationPrice.get(f.feed_ration_id) ?? 0;
-    estimatedFeedCost += Number(f.quantity) * price;
+    if (f.total_feed_cost != null) {
+      estimatedFeedCost += Number(f.total_feed_cost);
+    } else {
+      const price = rationPrice.get(f.feed_ration_id) ?? 0;
+      estimatedFeedCost += Number(f.quantity) * price;
+    }
   }
 
   let estimatedMedicineCost = 0;

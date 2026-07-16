@@ -1540,6 +1540,7 @@ export interface Database {
           name: string;
           unit: string;
           price_per_unit: number | null;
+          effective_from: string | null;
           notes: string | null;
           created_by: string | null;
           is_active: boolean;
@@ -1552,6 +1553,7 @@ export interface Database {
           name: string;
           unit?: string;
           price_per_unit?: number | null;
+          effective_from?: string | null;
           notes?: string | null;
           created_by?: string | null;
         };
@@ -1559,6 +1561,7 @@ export interface Database {
           name?: string;
           unit?: string;
           price_per_unit?: number | null;
+          effective_from?: string | null;
           notes?: string | null;
           is_active?: boolean;
         };
@@ -1709,6 +1712,8 @@ export interface Database {
           ownership_group_id: string | null;
           quantity: number;
           head_count: number | null;
+          unit_cost_snapshot: number | null;
+          total_feed_cost: number | null;
           fed_by: string | null;
           notes: string | null;
           created_by: string | null;
@@ -1729,6 +1734,8 @@ export interface Database {
           ownership_group_id?: string | null;
           quantity: number;
           head_count?: number | null;
+          unit_cost_snapshot?: number | null;
+          total_feed_cost?: number | null;
           fed_by?: string | null;
           notes?: string | null;
           created_by?: string | null;
@@ -1744,6 +1751,8 @@ export interface Database {
           ownership_group_id?: string | null;
           quantity?: number;
           head_count?: number | null;
+          unit_cost_snapshot?: number | null;
+          total_feed_cost?: number | null;
           fed_by?: string | null;
           notes?: string | null;
           invoiced_at?: string | null;

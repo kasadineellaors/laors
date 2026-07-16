@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { syncFeedingStock, saveFeedRationIngredients } from "@/lib/actions/feed-inventory";
 import type { FeedRationIngredientInput } from "@/lib/feed/inventory-types";
+import { getRationUnitPrices } from "@/lib/feed/inventory-queries";
 import { revalidatePath } from "next/cache";
 import type { Database } from "@/types/database";
 import type { FeedingContext } from "@/lib/feed/types";
@@ -17,17 +18,24 @@ export type FeedActionState = {
   feedingId?: string;
 };
 
-const DB_HINT = "Run supabase/RUN_PHASE10.sql or supabase db push, then retry.";
+const DB_HINT = "Run supabase/RUN_PHASE21.sql in Supabase SQL Editor, then retry.";
 
 function formatDbError(message: string): string {
   if (
     message.includes("feed_rations") ||
     message.includes("feeding_records") ||
+    message.includes("unit_cost_snapshot") ||
+    message.includes("total_feed_cost") ||
     message.includes("schema cache")
   ) {
     return `${message} — ${DB_HINT}`;
   }
   return message;
+}
+
+async function rationUnitCost(orgId: string, rationId: string): Promise<number> {
+  const prices = await getRationUnitPrices(orgId, [rationId]);
+  return prices.get(rationId) ?? 0;
 }
 
 function revalidateFeed() {
@@ -195,6 +203,9 @@ export async function createFeeding(
 
   try {
     const { supabase, user } = await requireMember(orgId);
+    const unitCost = await rationUnitCost(orgId, input.feedRationId);
+    const totalFeedCost = Math.round(unitCost * input.quantity * 100) / 100;
+
     const { data, error } = await supabase
       .from("feeding_records")
       .insert({
@@ -209,6 +220,8 @@ export async function createFeeding(
         fed_by: input.fedBy || user.id,
         notes: input.notes?.trim() || null,
         feeding_context: input.feedingContext ?? "general",
+        unit_cost_snapshot: unitCost,
+        total_feed_cost: totalFeedCost,
         created_by: user.id,
       })
       .select("id")
@@ -265,6 +278,8 @@ export async function updateFeeding(
 
     const nextRationId = input.feedRationId ?? existing.feed_ration_id;
     const nextQty = input.quantity ?? Number(existing.quantity);
+    const unitCost = await rationUnitCost(orgId, nextRationId);
+    const totalFeedCost = Math.round(unitCost * nextQty * 100) / 100;
 
     const stock = await syncFeedingStock(
       supabase,
@@ -289,6 +304,8 @@ export async function updateFeeding(
     if (input.headCount !== undefined) updates.head_count = input.headCount;
     if (input.fedBy !== undefined) updates.fed_by = input.fedBy;
     if (input.notes !== undefined) updates.notes = input.notes?.trim() || null;
+    updates.unit_cost_snapshot = unitCost;
+    updates.total_feed_cost = totalFeedCost;
 
     const { error } = await supabase
       .from("feeding_records")

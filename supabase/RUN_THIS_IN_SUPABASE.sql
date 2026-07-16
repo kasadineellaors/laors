@@ -14,6 +14,7 @@
 --   • Phase 18 — Lot-centric groups + processing + mortality
 --   • Phase 19 — Feed purchases + % ration inclusion
 --   • Phase 20 — Lot expense ledger + auto lot status on sales
+--   • Phase 21 — Feed cost snapshots + monthly/enterprise reports
 -- =============================================================================
 
 -- =============================================================================
@@ -387,6 +388,17 @@ DROP POLICY IF EXISTS "Members write lot_expenses" ON public.lot_expenses;
 CREATE POLICY "Members write lot_expenses"
   ON public.lot_expenses FOR ALL
   USING (public.is_org_member(organization_id));
+
+-- =============================================================================
+-- PHASE 21 — Feed cost snapshots (preserve historical feed costs)
+-- =============================================================================
+
+ALTER TABLE public.feeding_records
+  ADD COLUMN IF NOT EXISTS unit_cost_snapshot NUMERIC(12, 4),
+  ADD COLUMN IF NOT EXISTS total_feed_cost NUMERIC(14, 2);
+
+ALTER TABLE public.feed_rations
+  ADD COLUMN IF NOT EXISTS effective_from DATE DEFAULT CURRENT_DATE;
 
 -- =============================================================================
 -- DONE — reload API schema
