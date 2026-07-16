@@ -14,6 +14,7 @@ export async function getLotOperationalSummary(
   landedCost: number | null,
   openedAt: string | null,
   currentHead: number,
+  avgWeightInLbs: number | null = null,
 ): Promise<LotOperationalSummary> {
   const supabase = await createClient();
 
@@ -44,7 +45,7 @@ export async function getLotOperationalSummary(
       .eq("is_active", true),
     supabase
       .from("sales_records")
-      .select("head_count, total_amount")
+      .select("head_count, total_amount, avg_weight_lbs")
       .eq("organization_id", orgId)
       .eq("cattle_group_id", groupId)
       .eq("is_active", true),
@@ -103,10 +104,19 @@ export async function getLotOperationalSummary(
 
   let headsSold = 0;
   let saleRevenue = 0;
+  let weightedSaleWeight = 0;
+  let saleWeightHeads = 0;
   for (const s of sales ?? []) {
     headsSold += s.head_count ?? 0;
     saleRevenue += s.total_amount != null ? Number(s.total_amount) : 0;
+    if (s.avg_weight_lbs != null && (s.head_count ?? 0) > 0) {
+      weightedSaleWeight += Number(s.avg_weight_lbs) * (s.head_count ?? 0);
+      saleWeightHeads += s.head_count ?? 0;
+    }
   }
+
+  const avgSaleWeightLbs =
+    saleWeightHeads > 0 ? weightedSaleWeight / saleWeightHeads : null;
 
   let deathCount = 0;
   let deathValue = 0;
@@ -131,6 +141,25 @@ export async function getLotOperationalSummary(
 
   const headDivisor = Math.max(1, currentHead);
 
+  let totalGainLbs: number | null = null;
+  let adgLbs: number | null = null;
+  let feedCostPerLbGain: number | null = null;
+
+  if (
+    avgSaleWeightLbs != null &&
+    avgWeightInLbs != null &&
+    headsSold > 0 &&
+    avgSaleWeightLbs > avgWeightInLbs
+  ) {
+    totalGainLbs = (avgSaleWeightLbs - avgWeightInLbs) * headsSold;
+    if (daysOnFeed > 0) {
+      adgLbs = (avgSaleWeightLbs - avgWeightInLbs) / daysOnFeed;
+    }
+    if (totalGainLbs > 0) {
+      feedCostPerLbGain = estimatedFeedCost / totalGainLbs;
+    }
+  }
+
   return {
     days_on_feed: daysOnFeed,
     feed_events: feedings?.length ?? 0,
@@ -145,6 +174,10 @@ export async function getLotOperationalSummary(
     other_expenses: otherExpenses,
     total_invested: totalInvested,
     estimated_cost_per_head: totalInvested / headDivisor,
+    avg_sale_weight_lbs: avgSaleWeightLbs,
+    total_gain_lbs: totalGainLbs,
+    adg_lbs: adgLbs,
+    feed_cost_per_lb_gain: feedCostPerLbGain,
   };
 }
 

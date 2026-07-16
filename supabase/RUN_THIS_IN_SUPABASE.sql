@@ -463,6 +463,13 @@ WHERE fr.feed_ration_id = r.id
   AND r.price_per_unit IS NOT NULL;
 
 -- =============================================================================
+-- PHASE 25 — Sale out-weight for closeout gain metrics
+-- =============================================================================
+
+ALTER TABLE public.sales_records
+  ADD COLUMN IF NOT EXISTS avg_weight_lbs NUMERIC(12, 2);
+
+-- =============================================================================
 -- DONE — reload API schema
 -- =============================================================================
 

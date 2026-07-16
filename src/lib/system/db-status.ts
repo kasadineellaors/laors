@@ -150,6 +150,18 @@ export async function getDbSetupIssues(): Promise<DbSetupIssue[]> {
       fix: "Run supabase/RUN_PHASE22.sql or supabase/RUN_THIS_IN_SUPABASE.sql",
     },
     {
+      id: "phase25-sale-weight",
+      probe: async () => {
+        const { error } = await supabase
+          .from("sales_records")
+          .select("avg_weight_lbs")
+          .limit(1);
+        return !error;
+      },
+      message: "Sale out-weight for closeout gain is not set up",
+      fix: "Run supabase/RUN_PHASE25.sql or supabase/RUN_THIS_IN_SUPABASE.sql",
+    },
+    {
       id: "phase13-calendar",
       probe: async () => {
         const { error } = await supabase.from("calendar_events").select("id").limit(1);

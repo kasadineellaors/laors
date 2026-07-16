@@ -17,6 +17,9 @@ export type SaleActionState = {
 const DB_HINT = "Run supabase/RUN_PHASE4.sql in Supabase SQL Editor, then retry.";
 
 function formatDbError(message: string): string {
+  if (message.includes("avg_weight_lbs")) {
+    return `${message} — Run supabase/RUN_PHASE25.sql in Supabase SQL Editor, then retry.`;
+  }
   if (message.includes("sales_records") || message.includes("schema cache")) {
     return `${message} — ${DB_HINT}`;
   }
@@ -88,6 +91,7 @@ export async function createSale(
     headCount: number;
     totalAmount?: number;
     pricePerHead?: number;
+    avgWeightLbs?: number;
     financialCategoryId?: string;
     deductFromInventory?: boolean;
     individualAnimalId?: string;
@@ -131,6 +135,7 @@ export async function createSale(
         head_count: input.headCount,
         total_amount: total,
         price_per_head: perHead,
+        avg_weight_lbs: input.avgWeightLbs ?? null,
         financial_category_id: input.financialCategoryId || null,
         inventory_deducted: Boolean(input.deductFromInventory && input.cattleGroupId),
         individual_animal_id: input.individualAnimalId || null,
@@ -178,6 +183,7 @@ export async function updateSale(
     locationId?: string | null;
     totalAmount?: number | null;
     pricePerHead?: number | null;
+    avgWeightLbs?: number | null;
     financialCategoryId?: string | null;
     notes?: string | null;
   },
@@ -194,6 +200,9 @@ export async function updateSale(
       updates.financial_category_id = input.financialCategoryId;
     }
     if (input.notes !== undefined) updates.notes = input.notes?.trim() || null;
+    if (input.avgWeightLbs !== undefined) {
+      updates.avg_weight_lbs = input.avgWeightLbs;
+    }
 
     if (input.totalAmount !== undefined || input.pricePerHead !== undefined) {
       const { data: existing } = await supabase

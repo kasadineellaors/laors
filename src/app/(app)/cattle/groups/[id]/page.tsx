@@ -51,6 +51,7 @@ export default async function CattleGroupPage({
       group.landed_cost,
       group.opened_at ?? group.arrival_date ?? group.purchase_date,
       group.total_head,
+      group.avg_weight_lbs,
     ),
     listProcessingEvents(orgId, id),
     listMortalityRecords(orgId, id),

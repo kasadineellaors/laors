@@ -82,6 +82,10 @@ export interface LotOperationalSummary {
   other_expenses: number;
   total_invested: number;
   estimated_cost_per_head: number;
+  avg_sale_weight_lbs: number | null;
+  total_gain_lbs: number | null;
+  adg_lbs: number | null;
+  feed_cost_per_lb_gain: number | null;
 }
 
 export interface ProcessingEventRecord {

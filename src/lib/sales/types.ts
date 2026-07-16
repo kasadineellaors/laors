@@ -12,6 +12,7 @@ export interface SaleRecord {
   head_count: number;
   total_amount: number | null;
   price_per_head: number | null;
+  avg_weight_lbs: number | null;
   inventory_deducted: boolean;
   notes: string | null;
   cattle_group_id: string | null;

@@ -65,6 +65,9 @@ export function SaleForm({
   const [pricePerHead, setPricePerHead] = useState(
     sale?.price_per_head != null ? String(sale.price_per_head) : "",
   );
+  const [avgWeightLbs, setAvgWeightLbs] = useState(
+    sale?.avg_weight_lbs != null ? String(sale.avg_weight_lbs) : "",
+  );
   const [categoryId, setCategoryId] = useState(sale?.financial_category_id ?? "");
   const [deductInventory, setDeductInventory] = useState(
     canDeductInventory && (sale?.inventory_deducted ?? true),
@@ -93,6 +96,7 @@ export function SaleForm({
 
     const parsedTotal = totalAmount.trim() ? parseFloat(totalAmount) : undefined;
     const parsedPerHead = pricePerHead.trim() ? parseFloat(pricePerHead) : undefined;
+    const parsedWeight = avgWeightLbs.trim() ? parseFloat(avgWeightLbs) : undefined;
 
     if (isEdit) {
       const result = await updateSale(orgId, sale!.id, {
@@ -102,6 +106,7 @@ export function SaleForm({
         locationId: locationId || null,
         totalAmount: parsedTotal ?? null,
         pricePerHead: parsedPerHead ?? null,
+        avgWeightLbs: avgWeightLbs.trim() ? parsedWeight ?? null : null,
         financialCategoryId: categoryId || null,
         notes: notes || null,
       });
@@ -121,6 +126,7 @@ export function SaleForm({
       headCount: parsedHead,
       totalAmount: parsedTotal,
       pricePerHead: parsedPerHead,
+      avgWeightLbs: parsedWeight,
       financialCategoryId: categoryId || undefined,
       deductFromInventory:
         canDeductInventory && deductInventory && Boolean(groupId) && !prefillAnimal,
@@ -304,6 +310,18 @@ export function SaleForm({
               placeholder="Optional"
             />
           </div>
+        </div>
+        <div>
+          <Label htmlFor="avgWeight">Avg out weight (lb/head)</Label>
+          <Input
+            id="avgWeight"
+            type="number"
+            min={0}
+            step="1"
+            value={avgWeightLbs}
+            onChange={(e) => setAvgWeightLbs(e.target.value)}
+            placeholder="Optional — for closeout gain"
+          />
         </div>
         {categoryOptions.length > 0 ? (
           <div>

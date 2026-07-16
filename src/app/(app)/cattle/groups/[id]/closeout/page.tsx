@@ -39,6 +39,7 @@ export default async function LotCloseoutPage({
       group.landed_cost,
       group.opened_at ?? group.arrival_date ?? group.purchase_date,
       group.total_head,
+      group.avg_weight_lbs,
     ),
     listProcessingEvents(orgId, id),
     listMortalityRecords(orgId, id),
@@ -173,6 +174,21 @@ export default async function LotCloseoutPage({
           ) : null}
           {feedPerHeadDay != null ? (
             <Dt label="Feed $/head/day" value={money(feedPerHeadDay)} />
+          ) : null}
+          {summary.avg_sale_weight_lbs != null ? (
+            <Dt
+              label="Avg sale weight"
+              value={`${Math.round(summary.avg_sale_weight_lbs)} lb`}
+            />
+          ) : null}
+          {summary.total_gain_lbs != null ? (
+            <Dt label="Total gain (sold)" value={`${Math.round(summary.total_gain_lbs)} lb`} />
+          ) : null}
+          {summary.adg_lbs != null ? (
+            <Dt label="ADG" value={`${summary.adg_lbs.toFixed(2)} lb/day`} />
+          ) : null}
+          {summary.feed_cost_per_lb_gain != null ? (
+            <Dt label="Feed cost / lb gain" value={money(summary.feed_cost_per_lb_gain)} />
           ) : null}
         </dl>
       </Card>

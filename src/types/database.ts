@@ -1070,6 +1070,7 @@ export interface Database {
           head_count: number;
           total_amount: number | null;
           price_per_head: number | null;
+          avg_weight_lbs: number | null;
           financial_category_id: string | null;
           inventory_deducted: boolean;
           individual_animal_id: string | null;
@@ -1091,6 +1092,7 @@ export interface Database {
           head_count: number;
           total_amount?: number | null;
           price_per_head?: number | null;
+          avg_weight_lbs?: number | null;
           financial_category_id?: string | null;
           inventory_deducted?: boolean;
           individual_animal_id?: string | null;
@@ -1105,6 +1107,7 @@ export interface Database {
           location_id?: string | null;
           total_amount?: number | null;
           price_per_head?: number | null;
+          avg_weight_lbs?: number | null;
           financial_category_id?: string | null;
           individual_animal_id?: string | null;
           seedstock_sale_type?: string | null;

@@ -89,6 +89,12 @@ const SETUP_LINKS = [
     managerOnly: false,
   },
   {
+    href: "/time",
+    title: "Time Clock",
+    description: "Clock in and out, manager team time review",
+    managerOnly: false,
+  },
+  {
     href: "/weather/rainfall",
     title: "Rainfall",
     description: "Rain gauge log",

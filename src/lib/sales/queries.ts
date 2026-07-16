@@ -143,6 +143,7 @@ async function enrichSales(
     head_count: r.head_count as number,
     total_amount: r.total_amount != null ? Number(r.total_amount) : null,
     price_per_head: r.price_per_head != null ? Number(r.price_per_head) : null,
+    avg_weight_lbs: r.avg_weight_lbs != null ? Number(r.avg_weight_lbs) : null,
     inventory_deducted: Boolean(r.inventory_deducted),
     notes: (r.notes as string | null) ?? null,
     cattle_group_id: (r.cattle_group_id as string | null) ?? null,
