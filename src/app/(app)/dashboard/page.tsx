@@ -13,6 +13,8 @@ import { getRainfallSummary } from "@/lib/weather/queries";
 import { canManageInvoices, canManageTeam, canWriteInventory } from "@/lib/auth/roles";
 import { DbSetupBanner } from "@/components/app/db-setup-banner";
 import { GettingStartedChecklist } from "@/components/dashboard/getting-started-checklist";
+import { CommandCenterPanel } from "@/components/dashboard/command-center-panel";
+import { getDashboardCommandCenter } from "@/lib/dashboard/queries";
 import { getDbSetupIssues } from "@/lib/system/db-status";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,7 +41,7 @@ export default async function DashboardPage() {
   const showSeedstock = hasSeedstockMode(modes);
   const showCalendar = isCalendarEnabled(org);
 
-  const [totalHead, tree, openTasks, lowMedicine, lowFeed, salesSummary, rainfall, invoiceSummary, dbIssues, calvingSummary] =
+  const [totalHead, tree, openTasks, lowMedicine, lowFeed, salesSummary, rainfall, invoiceSummary, dbIssues, calvingSummary, commandCenter] =
     await Promise.all([
     getRanchTotalHeadCount(orgId),
     getLocationTreeWithRollups(orgId),
@@ -51,6 +53,7 @@ export default async function DashboardPage() {
     showInvoices ? getInvoiceSummary(orgId) : Promise.resolve({ openCount: 0, unpaidTotal: 0 }),
     getDbSetupIssues(),
     showCowCalf ? getCalvingSummary(orgId) : Promise.resolve({ total: 0, live: 0, thisMonth: 0 }),
+    getDashboardCommandCenter(orgId),
   ]);
 
   const propertyCount = tree.length;
@@ -73,6 +76,8 @@ export default async function DashboardPage() {
         canManageTeam={canManageTeam(role)}
         canWriteInventory={canWriteInventory(role)}
       />
+
+      <CommandCenterPanel data={commandCenter} />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
@@ -101,7 +106,7 @@ export default async function DashboardPage() {
         </div>
       ) : null}
 
-      {lowFeed > 0 ? (
+      {lowFeed > 0 && commandCenter.low_feed_items.length === 0 ? (
         <div className="rounded-xl border border-rust/30 bg-rust/10 px-4 py-3 text-sm text-rust">
           {lowFeed} feedstuff item{lowFeed === 1 ? "" : "s"} low on stock.{" "}
           <Link href="/feed/inventory" className="font-semibold underline">
