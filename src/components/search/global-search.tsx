@@ -56,7 +56,7 @@ export function GlobalSearch({ orgId }: GlobalSearchProps) {
   );
 
   useEffect(() => {
-    if (!open) return;
+    if (!open && query.trim().length < 2) return;
 
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
@@ -96,16 +96,6 @@ export function GlobalSearch({ orgId }: GlobalSearchProps) {
     };
   }, [open]);
 
-  useEffect(() => {
-    if (open) {
-      requestAnimationFrame(() => inputRef.current?.focus());
-    } else {
-      setQuery("");
-      setData(null);
-      setLoading(false);
-    }
-  }, [open]);
-
   const grouped = data
     ? (["lot", "sale", "feeding"] as const)
         .map((kind) => ({
@@ -116,66 +106,102 @@ export function GlobalSearch({ orgId }: GlobalSearchProps) {
         .filter((group) => group.items.length > 0)
     : [];
 
+  const showResults = open && query.trim().length >= 2;
+
   return (
-    <div ref={panelRef} className="relative">
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        onClick={() => setOpen((value) => !value)}
-        aria-expanded={open}
-        aria-controls={inputId}
-      >
-        Search
-      </Button>
+    <div ref={panelRef} className="relative w-full max-w-xs sm:max-w-sm">
+      <label htmlFor={inputId} className="sr-only">
+        Search lots, sales, and feedings
+      </label>
+
+      {/* Desktop: compact search field */}
+      <div className="hidden md:block">
+        <Input
+          ref={inputRef}
+          id={inputId}
+          value={query}
+          onChange={(event) => {
+            setQuery(event.target.value);
+            setOpen(true);
+          }}
+          onFocus={() => setOpen(true)}
+          placeholder="Search…"
+          autoComplete="off"
+          wrapperClassName="w-full"
+          className="h-10 min-h-10 text-sm"
+        />
+      </div>
+
+      {/* Mobile: toggle button */}
+      <div className="md:hidden">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            setOpen((value) => !value);
+            requestAnimationFrame(() => inputRef.current?.focus());
+          }}
+          aria-expanded={open}
+          aria-controls={`${inputId}-mobile`}
+        >
+          Search
+        </Button>
+      </div>
 
       {open ? (
-        <div className="absolute right-0 top-full z-20 mt-2 w-[min(24rem,calc(100vw-2rem))] rounded-xl border border-border bg-surface p-3 shadow-lg">
-          <label htmlFor={inputId} className="sr-only">
-            Search lots, sales, and feedings
-          </label>
-          <Input
-            ref={inputRef}
-            id={inputId}
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Lots, sales, feedings…"
-            autoComplete="off"
-          />
-
-          <div className="mt-3 max-h-80 overflow-y-auto text-sm">
-            {query.trim().length < 2 ? (
-              <p className="px-1 text-charcoal/60">Type at least 2 characters.</p>
-            ) : loading ? (
-              <p className="px-1 text-charcoal/60">Searching…</p>
-            ) : grouped.length === 0 ? (
-              <p className="px-1 text-charcoal/60">No matches for &ldquo;{query.trim()}&rdquo;.</p>
-            ) : (
-              <div className="space-y-4">
-                {grouped.map((group) => (
-                  <section key={group.kind}>
-                    <h3 className="mb-1 px-1 text-xs font-bold uppercase tracking-wide text-charcoal/50">
-                      {group.label}
-                    </h3>
-                    <ul className="divide-y divide-border rounded-lg border border-border">
-                      {group.items.map((item) => (
-                        <li key={`${item.kind}-${item.id}`}>
-                          <Link
-                            href={item.href}
-                            className="block px-3 py-2 hover:bg-olive/5"
-                            onClick={() => setOpen(false)}
-                          >
-                            <p className="font-semibold text-charcoal">{item.title}</p>
-                            <p className="text-xs text-charcoal/60">{item.subtitle}</p>
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </section>
-                ))}
-              </div>
-            )}
+        <div className="absolute right-0 top-full z-20 mt-2 w-[min(24rem,calc(100vw-2rem))] rounded-[var(--radius-card)] border border-border-neutral bg-surface-white p-3 shadow-[var(--shadow-card)]">
+          <div className="md:hidden">
+            <Input
+              ref={inputRef}
+              id={`${inputId}-mobile`}
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Lots, sales, feedings…"
+              autoComplete="off"
+              className="h-10 min-h-10 text-sm"
+            />
           </div>
+
+          {showResults ? (
+            <div className={`max-h-80 overflow-y-auto text-sm ${open ? "mt-3" : ""}`}>
+              {loading ? (
+                <p className="px-1 text-text-secondary">Searching…</p>
+              ) : grouped.length === 0 ? (
+                <p className="px-1 text-text-secondary">
+                  No matches for &ldquo;{query.trim()}&rdquo;.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {grouped.map((group) => (
+                    <section key={group.kind}>
+                      <h3 className="mb-1 px-1 text-xs font-bold uppercase tracking-wide text-text-secondary">
+                        {group.label}
+                      </h3>
+                      <ul className="divide-y divide-border-neutral rounded-lg border border-border-neutral">
+                        {group.items.map((item) => (
+                          <li key={`${item.kind}-${item.id}`}>
+                            <Link
+                              href={item.href}
+                              className="block px-3 py-2 hover:bg-tan/30"
+                              onClick={() => setOpen(false)}
+                            >
+                              <p className="font-semibold text-text-primary">{item.title}</p>
+                              <p className="text-xs text-text-secondary">{item.subtitle}</p>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </section>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <p className="mt-2 px-1 text-xs text-text-secondary md:mt-0">
+              Type at least 2 characters.
+            </p>
+          )}
         </div>
       ) : null}
     </div>

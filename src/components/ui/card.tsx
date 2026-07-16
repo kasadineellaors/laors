@@ -9,7 +9,7 @@ export function Card({
   return (
     <div
       className={cn(
-        "rounded-xl border border-border bg-surface p-6 shadow-sm",
+        "rounded-[var(--radius-card)] border border-border-neutral bg-surface-white p-5 shadow-[var(--shadow-card)] sm:p-6",
         className,
       )}
       {...props}
@@ -38,7 +38,7 @@ export function CardTitle({
 }: HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h2
-      className={cn("text-xl font-bold text-charcoal", className)}
+      className={cn("text-lg font-bold text-navy sm:text-xl", className)}
       {...props}
     >
       {children}
@@ -52,7 +52,7 @@ export function CardDescription({
   ...props
 }: HTMLAttributes<HTMLParagraphElement>) {
   return (
-    <p className={cn("mt-1 text-sm text-charcoal/70", className)} {...props}>
+    <p className={cn("mt-1 text-sm text-text-secondary", className)} {...props}>
       {children}
     </p>
   );

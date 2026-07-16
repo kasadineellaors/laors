@@ -14,9 +14,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         ref={ref}
         type={type}
         className={cn(
-          "flex h-12 w-full rounded-lg border-2 border-border bg-surface px-4 text-base text-charcoal",
-          "placeholder:text-charcoal/50",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-olive focus-visible:border-olive",
+          "flex h-11 w-full rounded-[var(--radius-button)] border border-border-neutral bg-surface-white px-4 text-base text-text-primary",
+          "placeholder:text-text-secondary",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:border-navy",
           "disabled:cursor-not-allowed disabled:opacity-50",
           error && "border-rust focus-visible:ring-rust",
           className,

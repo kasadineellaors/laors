@@ -1,26 +1,51 @@
 @import "tailwindcss";
 
-/* LAORS Western Design Tokens */
+/* LAORS brand palette — The Foreman */
 :root {
-  --laors-olive: #4a5d23;
-  --laors-olive-dark: #3a4a1b;
-  --laors-olive-light: #5c7230;
-  --laors-saddle: #8b4513;
-  --laors-saddle-dark: #6b340f;
-  --laors-cream: #f5f0e1;
-  --laors-tan: #d2b48c;
-  --laors-tan-light: #e8d5b7;
-  --laors-charcoal: #36454f;
-  --laors-gold: #c4a35a;
-  --laors-rust: #a0522d;
-  --laors-sage: #87a96b;
+  --laors-navy: #27425d;
+  --laors-navy-dark: #1e3349;
+  --laors-brown: #b57134;
+  --laors-brown-dark: #9a5f2b;
+  --laors-cream: #e1d1b7;
+  --laors-tan: #e0c29c;
+  --laors-slate: #4e5e80;
 
-  --background: var(--laors-cream);
-  --foreground: var(--laors-charcoal);
-  --surface: #ffffff;
-  --surface-muted: var(--laors-tan-light);
-  --border: #c9b896;
-  --ring: var(--laors-olive);
+  --surface-white: #fffdf9;
+  --text-primary: #263746;
+  --text-secondary: #6f7880;
+  --border-neutral: #cdba9d;
+
+  --status-success: #2f6b4f;
+  --status-success-bg: #e8f3ec;
+  --status-warning: #b8860b;
+  --status-warning-bg: #faf3e3;
+  --status-critical: #b54747;
+  --status-critical-bg: #fceeee;
+  --status-info: #4e5e80;
+  --status-info-bg: #eef1f6;
+
+  --shadow-card: 0 2px 8px rgba(39, 66, 93, 0.08);
+  --radius-card: 13px;
+  --radius-button: 9px;
+
+  --background: color-mix(in srgb, var(--laors-cream) 35%, var(--surface-white));
+  --foreground: var(--text-primary);
+  --surface: var(--surface-white);
+  --surface-muted: color-mix(in srgb, var(--laors-tan) 40%, var(--surface-white));
+  --border: var(--border-neutral);
+  --ring: var(--laors-navy);
+
+  /* Legacy aliases — olive/saddle mapped to new brand (shared UI migration) */
+  --laors-charcoal: var(--text-primary);
+  --laors-olive: var(--laors-navy);
+  --laors-olive-dark: var(--laors-navy-dark);
+  --laors-olive-light: #3a5678;
+  --laors-saddle: var(--laors-brown);
+  --laors-saddle-dark: var(--laors-brown-dark);
+  --laors-rust: var(--status-critical);
+  --laors-gold: var(--laors-brown);
+  --laors-sage: var(--status-success);
+  --laors-tan-light: color-mix(in srgb, var(--laors-tan) 50%, var(--surface-white));
 }
 
 @theme inline {
@@ -31,24 +56,45 @@
   --color-border: var(--border);
   --color-ring: var(--ring);
 
-  --color-olive: var(--laors-olive);
-  --color-olive-dark: var(--laors-olive-dark);
-  --color-olive-light: var(--laors-olive-light);
-  --color-saddle: var(--laors-saddle);
-  --color-saddle-dark: var(--laors-saddle-dark);
+  --color-navy: var(--laors-navy);
+  --color-navy-dark: var(--laors-navy-dark);
+  --color-brown: var(--laors-brown);
+  --color-brown-dark: var(--laors-brown-dark);
   --color-cream: var(--laors-cream);
   --color-tan: var(--laors-tan);
+  --color-slate: var(--laors-slate);
+  --color-surface-white: var(--surface-white);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-border-neutral: var(--border-neutral);
+
+  --color-status-success: var(--status-success);
+  --color-status-success-bg: var(--status-success-bg);
+  --color-status-warning: var(--status-warning);
+  --color-status-warning-bg: var(--status-warning-bg);
+  --color-status-critical: var(--status-critical);
+  --color-status-critical-bg: var(--status-critical-bg);
+  --color-status-info: var(--status-info);
+  --color-status-info-bg: var(--status-info-bg);
+
+  --color-olive: var(--laors-navy);
+  --color-olive-dark: var(--laors-navy-dark);
+  --color-olive-light: var(--laors-olive-light);
+  --color-saddle: var(--laors-brown);
+  --color-saddle-dark: var(--laors-brown-dark);
+  --color-charcoal: var(--text-primary);
+  --color-rust: var(--status-critical);
+  --color-gold: var(--laors-brown);
+  --color-sage: var(--status-success);
   --color-tan-light: var(--laors-tan-light);
-  --color-charcoal: var(--laors-charcoal);
-  --color-gold: var(--laors-gold);
-  --color-rust: var(--laors-rust);
-  --color-sage: var(--laors-sage);
 
   --font-sans: var(--font-source-sans);
   --radius-sm: 0.375rem;
   --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
+  --radius-lg: var(--radius-card);
   --radius-xl: 1rem;
+
+  --shadow-card: var(--shadow-card);
 }
 
 * {
@@ -67,10 +113,13 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Minimum touch target for field use */
 .touch-target {
   min-height: 48px;
   min-width: 48px;
+}
+
+.safe-area-pb {
+  padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
 @media print {

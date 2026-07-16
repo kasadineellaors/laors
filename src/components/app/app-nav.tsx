@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils/cn";
 
 const BASE_NAV = [
   { href: "/dashboard", label: "Home", match: (p: string) => p === "/dashboard" },
@@ -29,12 +30,6 @@ const MORE_NAV = {
     p.startsWith("/weather"),
 } as const;
 
-function navClass(active: boolean) {
-  return active
-    ? "flex min-h-11 flex-col items-center justify-center rounded-lg px-2 text-[11px] font-bold text-olive bg-olive/10"
-    : "flex min-h-11 flex-col items-center justify-center rounded-lg px-2 text-[11px] font-semibold text-charcoal/70 hover:bg-tan-light/50 hover:text-olive";
-}
-
 interface AppNavProps {
   calendarEnabled?: boolean;
 }
@@ -46,12 +41,30 @@ export function AppNav({ calendarEnabled = false }: AppNavProps) {
     : [...BASE_NAV, MORE_NAV];
 
   return (
-    <nav className="sticky bottom-0 border-t border-border bg-surface px-1 py-2 safe-area-pb">
-      <div className="mx-auto flex max-w-5xl justify-around gap-0.5">
+    <nav className="safe-area-pb border-t border-border-neutral bg-surface-white px-1 py-2">
+      <div className="mx-auto flex max-w-6xl justify-around gap-0.5">
         {navItems.map((item) => {
           const active = item.match(pathname);
           return (
-            <Link key={item.href} href={item.href} className={navClass(active)}>
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "flex min-h-11 min-w-[3rem] flex-col items-center justify-center rounded-lg px-2 text-[11px] font-semibold transition-colors",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2",
+                active
+                  ? "font-bold text-brown"
+                  : "text-navy hover:bg-tan/30 hover:text-navy-dark",
+              )}
+              aria-current={active ? "page" : undefined}
+            >
+              <span
+                className={cn(
+                  "mb-0.5 h-0.5 w-5 rounded-full",
+                  active ? "bg-brown" : "bg-transparent",
+                )}
+                aria-hidden
+              />
               {item.label}
             </Link>
           );

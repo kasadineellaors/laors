@@ -12,22 +12,22 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    "bg-olive text-white hover:bg-olive-dark active:bg-olive-dark focus-visible:ring-olive",
+    "bg-brown text-white hover:bg-brown-dark active:bg-brown-dark focus-visible:ring-brown",
   secondary:
-    "bg-saddle text-white hover:bg-saddle-dark active:bg-saddle-dark focus-visible:ring-saddle",
+    "bg-navy text-white hover:bg-navy-dark active:bg-navy-dark focus-visible:ring-navy",
   outline:
-    "border-2 border-olive text-olive bg-transparent hover:bg-olive/10 focus-visible:ring-olive",
+    "border border-navy text-navy bg-transparent hover:bg-tan/40 focus-visible:ring-navy",
   ghost:
-    "bg-transparent text-charcoal hover:bg-tan-light/60 focus-visible:ring-charcoal",
+    "bg-transparent text-text-primary hover:bg-tan/30 focus-visible:ring-navy",
   danger:
-    "bg-rust text-white hover:bg-rust/90 focus-visible:ring-rust",
+    "bg-status-critical text-white hover:bg-status-critical/90 focus-visible:ring-status-critical",
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: "h-10 px-4 text-sm rounded-md",
-  md: "h-12 px-5 text-base rounded-lg",
-  lg: "h-14 px-6 text-lg rounded-lg",
-  xl: "h-16 px-8 text-xl rounded-xl touch-target",
+  sm: "h-10 min-h-10 px-4 text-sm rounded-[var(--radius-button)]",
+  md: "h-11 min-h-11 px-5 text-sm rounded-[var(--radius-button)]",
+  lg: "h-12 min-h-12 px-6 text-base rounded-[var(--radius-button)]",
+  xl: "h-14 min-h-14 px-8 text-lg rounded-[var(--radius-button)] touch-target",
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -49,7 +49,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       type={type}
       disabled={disabled}
       className={cn(
-        "inline-flex items-center justify-center font-semibold transition-colors",
+        "inline-flex items-center justify-center font-medium transition-colors",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
         "disabled:pointer-events-none disabled:opacity-50",
         variantClasses[variant],

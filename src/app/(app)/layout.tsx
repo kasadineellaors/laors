@@ -15,13 +15,13 @@ export default async function AppLayout({
   const calendarEnabled = isCalendarEnabled(session.organization);
 
   return (
-    <div className="flex min-h-full flex-col bg-cream">
-      <header className="sticky top-0 z-10 border-b border-border bg-surface px-4 py-3">
-        <div className="mx-auto flex max-w-5xl items-center justify-between">
+    <div className="flex min-h-full flex-col bg-background">
+      <header className="sticky top-0 z-10 border-b border-border-neutral bg-surface-white px-4 py-3">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
           <LaorsLogo />
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex flex-1 items-center justify-end gap-3 sm:gap-5">
             <GlobalSearch orgId={session.organization!.id} />
-            <span className="hidden text-sm font-medium text-charcoal sm:inline">
+            <span className="hidden max-w-[10rem] truncate text-sm font-medium text-text-primary lg:inline xl:max-w-xs">
               {session.organization?.name}
             </span>
             <form action={signOut}>
@@ -32,10 +32,10 @@ export default async function AppLayout({
           </div>
         </div>
       </header>
-      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-4 py-6">
+      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-6 sm:py-8">
         {children}
       </main>
-      <nav className="sticky bottom-0 border-t border-border bg-surface px-2 py-2">
+      <nav className="sticky bottom-0 z-10">
         <AppNav calendarEnabled={calendarEnabled} />
       </nav>
     </div>

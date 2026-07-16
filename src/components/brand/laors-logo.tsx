@@ -4,17 +4,11 @@ interface LaorsLogoProps {
   subtitle?: string;
 }
 
-export function LaorsLogo({ subtitle }: LaorsLogoProps) {
+export function LaorsLogo({ subtitle = "The Foreman" }: LaorsLogoProps) {
   return (
-    <Link href="/dashboard" className="inline-flex flex-col">
-      <span className="text-xl font-bold tracking-tight text-olive">
-        LAORS
-      </span>
-      {subtitle ? (
-        <span className="text-xs font-medium text-charcoal/60">{subtitle}</span>
-      ) : (
-        <span className="text-xs font-medium text-charcoal/60">The Foreman</span>
-      )}
+    <Link href="/dashboard" className="inline-flex flex-col leading-tight">
+      <span className="text-xl font-bold tracking-tight text-navy">LAORS</span>
+      <span className="text-xs font-medium text-text-secondary">{subtitle}</span>
     </Link>
   );
 }
