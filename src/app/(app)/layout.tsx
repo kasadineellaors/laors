@@ -1,5 +1,6 @@
 import { LaorsLogo } from "@/components/brand/laors-logo";
 import { AppNav } from "@/components/app/app-nav";
+import { GlobalSearch } from "@/components/search/global-search";
 import { signOut } from "@/lib/actions/auth";
 import { requireOnboardedUser } from "@/lib/auth/session";
 import { isCalendarEnabled } from "@/lib/org/settings";
@@ -18,7 +19,8 @@ export default async function AppLayout({
       <header className="sticky top-0 z-10 border-b border-border bg-surface px-4 py-3">
         <div className="mx-auto flex max-w-5xl items-center justify-between">
           <LaorsLogo />
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <GlobalSearch orgId={session.organization!.id} />
             <span className="hidden text-sm font-medium text-charcoal sm:inline">
               {session.organization?.name}
             </span>
