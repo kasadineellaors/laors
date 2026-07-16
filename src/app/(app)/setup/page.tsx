@@ -101,6 +101,12 @@ const SETUP_LINKS = [
     managerOnly: false,
   },
   {
+    href: "/reports",
+    title: "Reports",
+    description: "Monthly P&L, operations, and enterprise profit views",
+    managerOnly: false,
+  },
+  {
     href: "/invoices",
     title: "Invoices",
     description: "Bill customers and track payment status",

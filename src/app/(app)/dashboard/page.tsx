@@ -237,9 +237,9 @@ export default async function DashboardPage() {
                 Sales
               </Button>
             </Link>
-            <Link href="/reports/monthly">
+            <Link href="/reports">
               <Button variant="secondary" fullWidth size="sm">
-                This month
+                Reports
               </Button>
             </Link>
             {showInvoices ? (
