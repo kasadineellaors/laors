@@ -22,6 +22,17 @@ export interface FeedingSummary {
   thisMonth: number;
   last7Days: number;
   totalQuantityThisMonth: number;
+  feedingsToday: number;
+  amountFedThisWeek: number;
+  feedCostThisWeek: number;
+}
+
+export interface FeedingFormPrefill {
+  groupId?: string;
+  locationId?: string;
+  ownerId?: string;
+  feedRationId?: string;
+  quantity?: string;
 }
 
 export interface FeedingRecord {

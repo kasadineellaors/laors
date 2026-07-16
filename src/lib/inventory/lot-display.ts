@@ -1,7 +1,7 @@
 import type { CattleGroupSummary } from "./types";
 
 export function getLotOwnerName(group: CattleGroupSummary): string | null {
-  return group.customer_name ?? group.ownership_group_name ?? null;
+  return group.owner_name ?? group.customer_name ?? group.ownership_group_name ?? null;
 }
 
 export function getLotReceivedDate(group: CattleGroupSummary): string | null {
@@ -66,7 +66,22 @@ export function buildLotSupportingDetails(group: CattleGroupSummary): string[] {
 
   const avgWt = getAvgReceivedWeightLbs(group);
   if (avgWt != null) {
-    details.push(`Avg ${avgWt.toLocaleString()} lbs`);
+    details.push(`Avg received ${avgWt.toLocaleString()} lbs`);
+  }
+
+  if (group.current_avg_weight_lbs != null && group.current_avg_weight_lbs > 0) {
+    const received = getAvgReceivedWeightLbs(group);
+    if (received == null || Math.abs(group.current_avg_weight_lbs - received) > 0.5) {
+      details.push(`Current avg ${group.current_avg_weight_lbs.toLocaleString()} lbs`);
+    }
+  }
+
+  if (group.open_treatment_count > 0) {
+    details.push(`${group.open_treatment_count} treatment${group.open_treatment_count === 1 ? "" : "s"}`);
+  }
+
+  if (group.feedings_today > 0) {
+    details.push(`Fed today (${group.feedings_today})`);
   }
 
   if (group.seller_name) {

@@ -12,19 +12,27 @@ export async function listMedicineItems(orgId: string): Promise<MedicineItemReco
 
   if (error || !rows?.length) return [];
 
-  return rows.map((r) => ({
-    id: r.id,
-    name: r.name,
-    unit: r.unit,
-    quantity_on_hand: Number(r.quantity_on_hand),
-    price_per_cc: r.price_per_cc != null ? Number(r.price_per_cc) : null,
-    reorder_at: r.reorder_at != null ? Number(r.reorder_at) : null,
-    notes: r.notes,
-    is_low_stock:
-      r.reorder_at != null && Number(r.quantity_on_hand) <= Number(r.reorder_at),
-    created_at: r.created_at,
-    updated_at: r.updated_at,
-  }));
+  return rows.map((r) => {
+    const qty = Number(r.quantity_on_hand);
+    const row = r as Record<string, unknown>;
+    return {
+      id: r.id,
+      name: r.name,
+      unit: r.unit,
+      quantity_on_hand: qty,
+      price_per_cc: r.price_per_cc != null ? Number(r.price_per_cc) : null,
+      avg_unit_cost:
+        row.avg_unit_cost != null ? Number(row.avg_unit_cost) : null,
+      withdrawal_days:
+        row.withdrawal_days != null ? Number(row.withdrawal_days) : null,
+      reorder_at: r.reorder_at != null ? Number(r.reorder_at) : null,
+      notes: r.notes,
+      is_low_stock: r.reorder_at != null && qty <= Number(r.reorder_at),
+      is_out_of_stock: qty <= 0,
+      created_at: r.created_at,
+      updated_at: r.updated_at,
+    };
+  });
 }
 
 export async function getMedicineItem(
@@ -43,6 +51,9 @@ export async function listMedicineOptions(orgId: string): Promise<MedicineOption
     unit: i.unit,
     quantity_on_hand: i.quantity_on_hand,
     price_per_cc: i.price_per_cc,
+    withdrawal_days: i.withdrawal_days,
+    is_low_stock: i.is_low_stock,
+    is_out_of_stock: i.is_out_of_stock,
   }));
 }
 

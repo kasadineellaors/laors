@@ -9,6 +9,7 @@ export interface FeedItemRecord {
   price_per_unit: number | null;
   notes: string | null;
   is_low_stock: boolean;
+  projected_days_remaining: number | null;
   created_at: string;
   updated_at: string;
 }

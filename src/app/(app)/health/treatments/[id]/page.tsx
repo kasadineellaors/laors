@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireOnboardedUser } from "@/lib/auth/session";
 import { getTreePickerOptions } from "@/lib/locations/options";
 import { listCattleGroups } from "@/lib/inventory/queries";
+import { toFeedGroupOptions } from "@/lib/feed/options";
 import { getTreatment } from "@/lib/health/queries";
 import { listMedicineOptions } from "@/lib/medicine/queries";
 import { listOrgMembers } from "@/lib/tasks/queries";
@@ -20,6 +21,7 @@ export default async function TreatmentDetailPage({
   const { id } = await params;
   const session = await requireOnboardedUser();
   const orgId = session.organization!.id;
+  const userId = session.user.id;
 
   const treatment = await getTreatment(orgId, id);
   if (!treatment) notFound();
@@ -28,12 +30,7 @@ export default async function TreatmentDetailPage({
     getTreePickerOptions(orgId).then((nodes) =>
       nodes.map((n) => ({ value: n.id, label: n.breadcrumb })),
     ),
-    listCattleGroups(orgId).then((gs) =>
-      gs.map((g) => ({
-        value: g.id,
-        label: `${g.name} (${g.total_head} hd)`,
-      })),
-    ),
+    listCattleGroups(orgId).then(toFeedGroupOptions),
     listOrgMembers(orgId),
     listMedicineOptions(orgId),
   ]);
@@ -41,6 +38,7 @@ export default async function TreatmentDetailPage({
   return (
     <TreatmentDetailClient
       orgId={orgId}
+      currentUserId={userId}
       treatment={treatment}
       locationOptions={locations}
       groupOptions={groups}
@@ -49,3 +47,4 @@ export default async function TreatmentDetailPage({
     />
   );
 }
+

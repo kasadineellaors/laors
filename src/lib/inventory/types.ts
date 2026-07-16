@@ -18,6 +18,13 @@ export interface CattleGroupSummary {
   ownership_group_name: string | null;
   customer_id: string | null;
   customer_name: string | null;
+  owner_id: string | null;
+  owner_name: string | null;
+  open_treatment_count: number;
+  feedings_today: number;
+  withdrawal_active: boolean;
+  head_discrepancy: boolean;
+  current_avg_weight_lbs: number | null;
   lot_number: string | null;
   enterprise_type: string;
   lot_status: string;

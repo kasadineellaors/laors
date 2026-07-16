@@ -61,7 +61,7 @@ async function enrichTreatments(
       ? supabase.from("profiles").select("id, full_name").in("id", profileIds)
       : Promise.resolve({ data: [] }),
     medicineIds.length
-      ? supabase.from("medicine_items").select("id, name").in("id", medicineIds)
+      ? supabase.from("medicine_items").select("id, name, unit").in("id", medicineIds)
       : Promise.resolve({ data: [] }),
   ]);
 
@@ -91,32 +91,42 @@ async function enrichTreatments(
     ]),
   );
 
-  return rows.map((r) => ({
-    id: r.id as string,
-    product_name: r.product_name as string,
-    treatment_type: (r.treatment_type as string | null) ?? null,
-    reason: (r.reason as string | null) ?? null,
-    head_count: (r.head_count as number | null) ?? null,
-    treatment_date: r.treatment_date as string,
-    notes: (r.notes as string | null) ?? null,
-    cattle_group_id: (r.cattle_group_id as string | null) ?? null,
-    cattle_group_name: r.cattle_group_id
-      ? groupNames.get(r.cattle_group_id as string) ?? null
-      : null,
-    location_id: (r.location_id as string | null) ?? null,
-    location_label: r.location_id ? locLabels.get(r.location_id as string) ?? null : null,
-    administered_by: (r.administered_by as string | null) ?? null,
-    administered_by_name: r.administered_by
-      ? profileNames.get(r.administered_by as string) ?? null
-      : null,
-    created_by: (r.created_by as string | null) ?? null,
-    created_by_name: r.created_by ? profileNames.get(r.created_by as string) ?? null : null,
-    medicine_item_id: (r.medicine_item_id as string | null) ?? null,
-    medicine_item_name: r.medicine_item_id
-      ? medicineNames.get(r.medicine_item_id as string) ?? null
-      : null,
-    quantity_used: r.quantity_used != null ? Number(r.quantity_used) : null,
-    created_at: r.created_at as string,
-    updated_at: r.updated_at as string,
-  }));
+  return rows.map((r) => {
+    const row = r as Record<string, unknown>;
+    const withdrawalUntil = (row.withdrawal_until as string | null) ?? null;
+    const today = new Date().toISOString().slice(0, 10);
+    const medicineId = row.medicine_item_id as string | null;
+    const med = medicineId ? medicines?.find((m) => m.id === medicineId) : null;
+    const medRow = med as { id: string; name: string; unit?: string } | undefined;
+
+    return {
+      id: row.id as string,
+      product_name: row.product_name as string,
+      treatment_type: (row.treatment_type as string | null) ?? null,
+      reason: (row.reason as string | null) ?? null,
+      head_count: (row.head_count as number | null) ?? null,
+      treatment_date: row.treatment_date as string,
+      notes: (row.notes as string | null) ?? null,
+      cattle_group_id: (row.cattle_group_id as string | null) ?? null,
+      cattle_group_name: row.cattle_group_id
+        ? groupNames.get(row.cattle_group_id as string) ?? null
+        : null,
+      location_id: (row.location_id as string | null) ?? null,
+      location_label: row.location_id ? locLabels.get(row.location_id as string) ?? null : null,
+      administered_by: (row.administered_by as string | null) ?? null,
+      administered_by_name: row.administered_by
+        ? profileNames.get(row.administered_by as string) ?? null
+        : null,
+      created_by: (row.created_by as string | null) ?? null,
+      created_by_name: row.created_by ? profileNames.get(row.created_by as string) ?? null : null,
+      medicine_item_id: medicineId,
+      medicine_item_name: medicineId ? medicineNames.get(medicineId) ?? null : null,
+      medicine_unit: medRow?.unit ?? null,
+      quantity_used: row.quantity_used != null ? Number(row.quantity_used) : null,
+      withdrawal_until: withdrawalUntil,
+      withdrawal_active: Boolean(withdrawalUntil && withdrawalUntil >= today),
+      created_at: row.created_at as string,
+      updated_at: row.updated_at as string,
+    };
+  });
 }

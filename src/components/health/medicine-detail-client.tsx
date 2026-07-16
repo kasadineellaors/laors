@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { MedicineItemRecord, MedicineStockAdjustment } from "@/lib/medicine/types";
 import { adjustMedicineStock, archiveMedicineItem } from "@/lib/actions/medicine";
+import { costLabelForUnit, formatMedicineUnit, formatQuantityWithUnit } from "@/lib/health/display";
 import { MedicineForm } from "@/components/health/medicine-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -76,8 +77,8 @@ export function MedicineDetailClient({
   if (editing) {
     return (
       <div className="space-y-4">
-        <Link href="/health/medicine" className="text-sm font-medium text-olive hover:underline">
-          ← Medicine
+        <Link href="/health/medicine" className="text-sm font-medium text-brown hover:underline">
+          ← Medicine Inventory
         </Link>
         <MedicineForm
           orgId={orgId}
@@ -93,26 +94,36 @@ export function MedicineDetailClient({
 
   return (
     <div className="space-y-6">
-      <Link href="/health/medicine" className="text-sm font-medium text-olive hover:underline">
-        ← Medicine
+      <Link href="/health/medicine" className="text-sm font-medium text-brown hover:underline">
+        ← Medicine Inventory
       </Link>
 
-      <div className="rounded-xl border border-border bg-surface px-4 py-5">
-        <h1 className="text-2xl font-bold text-charcoal">{item.name}</h1>
-        <p className="text-sm text-charcoal/60">
-          Unit: {item.unit}
-          {item.price_per_cc != null ? ` · Catalog: $${item.price_per_cc}/cc` : ""}
+      <div className="rounded-[var(--radius-card)] border border-border-neutral bg-surface-white px-4 py-5 shadow-[var(--shadow-card)]">
+        <h1 className="text-2xl font-bold text-navy">{item.name}</h1>
+        <p className="text-sm text-text-secondary">
+          Unit: {formatMedicineUnit(item.unit)}
+          {item.price_per_cc != null
+            ? ` · ${costLabelForUnit(item.unit)}: $${item.price_per_cc}`
+            : ""}
         </p>
-        <p className="mt-3 text-4xl font-bold text-olive">
-          {item.quantity_on_hand}{" "}
-          <span className="text-lg font-semibold text-charcoal/60">on hand</span>
+        <p className="mt-3 text-3xl font-bold text-navy">
+          {formatQuantityWithUnit(item.quantity_on_hand, item.unit)}{" "}
+          <span className="text-lg font-semibold text-text-secondary">on hand</span>
         </p>
-        {item.is_low_stock ? (
-          <p className="mt-2 text-sm font-semibold text-rust">
-            Low stock — reorder at {item.reorder_at} {item.unit}
+        {item.is_out_of_stock ? (
+          <p className="mt-2 text-sm font-semibold text-status-critical">Out of stock</p>
+        ) : item.is_low_stock ? (
+          <p className="mt-2 text-sm font-semibold text-status-warning">
+            Low stock — reorder at {item.reorder_at} {formatMedicineUnit(item.unit)}
           </p>
         ) : null}
-        {item.notes ? <p className="mt-3 text-sm text-charcoal/70">{item.notes}</p> : null}
+        {item.withdrawal_days != null && item.withdrawal_days > 0 ? (
+          <p className="mt-2 text-sm text-text-secondary">
+            Default meat withdrawal: {item.withdrawal_days} day
+            {item.withdrawal_days === 1 ? "" : "s"}
+          </p>
+        ) : null}
+        {item.notes ? <p className="mt-3 text-sm text-text-secondary">{item.notes}</p> : null}
       </div>
 
       <div className="grid grid-cols-2 gap-3">

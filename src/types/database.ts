@@ -455,6 +455,7 @@ export interface Database {
           shrunk_weight_lbs: number | null;
           received_weight_lbs: number | null;
           avg_weight_lbs: number | null;
+          current_avg_weight_lbs: number | null;
           purchase_price_per_lb: number | null;
           landed_cost: number | null;
           seller_name: string | null;
@@ -971,6 +972,7 @@ export interface Database {
           created_by: string | null;
           medicine_item_id: string | null;
           quantity_used: number | null;
+          withdrawal_until: string | null;
           invoiced_at: string | null;
           invoice_id: string | null;
           is_active: boolean;
@@ -992,6 +994,7 @@ export interface Database {
           created_by?: string | null;
           medicine_item_id?: string | null;
           quantity_used?: number | null;
+          withdrawal_until?: string | null;
           invoiced_at?: string | null;
           invoice_id?: string | null;
         };
@@ -1007,6 +1010,7 @@ export interface Database {
           administered_by?: string | null;
           medicine_item_id?: string | null;
           quantity_used?: number | null;
+          withdrawal_until?: string | null;
           invoiced_at?: string | null;
           invoice_id?: string | null;
           is_active?: boolean;
@@ -1022,6 +1026,7 @@ export interface Database {
           quantity_on_hand: number;
           price_per_cc: number | null;
           avg_unit_cost: number | null;
+          withdrawal_days: number | null;
           reorder_at: number | null;
           notes: string | null;
           is_active: boolean;
@@ -1036,6 +1041,7 @@ export interface Database {
           quantity_on_hand?: number;
           price_per_cc?: number | null;
           avg_unit_cost?: number | null;
+          withdrawal_days?: number | null;
           reorder_at?: number | null;
           notes?: string | null;
         };
@@ -1045,6 +1051,7 @@ export interface Database {
           quantity_on_hand?: number;
           price_per_cc?: number | null;
           avg_unit_cost?: number | null;
+          withdrawal_days?: number | null;
           reorder_at?: number | null;
           notes?: string | null;
           is_active?: boolean;
@@ -1948,6 +1955,7 @@ export interface Database {
           cattle_group_id: string | null;
           location_id: string | null;
           ownership_group_id: string | null;
+          owner_id: string | null;
           quantity: number;
           head_count: number | null;
           unit_cost_snapshot: number | null;
@@ -1970,6 +1978,7 @@ export interface Database {
           cattle_group_id?: string | null;
           location_id?: string | null;
           ownership_group_id?: string | null;
+          owner_id?: string | null;
           quantity: number;
           head_count?: number | null;
           unit_cost_snapshot?: number | null;

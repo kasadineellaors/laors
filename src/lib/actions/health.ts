@@ -23,6 +23,7 @@ function formatDbError(message: string): string {
 }
 
 function revalidateTreatments() {
+  revalidatePath("/health");
   revalidatePath("/health/treatments");
   revalidatePath("/health/medicine");
   revalidatePath("/dashboard");
@@ -74,23 +75,44 @@ export async function createTreatment(
 
   try {
     const { supabase, user } = await requireMember(orgId);
+    const treatmentDate = input.treatmentDate || new Date().toISOString().slice(0, 10);
+
+    let withdrawalUntil: string | null = null;
+    if (input.medicineItemId) {
+      const { data: med } = await supabase
+        .from("medicine_items")
+        .select("withdrawal_days")
+        .eq("id", input.medicineItemId)
+        .eq("organization_id", orgId)
+        .maybeSingle();
+      const days = med?.withdrawal_days != null ? Number(med.withdrawal_days) : 0;
+      if (days > 0) {
+        const end = new Date(`${treatmentDate}T12:00:00`);
+        end.setDate(end.getDate() + days);
+        withdrawalUntil = end.toISOString().slice(0, 10);
+      }
+    }
+
+    const insertRow = {
+      organization_id: orgId,
+      product_name: productName,
+      treatment_type: input.treatmentType?.trim() || null,
+      head_count: input.headCount ?? null,
+      treatment_date: treatmentDate,
+      cattle_group_id: input.cattleGroupId || null,
+      location_id: input.locationId || null,
+      administered_by: input.administeredTo || user.id,
+      notes: input.notes?.trim() || null,
+      reason: input.reason?.trim() || null,
+      medicine_item_id: input.medicineItemId || null,
+      quantity_used: input.quantityUsed ?? null,
+      withdrawal_until: withdrawalUntil,
+      created_by: user.id,
+    };
+
     const { data, error } = await supabase
       .from("treatment_records")
-      .insert({
-        organization_id: orgId,
-        product_name: productName,
-        treatment_type: input.treatmentType?.trim() || null,
-        head_count: input.headCount ?? null,
-        treatment_date: input.treatmentDate || new Date().toISOString().slice(0, 10),
-        cattle_group_id: input.cattleGroupId || null,
-        location_id: input.locationId || null,
-        administered_by: input.administeredTo || user.id,
-        notes: input.notes?.trim() || null,
-        reason: input.reason?.trim() || null,
-        medicine_item_id: input.medicineItemId || null,
-        quantity_used: input.quantityUsed ?? null,
-        created_by: user.id,
-      })
+      .insert(insertRow as Database["public"]["Tables"]["treatment_records"]["Insert"])
       .select("id")
       .single();
 
@@ -173,6 +195,34 @@ export async function updateTreatment(
     if (input.reason !== undefined) updates.reason = input.reason?.trim() || null;
     if (input.medicineItemId !== undefined) updates.medicine_item_id = input.medicineItemId;
     if (input.quantityUsed !== undefined) updates.quantity_used = input.quantityUsed;
+
+    const nextTreatmentDate =
+      input.treatmentDate ??
+      (await supabase
+        .from("treatment_records")
+        .select("treatment_date")
+        .eq("id", treatmentId)
+        .maybeSingle()).data?.treatment_date ??
+      new Date().toISOString().slice(0, 10);
+
+    if (nextMedicineId) {
+      const { data: med } = await supabase
+        .from("medicine_items")
+        .select("withdrawal_days")
+        .eq("id", nextMedicineId)
+        .eq("organization_id", orgId)
+        .maybeSingle();
+      const days = med?.withdrawal_days != null ? Number(med.withdrawal_days) : 0;
+      if (days > 0) {
+        const end = new Date(`${nextTreatmentDate}T12:00:00`);
+        end.setDate(end.getDate() + days);
+        (updates as { withdrawal_until?: string | null }).withdrawal_until = end
+          .toISOString()
+          .slice(0, 10);
+      } else {
+        (updates as { withdrawal_until?: string | null }).withdrawal_until = null;
+      }
+    }
 
     const stock = await syncTreatmentMedicineStock(
       supabase,

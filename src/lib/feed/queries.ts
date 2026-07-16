@@ -73,6 +73,7 @@ type FeedingRow = {
   cattle_group_id: string | null;
   location_id: string | null;
   ownership_group_id: string | null;
+  owner_id?: string | null;
   fed_by: string | null;
   notes: string | null;
   created_by: string | null;
@@ -87,7 +88,12 @@ async function enrichFeedings(orgId: string, rows: FeedingRow[]): Promise<Feedin
   const rationIds = [...new Set(rows.map((r) => r.feed_ration_id))];
   const groupIds = [...new Set(rows.map((r) => r.cattle_group_id).filter(Boolean))] as string[];
   const locationIds = [...new Set(rows.map((r) => r.location_id).filter(Boolean))] as string[];
-  const ownerIds = [...new Set(rows.map((r) => r.ownership_group_id).filter(Boolean))] as string[];
+  const ownerIds = [
+    ...new Set(
+      rows
+        .flatMap((r) => [r.owner_id, r.ownership_group_id].filter(Boolean)),
+    ),
+  ] as string[];
   const profileIds = [
     ...new Set(rows.flatMap((r) => [r.fed_by, r.created_by].filter(Boolean))),
   ] as string[];
@@ -107,7 +113,7 @@ async function enrichFeedings(orgId: string, rows: FeedingRow[]): Promise<Feedin
       ? supabase.from("locations").select("id, name, parent_id, depth, path").in("id", locationIds)
       : Promise.resolve({ data: [] }),
     ownerIds.length
-      ? supabase.from("ownership_groups").select("id, name").in("id", ownerIds)
+      ? supabase.from("owners").select("id, name").in("id", ownerIds)
       : Promise.resolve({ data: [] }),
     profileIds.length
       ? supabase.from("profiles").select("id, full_name").in("id", profileIds)
@@ -117,6 +123,18 @@ async function enrichFeedings(orgId: string, rows: FeedingRow[]): Promise<Feedin
   const rationMap = new Map((rations ?? []).map((r) => [r.id, r]));
   const groupMap = new Map((groups ?? []).map((g) => [g.id, g.name]));
   const ownerMap = new Map((owners ?? []).map((o) => [o.id, o.name]));
+  if (ownerMap.size === 0 && ownerIds.length) {
+    const { data: legacyOwners } = await supabase
+      .from("ownership_groups")
+      .select("id, name")
+      .in("id", ownerIds);
+    for (const o of legacyOwners ?? []) ownerMap.set(o.id, o.name);
+    const { data: legacyCustomers } = await supabase
+      .from("customers")
+      .select("id, name")
+      .in("id", ownerIds);
+    for (const c of legacyCustomers ?? []) ownerMap.set(c.id, c.name);
+  }
   const profileMap = new Map(
     (profiles ?? []).map((p) => [p.id, p.full_name?.trim() || "Team member"]),
   );
@@ -157,9 +175,9 @@ async function enrichFeedings(orgId: string, rows: FeedingRow[]): Promise<Feedin
       location_id: row.location_id,
       location_label: row.location_id ? locLabels.get(row.location_id) ?? null : null,
       ownership_group_id: row.ownership_group_id,
-      ownership_group_name: row.ownership_group_id
-        ? ownerMap.get(row.ownership_group_id) ?? null
-        : null,
+      ownership_group_name:
+        ownerMap.get(row.owner_id ?? "") ??
+        (row.ownership_group_id ? ownerMap.get(row.ownership_group_id) ?? null : null),
       fed_by: row.fed_by,
       fed_by_name: row.fed_by ? profileMap.get(row.fed_by) ?? null : null,
       notes: row.notes,
@@ -220,6 +238,13 @@ export async function getFeedingRecord(orgId: string, id: string): Promise<Feedi
   return record ?? null;
 }
 
+type FeedingSummaryRow = {
+  fed_at: string;
+  quantity: number;
+  feeding_context?: string;
+  total_feed_cost?: number | null;
+};
+
 export async function getFeedingSummary(
   orgId: string,
   context?: FeedingContext,
@@ -227,7 +252,7 @@ export async function getFeedingSummary(
   const supabase = await createClient();
   let query = supabase
     .from("feeding_records")
-    .select("fed_at, quantity, feeding_context")
+    .select("fed_at, quantity, feeding_context, total_feed_cost")
     .eq("organization_id", orgId)
     .eq("is_active", true);
 
@@ -235,13 +260,28 @@ export async function getFeedingSummary(
     query = query.eq("feeding_context", context);
   }
 
-  const { data, error } = await query;
+  let { data, error } = await query;
 
   if (error) {
     if (error.message.includes("feeding_context") && context) {
       return getFeedingSummary(orgId);
     }
-    throw new Error(`${error.message} — ${DB_HINT}`);
+    if (error.message.includes("total_feed_cost")) {
+      let fallbackQuery = supabase
+        .from("feeding_records")
+        .select("fed_at, quantity, feeding_context")
+        .eq("organization_id", orgId)
+        .eq("is_active", true);
+      if (context) {
+        fallbackQuery = fallbackQuery.eq("feeding_context", context);
+      }
+      const fallback = await fallbackQuery;
+      if (fallback.error) throw new Error(`${fallback.error.message} — ${DB_HINT}`);
+      data = (fallback.data ?? []).map((r) => ({ ...r, total_feed_cost: null }));
+      error = null;
+    } else {
+      throw new Error(`${error.message} — ${DB_HINT}`);
+    }
   }
 
   const today = new Date().toISOString().slice(0, 10);
@@ -250,11 +290,18 @@ export async function getFeedingSummary(
   weekAgo.setDate(weekAgo.getDate() - 6);
   const weekStart = weekAgo.toISOString().slice(0, 10);
 
-  const rows = data ?? [];
+  const rows = (data ?? []) as FeedingSummaryRow[];
   const thisMonthRows = rows.filter((r) => r.fed_at >= monthStart);
+  const weekRows = rows.filter((r) => r.fed_at >= weekStart);
   return {
     thisMonth: thisMonthRows.length,
-    last7Days: rows.filter((r) => r.fed_at >= weekStart).length,
+    last7Days: weekRows.length,
     totalQuantityThisMonth: thisMonthRows.reduce((s, r) => s + Number(r.quantity), 0),
+    feedingsToday: rows.filter((r) => r.fed_at === today).length,
+    amountFedThisWeek: weekRows.reduce((s, r) => s + Number(r.quantity), 0),
+    feedCostThisWeek: weekRows.reduce(
+      (s, r) => s + (r.total_feed_cost != null ? Number(r.total_feed_cost) : 0),
+      0,
+    ),
   };
 }

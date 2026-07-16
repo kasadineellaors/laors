@@ -16,7 +16,10 @@ export interface TreatmentRecord {
   created_by_name: string | null;
   medicine_item_id: string | null;
   medicine_item_name: string | null;
+  medicine_unit: string | null;
   quantity_used: number | null;
+  withdrawal_until: string | null;
+  withdrawal_active: boolean;
   created_at: string;
   updated_at: string;
 }

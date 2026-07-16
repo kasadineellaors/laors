@@ -29,6 +29,7 @@ function formatDbError(message: string): string {
 }
 
 function revalidateMedicine() {
+  revalidatePath("/health");
   revalidatePath("/health/medicine");
   revalidatePath("/health/treatments");
   revalidatePath("/dashboard");
@@ -135,6 +136,7 @@ export async function createMedicineItem(
     quantityOnHand?: number;
     reorderAt?: number;
     pricePerCc?: number;
+    withdrawalDays?: number | null;
     notes?: string;
   },
 ): Promise<MedicineActionState> {
@@ -155,6 +157,7 @@ export async function createMedicineItem(
         quantity_on_hand: qty,
         reorder_at: input.reorderAt ?? null,
         price_per_cc: input.pricePerCc ?? null,
+        withdrawal_days: input.withdrawalDays ?? null,
         notes: input.notes?.trim() || null,
       })
       .select("id")
@@ -176,6 +179,7 @@ export async function updateMedicineItem(
     unit?: string;
     reorderAt?: number | null;
     pricePerCc?: number | null;
+    withdrawalDays?: number | null;
     notes?: string | null;
   },
 ): Promise<MedicineActionState> {
@@ -187,6 +191,9 @@ export async function updateMedicineItem(
     if (input.unit !== undefined) updates.unit = input.unit.trim() || "dose";
     if (input.reorderAt !== undefined) updates.reorder_at = input.reorderAt;
     if (input.pricePerCc !== undefined) updates.price_per_cc = input.pricePerCc;
+    if (input.withdrawalDays !== undefined) {
+      (updates as { withdrawal_days?: number | null }).withdrawal_days = input.withdrawalDays;
+    }
     if (input.notes !== undefined) updates.notes = input.notes?.trim() || null;
 
     const { error } = await supabase

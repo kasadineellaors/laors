@@ -3,9 +3,22 @@ export const TREATMENT_TYPES = [
   { value: "antibiotic", label: "Antibiotic" },
   { value: "dewormer", label: "Dewormer" },
   { value: "parasite", label: "Parasite control" },
-  { value: "vitamin_mineral", label: "Vitamin / mineral" },
-  { value: "pain_relief", label: "Pain relief" },
+  { value: "vitamin_mineral", label: "Preventive" },
+  { value: "pain_relief", label: "Anti-inflammatory" },
   { value: "other", label: "Other" },
+] as const;
+
+export const TREATMENT_REASONS = [
+  { value: "Respiratory", label: "Respiratory" },
+  { value: "Digestive", label: "Digestive" },
+  { value: "Lameness", label: "Lameness" },
+  { value: "Pinkeye", label: "Pinkeye" },
+  { value: "Injury", label: "Injury" },
+  { value: "Parasite control", label: "Parasite control" },
+  { value: "Vaccination", label: "Vaccination" },
+  { value: "Reproductive", label: "Reproductive" },
+  { value: "Preventive", label: "Preventive" },
+  { value: "Other", label: "Other" },
 ] as const;
 
 export type TreatmentTypeValue = (typeof TREATMENT_TYPES)[number]["value"];

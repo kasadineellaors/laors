@@ -249,6 +249,7 @@ export async function createFeeding(
     cattleGroupId?: string;
     locationId?: string;
     ownershipGroupId?: string;
+    ownerId?: string;
     headCount?: number;
     fedBy?: string;
     notes?: string;
@@ -262,7 +263,7 @@ export async function createFeeding(
   if (input.requireLocation && !input.locationId) {
     return { error: "Select which pen you fed" };
   }
-  if (input.requireOwner && !input.ownershipGroupId) {
+  if (input.requireOwner && !input.ownershipGroupId && !input.ownerId) {
     return { error: "Select who this feed is for" };
   }
 
@@ -271,6 +272,8 @@ export async function createFeeding(
     const fedAt = input.fedAt || todayIso();
     const unitCost = await getRationUnitPriceAtDate(orgId, input.feedRationId, fedAt);
     const totalFeedCost = Math.round(unitCost * input.quantity * 100) / 100;
+
+    const resolvedOwnerId = input.ownerId || input.ownershipGroupId || null;
 
     const { data, error } = await supabase
       .from("feeding_records")
@@ -281,7 +284,8 @@ export async function createFeeding(
         fed_at: fedAt,
         cattle_group_id: input.cattleGroupId || null,
         location_id: input.locationId || null,
-        ownership_group_id: input.ownershipGroupId || null,
+        ownership_group_id: input.ownershipGroupId || resolvedOwnerId,
+        owner_id: resolvedOwnerId,
         head_count: input.headCount ?? null,
         fed_by: input.fedBy || user.id,
         notes: input.notes?.trim() || null,
@@ -325,6 +329,7 @@ export async function updateFeeding(
     cattleGroupId?: string | null;
     locationId?: string | null;
     ownershipGroupId?: string | null;
+    ownerId?: string | null;
     headCount?: number | null;
     fedBy?: string | null;
     notes?: string | null;
@@ -368,6 +373,9 @@ export async function updateFeeding(
     if (input.cattleGroupId !== undefined) updates.cattle_group_id = input.cattleGroupId;
     if (input.locationId !== undefined) updates.location_id = input.locationId;
     if (input.ownershipGroupId !== undefined) updates.ownership_group_id = input.ownershipGroupId;
+    if (input.ownerId !== undefined) {
+      (updates as { owner_id?: string | null }).owner_id = input.ownerId;
+    }
     if (input.headCount !== undefined) updates.head_count = input.headCount;
     if (input.fedBy !== undefined) updates.fed_by = input.fedBy;
     if (input.notes !== undefined) updates.notes = input.notes?.trim() || null;

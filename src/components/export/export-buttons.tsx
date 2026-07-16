@@ -9,6 +9,7 @@ interface ExportButtonsProps {
   from?: string;
   to?: string;
   size?: "sm" | "md" | "lg";
+  compact?: boolean;
 }
 
 function buildUrl(
@@ -24,7 +25,31 @@ function buildUrl(
   return `/api/export?${params.toString()}`;
 }
 
-export function ExportButtons({ orgId, recordType, from, to, size = "lg" }: ExportButtonsProps) {
+export function ExportButtons({
+  orgId,
+  recordType,
+  from,
+  to,
+  size = "lg",
+  compact = false,
+}: ExportButtonsProps) {
+  if (compact) {
+    return (
+      <div className="flex gap-2">
+        <a href={buildUrl(orgId, recordType, "csv", from, to)} download>
+          <Button type="button" variant="outline" size="sm">
+            Download CSV
+          </Button>
+        </a>
+        <a href={buildUrl(orgId, recordType, "pdf", from, to)} download>
+          <Button type="button" variant="outline" size="sm">
+            Download PDF
+          </Button>
+        </a>
+      </div>
+    );
+  }
+
   return (
     <div className="flex gap-2">
       <a href={buildUrl(orgId, recordType, "csv", from, to)} download>

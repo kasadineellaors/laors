@@ -12,12 +12,14 @@ export default async function NewMedicinePage() {
   const orgId = session.organization!.id;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-4">
       <div>
-        <Link href="/health/medicine" className="text-sm font-medium text-olive hover:underline">
-          ← Medicine
+        <Link href="/health/medicine" className="text-sm font-medium text-brown hover:underline">
+          ← Medicine Inventory
         </Link>
-        <h1 className="mt-1 text-2xl font-bold text-charcoal">Add medicine</h1>
+        <h1 className="mt-1 text-[1.75rem] font-bold leading-tight text-navy sm:text-[2rem]">
+          Add medicine
+        </h1>
       </div>
       <MedicineForm orgId={orgId} />
     </div>

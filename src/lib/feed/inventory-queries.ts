@@ -22,19 +22,45 @@ export async function listFeedItems(orgId: string): Promise<FeedItemRecord[]> {
 
   if (error || !rows?.length) return [];
 
-  return rows.map((r) => ({
-    id: r.id,
-    name: r.name,
-    unit: r.unit,
-    quantity_on_hand: Number(r.quantity_on_hand),
-    price_per_unit: r.price_per_unit != null ? Number(r.price_per_unit) : null,
-    reorder_at: r.reorder_at != null ? Number(r.reorder_at) : null,
-    notes: r.notes,
-    is_low_stock:
-      r.reorder_at != null && Number(r.quantity_on_hand) <= Number(r.reorder_at),
-    created_at: r.created_at,
-    updated_at: r.updated_at,
-  }));
+  const weekAgo = new Date();
+  weekAgo.setDate(weekAgo.getDate() - 7);
+  const weekStart = weekAgo.toISOString();
+
+  const { data: adjustments } = await supabase
+    .from("feed_stock_adjustments")
+    .select("feed_item_id, delta")
+    .eq("organization_id", orgId)
+    .eq("adjustment_type", "feeding")
+    .gte("created_at", weekStart);
+
+  const weeklyUse = new Map<string, number>();
+  for (const row of adjustments ?? []) {
+    const used = Math.abs(Number(row.delta));
+    weeklyUse.set(row.feed_item_id, (weeklyUse.get(row.feed_item_id) ?? 0) + used);
+  }
+
+  return rows.map((r) => {
+    const onHand = Number(r.quantity_on_hand);
+    const weekly = weeklyUse.get(r.id) ?? 0;
+    const dailyUse = weekly / 7;
+    const projected =
+      dailyUse > 0 ? Math.round((onHand / dailyUse) * 10) / 10 : null;
+
+    return {
+      id: r.id,
+      name: r.name,
+      unit: r.unit,
+      quantity_on_hand: onHand,
+      price_per_unit: r.price_per_unit != null ? Number(r.price_per_unit) : null,
+      reorder_at: r.reorder_at != null ? Number(r.reorder_at) : null,
+      notes: r.notes,
+      is_low_stock:
+        r.reorder_at != null && onHand <= Number(r.reorder_at),
+      projected_days_remaining: projected,
+      created_at: r.created_at,
+      updated_at: r.updated_at,
+    };
+  });
 }
 
 export async function getFeedItem(orgId: string, itemId: string): Promise<FeedItemRecord | null> {

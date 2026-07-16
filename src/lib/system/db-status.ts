@@ -186,6 +186,18 @@ export async function getDbSetupIssues(): Promise<DbSetupIssue[]> {
       fix: "Run supabase/RUN_PHASE30.sql or supabase/RUN_THIS_IN_SUPABASE.sql",
     },
     {
+      id: "phase34-cattle-feed-signals",
+      probe: async () => {
+        const { error } = await supabase
+          .from("treatment_records")
+          .select("withdrawal_until")
+          .limit(1);
+        return !error;
+      },
+      message: "Withdrawal tracking and current weight fields are not set up",
+      fix: "Run supabase/RUN_PHASE34.sql in Supabase SQL Editor",
+    },
+    {
       id: "phase33-owners",
       probe: async () => {
         const { error } = await supabase.from("owners").select("id").limit(1);

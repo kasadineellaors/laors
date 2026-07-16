@@ -83,6 +83,24 @@ export function CattleLotCard({ group }: CattleLotCardProps) {
             </p>
           ) : null}
 
+          <div className="mt-2 flex flex-wrap gap-2">
+            {group.withdrawal_active ? (
+              <span className="inline-flex items-center gap-1 rounded-md bg-status-critical-bg px-2 py-0.5 text-xs font-medium text-status-critical">
+                <span aria-hidden>⏱</span>
+                Withdrawal active
+              </span>
+            ) : null}
+            {group.head_discrepancy ? (
+              <span
+                className="inline-flex items-center gap-1 rounded-md bg-status-warning-bg px-2 py-0.5 text-xs font-medium text-status-warning"
+                title="Starting head does not match current inventory after sales and deaths"
+              >
+                <span aria-hidden>≠</span>
+                Head count mismatch
+              </span>
+            ) : null}
+          </div>
+
           {details.length > 0 ? (
             <p className="mt-2 text-xs leading-relaxed text-text-secondary">{details.join(" • ")}</p>
           ) : null}

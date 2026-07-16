@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireOnboardedUser } from "@/lib/auth/session";
-import { listFeedRations, listFeedingRecords } from "@/lib/feed/queries";
-import { countLowStockFeedItems, listFeedItems } from "@/lib/feed/inventory-queries";
-import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { getFeedingSummary, listFeedRations, listFeedingRecords } from "@/lib/feed/queries";
+import { listFeedItems } from "@/lib/feed/inventory-queries";
+import { FeedPageHeader } from "@/components/feed/feed-page-header";
+import { FeedSummaryMetrics } from "@/components/feed/feed-summary-metrics";
+import { FeedLowStockAlert } from "@/components/feed/feed-low-stock-alert";
+import { FeedModuleCard } from "@/components/feed/feed-module-card";
 import { FeedingList } from "@/components/feed/feeding-list";
 
 export const metadata: Metadata = {
@@ -15,83 +17,64 @@ export default async function FeedPage() {
   const session = await requireOnboardedUser();
   const orgId = session.organization!.id;
 
-  const [rations, recentFeedings, feedItems, lowStock] = await Promise.all([
+  const [rations, recentFeedings, feedItems, summary] = await Promise.all([
     listFeedRations(orgId),
     listFeedingRecords(orgId, { limit: 5, context: "general" }),
     listFeedItems(orgId),
-    countLowStockFeedItems(orgId),
+    getFeedingSummary(orgId, "general"),
   ]);
 
+  const lowStockCount = feedItems.filter((i) => i.is_low_stock).length;
+  const feedingsThisWeek = summary.last7Days;
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-charcoal">Feed</h1>
-        <p className="text-charcoal/70">Log what you fed — pen, owner, ration, date</p>
+    <div className="flex min-h-[calc(100dvh-8.5rem)] flex-1 flex-col gap-6 pb-4">
+      <FeedPageHeader />
+
+      <FeedLowStockAlert items={feedItems} />
+
+      <FeedSummaryMetrics
+        feedingsToday={summary.feedingsToday}
+        amountFedThisWeek={summary.amountFedThisWeek}
+        feedCostThisWeek={summary.feedCostThisWeek}
+        lowStockCount={lowStockCount}
+      />
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <FeedModuleCard
+          href="/feed/inventory"
+          title="Feedstuff Inventory"
+          description="Track feed on hand, purchases, usage, and low-stock alerts."
+          metric={`${feedItems.length} active · ${lowStockCount} low stock`}
+          actionLabel="View inventory"
+        />
+        <FeedModuleCard
+          href="/feed/rations"
+          title="Rations"
+          description="Build and manage feed mixes using inventory ingredients."
+          metric={`${rations.length} active ration${rations.length === 1 ? "" : "s"}`}
+          actionLabel="Manage rations"
+        />
+        <FeedModuleCard
+          href="/feed/log"
+          title="Feed Log"
+          description="Review feeding history, quantities, costs, and employees."
+          metric={`${feedingsThisWeek} feeding${feedingsThisWeek === 1 ? "" : "s"} this week`}
+          actionLabel="View feed log"
+        />
       </div>
 
-      {lowStock > 0 ? (
-        <div className="rounded-xl border border-rust/30 bg-rust/10 px-4 py-3 text-sm text-rust">
-          {lowStock} feedstuff item{lowStock === 1 ? "" : "s"} low on stock.{" "}
-          <Link href="/feed/inventory" className="font-semibold underline">
-            Check inventory
-          </Link>
+      <section className="flex-1">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-navy">Recent feedings</h2>
+          {recentFeedings.length > 0 ? (
+            <Link href="/feed/log" className="text-sm font-medium text-brown hover:underline">
+              View all
+            </Link>
+          ) : null}
         </div>
-      ) : null}
-
-      <Link href="/feed/log/new">
-        <Button fullWidth size="xl">
-          + Log feeding
-        </Button>
-      </Link>
-
-      <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-xl border border-border bg-surface px-3 py-4 text-center">
-          <p className="text-2xl font-bold text-olive">{feedItems.length}</p>
-          <p className="text-xs text-charcoal/60">Feedstuff</p>
-        </div>
-        <div className="rounded-xl border border-border bg-surface px-3 py-4 text-center">
-          <p className="text-2xl font-bold text-olive">{rations.length}</p>
-          <p className="text-xs text-charcoal/60">Rations</p>
-        </div>
-        <div className="rounded-xl border border-border bg-surface px-3 py-4 text-center">
-          <p className="text-2xl font-bold text-olive">{recentFeedings.length}</p>
-          <p className="text-xs text-charcoal/60">Recent logs</p>
-        </div>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Link href="/feed/inventory">
-          <Card className="h-full transition-colors hover:border-olive hover:bg-olive/5">
-            <CardHeader>
-              <CardTitle>Feedstuff inventory</CardTitle>
-              <CardDescription>Hay, grain, supplement on hand — with low-stock alerts.</CardDescription>
-            </CardHeader>
-          </Card>
-        </Link>
-        <Link href="/feed/rations">
-          <Card className="h-full transition-colors hover:border-olive hover:bg-olive/5">
-            <CardHeader>
-              <CardTitle>Rations</CardTitle>
-              <CardDescription>Build mixes from inventory — deducted when you log feeding.</CardDescription>
-            </CardHeader>
-          </Card>
-        </Link>
-        <Link href="/feed/log">
-          <Card className="h-full transition-colors hover:border-olive hover:bg-olive/5">
-            <CardHeader>
-              <CardTitle>Feed log</CardTitle>
-              <CardDescription>Pen → owner → ration → date → amount.</CardDescription>
-            </CardHeader>
-          </Card>
-        </Link>
-      </div>
-
-      {recentFeedings.length > 0 ? (
-        <div>
-          <h2 className="mb-3 text-lg font-semibold text-charcoal">Recent feedings</h2>
-          <FeedingList records={recentFeedings} detailBasePath="/feed/log" />
-        </div>
-      ) : null}
+        <FeedingList records={recentFeedings} detailBasePath="/feed/log" />
+      </section>
     </div>
   );
 }

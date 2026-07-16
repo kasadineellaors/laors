@@ -3,10 +3,13 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireOnboardedUser } from "@/lib/auth/session";
 import { hasCowCalfMode } from "@/lib/cow-calf/constants";
-import { getTreePickerOptions, getRanchOptions } from "@/lib/locations/options";
+import { getTreePickerOptions } from "@/lib/locations/options";
 import { listCattleGroups } from "@/lib/inventory/queries";
 import { listFeedRationOptions } from "@/lib/feed/queries";
+import { getRationUnitPrices } from "@/lib/feed/inventory-queries";
 import { listOrgMembers } from "@/lib/tasks/queries";
+import { listOwnerOptions } from "@/lib/owners/queries";
+import { toFeedGroupOptions, rationCostsToRecord, ownersToSelectOptions } from "@/lib/feed/options";
 import { FeedingForm } from "@/components/feed/feeding-form";
 import type { OperationMode } from "@/types/auth";
 
@@ -25,25 +28,31 @@ export default async function NewCowCalfFeedPage() {
     getTreePickerOptions(orgId).then((nodes) =>
       nodes.map((n) => ({ value: n.id, label: n.breadcrumb })),
     ),
-    listCattleGroups(orgId).then((gs) =>
-      gs.map((g) => ({ value: g.id, label: `${g.name} (${g.total_head} hd)` })),
-    ),
-    getRanchOptions(orgId, "ownership_groups"),
+    listCattleGroups(orgId).then(toFeedGroupOptions),
+    listOwnerOptions(orgId).then(ownersToSelectOptions),
     listOrgMembers(orgId),
     listFeedRationOptions(orgId),
   ]);
 
+  const rationUnitCosts = rationCostsToRecord(
+    await getRationUnitPrices(
+      orgId,
+      rationOptions.map((r) => r.id),
+    ),
+  );
+
   return (
     <div className="space-y-6">
       <div>
-        <Link href="/cow-calf/feed" className="text-sm font-medium text-olive hover:underline">
+        <Link href="/cow-calf/feed" className="text-sm font-medium text-brown hover:underline">
           ← Cow-calf feed
         </Link>
-        <h1 className="mt-1 text-2xl font-bold text-charcoal">Log feed</h1>
+        <h1 className="mt-1 text-2xl font-bold text-navy">Log feed</h1>
       </div>
       <FeedingForm
         orgId={orgId}
         rationOptions={rationOptions}
+        rationUnitCosts={rationUnitCosts}
         locationOptions={locations}
         groupOptions={groups}
         ownerOptions={owners}

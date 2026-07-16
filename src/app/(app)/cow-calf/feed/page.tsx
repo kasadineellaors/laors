@@ -51,7 +51,8 @@ export default async function CowCalfFeedPage() {
       <FeedingList
         records={records}
         detailBasePath="/cow-calf/feed"
-        emptyMessage="No cow-calf feed logged yet — log hay or supplement by pasture."
+        newFeedingPath="/cow-calf/feed/new"
+        emptyMessage="No cow-calf feed logged yet — log hay or supplement by location."
       />
     </div>
   );

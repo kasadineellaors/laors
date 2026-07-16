@@ -3,7 +3,75 @@ import type { Database } from "@/types/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getBreadcrumb } from "@/lib/locations/tree";
 import type { LocationRow } from "@/lib/locations/types";
+import {
+  computeHeadDiscrepancy,
+  fetchCattleListEnrichment,
+} from "./cattle-list-enrichment";
 import type { CattleGroupSummary, MovementRecord } from "./types";
+
+type GroupRow = {
+  id: string;
+  name: string;
+  location_id: string | null;
+  notes: string | null;
+  ownership_group_id: string | null;
+  customer_id: string | null;
+  owner_id?: string | null;
+  lot_number: string | null;
+  enterprise_type: string;
+  lot_status: string;
+  opened_at: string | null;
+  closed_at: string | null;
+  purchase_date: string | null;
+  arrival_date: string | null;
+  starting_head: number | null;
+  pay_weight_lbs: number | null;
+  shrunk_weight_lbs: number | null;
+  received_weight_lbs: number | null;
+  avg_weight_lbs: number | null;
+  current_avg_weight_lbs?: number | null;
+  purchase_price_per_lb: number | null;
+  landed_cost: number | null;
+  seller_name: string | null;
+  source_name: string | null;
+};
+
+async function loadOwnerNames(
+  orgId: string,
+  supabase: SupabaseClient<Database>,
+): Promise<Map<string, string>> {
+  const { data: owners } = await supabase
+    .from("owners")
+    .select("id, name")
+    .eq("organization_id", orgId)
+    .eq("is_active", true);
+
+  if (owners?.length) {
+    return new Map(owners.map((o) => [o.id, o.name]));
+  }
+
+  const [{ data: ownershipGroups }, { data: customers }] = await Promise.all([
+    supabase.from("ownership_groups").select("id, name").eq("organization_id", orgId).eq("is_active", true),
+    supabase.from("customers").select("id, name").eq("organization_id", orgId).eq("is_active", true),
+  ]);
+
+  const names = new Map<string, string>();
+  for (const o of ownershipGroups ?? []) names.set(o.id, o.name);
+  for (const c of customers ?? []) names.set(c.id, c.name);
+  return names;
+}
+
+function resolveOwnerName(
+  g: GroupRow,
+  ownerNames: Map<string, string>,
+  ownershipNames: Map<string, string>,
+  customerNames: Map<string, string>,
+): string | null {
+  if (g.owner_id) return ownerNames.get(g.owner_id) ?? null;
+  if (g.customer_id) return customerNames.get(g.customer_id) ?? null;
+  if (g.ownership_group_id) return ownershipNames.get(g.ownership_group_id) ?? null;
+  return null;
+}
 
 export async function listCattleGroups(
   orgId: string,
@@ -11,16 +79,32 @@ export async function listCattleGroups(
 ): Promise<CattleGroupSummary[]> {
   const supabase = supabaseClient ?? (await createClient());
 
-  const [{ data: groups }, { data: locations }, { data: counts }, { data: classifications }, { data: ownershipGroups }, { data: customers }] =
+  const baseSelect =
+    "id, name, location_id, notes, ownership_group_id, customer_id, lot_number, enterprise_type, lot_status, opened_at, closed_at, purchase_date, arrival_date, starting_head, pay_weight_lbs, shrunk_weight_lbs, received_weight_lbs, avg_weight_lbs, purchase_price_per_lb, landed_cost, seller_name, source_name";
+
+  const extendedRes = await supabase
+    .from("cattle_groups")
+    .select(`${baseSelect}, owner_id, current_avg_weight_lbs`)
+    .eq("organization_id", orgId)
+    .eq("is_active", true)
+    .order("name");
+
+  let groupRows: GroupRow[];
+  if (!extendedRes.error && extendedRes.data) {
+    groupRows = extendedRes.data as GroupRow[];
+  } else {
+    const basicRes = await supabase
+      .from("cattle_groups")
+      .select(baseSelect)
+      .eq("organization_id", orgId)
+      .eq("is_active", true)
+      .order("name");
+    if (basicRes.error) throw new Error(basicRes.error.message);
+    groupRows = (basicRes.data ?? []) as GroupRow[];
+  }
+
+  const [{ data: locations }, { data: counts }, { data: classifications }, { data: ownershipGroups }, { data: customers }] =
     await Promise.all([
-      supabase
-        .from("cattle_groups")
-        .select(
-          "id, name, location_id, notes, ownership_group_id, customer_id, lot_number, enterprise_type, lot_status, opened_at, closed_at, purchase_date, arrival_date, starting_head, pay_weight_lbs, shrunk_weight_lbs, received_weight_lbs, avg_weight_lbs, purchase_price_per_lb, landed_cost, seller_name, source_name",
-        )
-        .eq("organization_id", orgId)
-        .eq("is_active", true)
-        .order("name"),
       supabase
         .from("locations")
         .select("id, name, parent_id, depth, path")
@@ -47,6 +131,7 @@ export async function listCattleGroups(
         .eq("is_active", true),
     ]);
 
+  const ownerNames = await loadOwnerNames(orgId, supabase);
   const ownershipNames = new Map((ownershipGroups ?? []).map((o) => [o.id, o.name]));
   const customerNames = new Map((customers ?? []).map((c) => [c.id, c.name]));
 
@@ -63,7 +148,10 @@ export async function listCattleGroups(
     countsByGroup.set(row.cattle_group_id, list);
   }
 
-  return (groups ?? []).map((g) => {
+  const groupIds = groupRows.map((g) => g.id);
+  const enrichment = await fetchCattleListEnrichment(orgId, groupIds, supabase);
+
+  return groupRows.map((g) => {
     const groupCounts = countsByGroup.get(g.id) ?? [];
     const lines = groupCounts.map((row) => {
       const cls = classMap.get(row.classification_id);
@@ -81,6 +169,11 @@ export async function listCattleGroups(
           .join(" › ")
       : null;
 
+    const startingHead = g.starting_head != null ? Number(g.starting_head) : null;
+    const lotStatus = g.lot_status ?? "active";
+    const headsSold = enrichment.headsSoldByGroup.get(g.id) ?? 0;
+    const deaths = enrichment.deathsByGroup.get(g.id) ?? 0;
+
     return {
       id: g.id,
       name: g.name,
@@ -96,18 +189,30 @@ export async function listCattleGroups(
         : null,
       customer_id: g.customer_id,
       customer_name: g.customer_id ? customerNames.get(g.customer_id) ?? null : null,
+      owner_id: g.owner_id ?? g.customer_id ?? g.ownership_group_id ?? null,
+      owner_name: resolveOwnerName(g, ownerNames, ownershipNames, customerNames),
+      open_treatment_count: enrichment.treatmentCountByGroup.get(g.id) ?? 0,
+      feedings_today: enrichment.feedingsTodayByGroup.get(g.id) ?? 0,
+      withdrawal_active: enrichment.withdrawalActiveByGroup.get(g.id) ?? false,
+      head_discrepancy: computeHeadDiscrepancy(startingHead, total, headsSold, deaths, lotStatus),
       lot_number: g.lot_number ?? null,
       enterprise_type: g.enterprise_type ?? "stocker",
-      lot_status: g.lot_status ?? "active",
+      lot_status: lotStatus,
       opened_at: g.opened_at ?? null,
       closed_at: g.closed_at ?? null,
       purchase_date: g.purchase_date ?? null,
       arrival_date: g.arrival_date ?? null,
-      starting_head: g.starting_head != null ? Number(g.starting_head) : null,
+      starting_head: startingHead,
       pay_weight_lbs: g.pay_weight_lbs != null ? Number(g.pay_weight_lbs) : null,
       shrunk_weight_lbs: g.shrunk_weight_lbs != null ? Number(g.shrunk_weight_lbs) : null,
       received_weight_lbs: g.received_weight_lbs != null ? Number(g.received_weight_lbs) : null,
       avg_weight_lbs: g.avg_weight_lbs != null ? Number(g.avg_weight_lbs) : null,
+      current_avg_weight_lbs:
+        g.current_avg_weight_lbs != null
+          ? Number(g.current_avg_weight_lbs)
+          : g.avg_weight_lbs != null
+            ? Number(g.avg_weight_lbs)
+            : null,
       purchase_price_per_lb:
         g.purchase_price_per_lb != null ? Number(g.purchase_price_per_lb) : null,
       landed_cost: g.landed_cost != null ? Number(g.landed_cost) : null,
@@ -206,7 +311,9 @@ export async function listRecentMovements(
     source_location_name: m.source_location_id
       ? locNames.get(m.source_location_id) ?? null
       : null,
-    destination_location_name: locNames.get(m.destination_location_id) ?? null,
+    destination_location_name: m.destination_location_id
+      ? locNames.get(m.destination_location_id) ?? null
+      : null,
     reason_name: m.movement_reason_id
       ? reasonNames.get(m.movement_reason_id) ?? null
       : null,
