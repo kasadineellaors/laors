@@ -8,6 +8,7 @@ import {
   buildMoveLinesForTotal,
   getDefaultHeadClassificationId,
 } from "@/lib/inventory/default-classification";
+import { computeAvgWeightIn } from "@/lib/lots/purchase-weights";
 import { listGroupsAtLocation } from "@/lib/inventory/queries";
 import type { ActionState } from "./onboarding";
 
@@ -216,6 +217,8 @@ export async function createCattleGroup(
     purchaseDate?: string;
     arrivalDate?: string;
     payWeightLbs?: number;
+    shrunkWeightLbs?: number;
+    receivedWeightLbs?: number;
     purchasePricePerLb?: number;
     landedCost?: number;
     sellerName?: string;
@@ -229,10 +232,11 @@ export async function createCattleGroup(
     if (input.headCount <= 0) return { error: "Enter a head count greater than zero" };
 
     const defaultClassId = await getDefaultHeadClassificationId(orgId);
-    const avgWeight =
-      input.payWeightLbs && input.headCount
-        ? input.payWeightLbs / input.headCount
-        : null;
+    const avgWeight = computeAvgWeightIn(input.headCount, {
+      payWeightLbs: input.payWeightLbs,
+      shrunkWeightLbs: input.shrunkWeightLbs,
+      receivedWeightLbs: input.receivedWeightLbs,
+    });
 
     const { data: group, error: groupError } = await supabase
       .from("cattle_groups")
@@ -251,6 +255,8 @@ export async function createCattleGroup(
         arrival_date: input.arrivalDate || null,
         starting_head: input.headCount,
         pay_weight_lbs: input.payWeightLbs ?? null,
+        shrunk_weight_lbs: input.shrunkWeightLbs ?? null,
+        received_weight_lbs: input.receivedWeightLbs ?? null,
         avg_weight_lbs: avgWeight,
         purchase_price_per_lb: input.purchasePricePerLb ?? null,
         landed_cost: input.landedCost ?? null,
@@ -293,6 +299,8 @@ export async function updateCattleGroup(
     purchaseDate?: string | null;
     arrivalDate?: string | null;
     payWeightLbs?: number | null;
+    shrunkWeightLbs?: number | null;
+    receivedWeightLbs?: number | null;
     purchasePricePerLb?: number | null;
     landedCost?: number | null;
     sellerName?: string | null;
@@ -312,10 +320,13 @@ export async function updateCattleGroup(
       purchase_date?: string | null;
       arrival_date?: string | null;
       pay_weight_lbs?: number | null;
+      shrunk_weight_lbs?: number | null;
+      received_weight_lbs?: number | null;
       purchase_price_per_lb?: number | null;
       landed_cost?: number | null;
       seller_name?: string | null;
       source_name?: string | null;
+      avg_weight_lbs?: number | null;
     } = {};
     if (data.name !== undefined) updates.name = data.name.trim();
     if (data.notes !== undefined) updates.notes = data.notes?.trim() || null;
@@ -331,12 +342,42 @@ export async function updateCattleGroup(
     if (data.purchaseDate !== undefined) updates.purchase_date = data.purchaseDate;
     if (data.arrivalDate !== undefined) updates.arrival_date = data.arrivalDate;
     if (data.payWeightLbs !== undefined) updates.pay_weight_lbs = data.payWeightLbs;
+    if (data.shrunkWeightLbs !== undefined) updates.shrunk_weight_lbs = data.shrunkWeightLbs;
+    if (data.receivedWeightLbs !== undefined) updates.received_weight_lbs = data.receivedWeightLbs;
     if (data.purchasePricePerLb !== undefined) {
       updates.purchase_price_per_lb = data.purchasePricePerLb;
     }
     if (data.landedCost !== undefined) updates.landed_cost = data.landedCost;
     if (data.sellerName !== undefined) updates.seller_name = data.sellerName?.trim() || null;
     if (data.sourceName !== undefined) updates.source_name = data.sourceName?.trim() || null;
+
+    const weightFieldsTouched =
+      data.payWeightLbs !== undefined ||
+      data.shrunkWeightLbs !== undefined ||
+      data.receivedWeightLbs !== undefined;
+
+    if (weightFieldsTouched) {
+      const { data: existing } = await supabase
+        .from("cattle_groups")
+        .select("starting_head, pay_weight_lbs, shrunk_weight_lbs, received_weight_lbs")
+        .eq("id", groupId)
+        .eq("organization_id", orgId)
+        .maybeSingle();
+
+      const headCount = existing?.starting_head ?? 0;
+      updates.avg_weight_lbs = computeAvgWeightIn(headCount, {
+        payWeightLbs:
+          data.payWeightLbs !== undefined ? data.payWeightLbs : existing?.pay_weight_lbs,
+        shrunkWeightLbs:
+          data.shrunkWeightLbs !== undefined
+            ? data.shrunkWeightLbs
+            : existing?.shrunk_weight_lbs,
+        receivedWeightLbs:
+          data.receivedWeightLbs !== undefined
+            ? data.receivedWeightLbs
+            : existing?.received_weight_lbs,
+      });
+    }
 
     const { error } = await supabase
       .from("cattle_groups")

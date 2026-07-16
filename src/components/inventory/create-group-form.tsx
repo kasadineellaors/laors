@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { SelectOption } from "@/lib/locations/options";
 import { createCattleGroup } from "@/lib/actions/inventory";
+import { computeAvgWeightIn, perHeadAvg, shrinkPct } from "@/lib/lots/purchase-weights";
 import { ENTERPRISE_LABELS, type EnterpriseType } from "@/lib/lots/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +39,8 @@ export function CreateGroupForm({
   const [sourceName, setSourceName] = useState("");
   const [headCount, setHeadCount] = useState("");
   const [payWeight, setPayWeight] = useState("");
+  const [shrunkWeight, setShrunkWeight] = useState("");
+  const [receivedWeight, setReceivedWeight] = useState("");
   const [pricePerLb, setPricePerLb] = useState("");
   const [landedCost, setLandedCost] = useState("");
   const [notes, setNotes] = useState("");
@@ -46,6 +49,21 @@ export function CreateGroupForm({
 
   const selectClass =
     "flex h-12 w-full rounded-lg border-2 border-border bg-surface px-4 text-base";
+
+  const head = parseInt(headCount, 10);
+  const hasHead = !Number.isNaN(head) && head > 0;
+  const payNum = payWeight.trim() ? parseFloat(payWeight) : null;
+  const shrunkNum = shrunkWeight.trim() ? parseFloat(shrunkWeight) : null;
+  const receivedNum = receivedWeight.trim() ? parseFloat(receivedWeight) : null;
+  const avgIn = hasHead
+    ? computeAvgWeightIn(head, {
+        payWeightLbs: payNum,
+        shrunkWeightLbs: shrunkNum,
+        receivedWeightLbs: receivedNum,
+      })
+    : null;
+  const payToShrunk = shrinkPct(payNum, shrunkNum);
+  const payToReceived = shrinkPct(payNum, receivedNum);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -60,6 +78,8 @@ export function CreateGroupForm({
     }
 
     const pay = payWeight.trim() ? parseFloat(payWeight) : undefined;
+    const shrunk = shrunkWeight.trim() ? parseFloat(shrunkWeight) : undefined;
+    const received = receivedWeight.trim() ? parseFloat(receivedWeight) : undefined;
     const price = pricePerLb.trim() ? parseFloat(pricePerLb) : undefined;
     const landed = landedCost.trim()
       ? parseFloat(landedCost)
@@ -79,6 +99,8 @@ export function CreateGroupForm({
       purchaseDate,
       arrivalDate,
       payWeightLbs: pay,
+      shrunkWeightLbs: shrunk,
+      receivedWeightLbs: received,
       purchasePricePerLb: price,
       landedCost: landed,
       sellerName: sellerName || undefined,
@@ -225,31 +247,70 @@ export function CreateGroupForm({
             </select>
           </div>
         ) : null}
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <Label htmlFor="headCount">Head count</Label>
-            <Input
-              id="headCount"
-              type="number"
-              min="1"
-              value={headCount}
-              onChange={(e) => setHeadCount(e.target.value)}
-              required
-              className="text-center text-xl font-bold tabular-nums"
-            />
-          </div>
-          <div>
-            <Label htmlFor="payWeight">Pay weight (lb)</Label>
-            <Input
-              id="payWeight"
-              type="number"
-              min="0"
-              step="0.01"
-              value={payWeight}
-              onChange={(e) => setPayWeight(e.target.value)}
-            />
-          </div>
+        <div>
+          <Label htmlFor="headCount">Head count</Label>
+          <Input
+            id="headCount"
+            type="number"
+            min="1"
+            value={headCount}
+            onChange={(e) => setHeadCount(e.target.value)}
+            required
+            className="text-center text-xl font-bold tabular-nums"
+          />
         </div>
+
+        <div className="rounded-xl border border-border bg-cream/30 p-4 space-y-3">
+          <div>
+            <p className="text-sm font-semibold text-charcoal">Purchase weights</p>
+            <p className="text-xs text-charcoal/60">
+              Total lot pounds — pay at sale barn, shrunk after pencil shrink, received on ranch scale.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <WeightField
+              id="payWeight"
+              label="Pay weight (lb)"
+              value={payWeight}
+              onChange={setPayWeight}
+              perHead={hasHead ? perHeadAvg(payNum, head) : null}
+            />
+            <WeightField
+              id="shrunkWeight"
+              label="Shrunk weight (lb)"
+              value={shrunkWeight}
+              onChange={setShrunkWeight}
+              perHead={hasHead ? perHeadAvg(shrunkNum, head) : null}
+            />
+            <WeightField
+              id="receivedWeight"
+              label="Received weight (lb)"
+              value={receivedWeight}
+              onChange={setReceivedWeight}
+              perHead={hasHead ? perHeadAvg(receivedNum, head) : null}
+            />
+          </div>
+          {avgIn != null || payToShrunk != null || payToReceived != null ? (
+            <div className="flex flex-wrap gap-2 text-xs text-charcoal/70">
+              {avgIn != null ? (
+                <span className="rounded-full bg-surface px-2.5 py-1 font-medium">
+                  Avg weight in: {Math.round(avgIn)} lb / hd
+                </span>
+              ) : null}
+              {payToShrunk != null ? (
+                <span className="rounded-full bg-surface px-2.5 py-1 font-medium">
+                  Pay → shrunk: {payToShrunk.toFixed(1)}%
+                </span>
+              ) : null}
+              {payToReceived != null ? (
+                <span className="rounded-full bg-surface px-2.5 py-1 font-medium">
+                  Pay → received: {payToReceived.toFixed(1)}%
+                </span>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label htmlFor="pricePerLb">Price per lb ($)</Label>
@@ -289,5 +350,36 @@ export function CreateGroupForm({
         </Button>
       </form>
     </Card>
+  );
+}
+
+function WeightField({
+  id,
+  label,
+  value,
+  onChange,
+  perHead,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  perHead: number | null;
+}) {
+  return (
+    <div>
+      <Label htmlFor={id}>{label}</Label>
+      <Input
+        id={id}
+        type="number"
+        min="0"
+        step="0.01"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+      {perHead != null ? (
+        <p className="mt-1 text-xs text-charcoal/60">{Math.round(perHead)} lb / hd</p>
+      ) : null}
+    </div>
   );
 }

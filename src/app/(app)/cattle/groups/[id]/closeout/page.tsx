@@ -8,6 +8,7 @@ import {
   listMortalityRecords,
   listProcessingEvents,
 } from "@/lib/lots/queries";
+import { shrinkPct } from "@/lib/lots/purchase-weights";
 import { ENTERPRISE_LABELS, LOT_STATUS_LABELS } from "@/lib/lots/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -65,10 +66,11 @@ export default async function LotCloseoutPage({
 
   const avgWeightIn = group.avg_weight_lbs;
   const payWeight = group.pay_weight_lbs;
-  const shrinkPct =
-    payWeight != null && avgWeightIn != null && payWeight > 0
-      ? ((payWeight - avgWeightIn) / payWeight) * 100
-      : null;
+  const shrunkWeight = group.shrunk_weight_lbs;
+  const receivedWeight = group.received_weight_lbs;
+  const payToShrunk = shrinkPct(payWeight, shrunkWeight);
+  const shrunkToReceived = shrinkPct(shrunkWeight, receivedWeight);
+  const payToReceived = shrinkPct(payWeight, receivedWeight);
   const breakevenPerHead =
     summary.heads_sold > 0 ? totalExpenses / summary.heads_sold : null;
   const feedPerHeadDay =
@@ -164,11 +166,23 @@ export default async function LotCloseoutPage({
           {payWeight != null ? (
             <Dt label="Pay weight" value={`${Math.round(payWeight)} lb`} />
           ) : null}
+          {shrunkWeight != null ? (
+            <Dt label="Shrunk weight" value={`${Math.round(shrunkWeight)} lb`} />
+          ) : null}
+          {receivedWeight != null ? (
+            <Dt label="Received weight" value={`${Math.round(receivedWeight)} lb`} />
+          ) : null}
           {avgWeightIn != null ? (
             <Dt label="Avg weight in" value={`${Math.round(avgWeightIn)} lb`} />
           ) : null}
-          {shrinkPct != null ? (
-            <Dt label="Shrink (pay → received)" value={`${shrinkPct.toFixed(1)}%`} />
+          {payToShrunk != null ? (
+            <Dt label="Shrink (pay → shrunk)" value={`${payToShrunk.toFixed(1)}%`} />
+          ) : null}
+          {shrunkToReceived != null ? (
+            <Dt label="Shrink (shrunk → received)" value={`${shrunkToReceived.toFixed(1)}%`} />
+          ) : null}
+          {payToReceived != null ? (
+            <Dt label="Shrink (pay → received)" value={`${payToReceived.toFixed(1)}%`} />
           ) : null}
           {group.purchase_price_per_lb != null ? (
             <Dt

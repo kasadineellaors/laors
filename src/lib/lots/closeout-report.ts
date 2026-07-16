@@ -1,5 +1,6 @@
 import { getCattleGroup } from "@/lib/inventory/queries";
 import { getLotOperationalSummary } from "@/lib/lots/queries";
+import { shrinkPct } from "@/lib/lots/purchase-weights";
 import { ENTERPRISE_LABELS, LOT_STATUS_LABELS } from "@/lib/lots/types";
 import { createClient } from "@/lib/supabase/server";
 
@@ -64,11 +65,12 @@ export async function getLotCloseoutPrintData(
     LOT_STATUS_LABELS[group.lot_status as keyof typeof LOT_STATUS_LABELS] ?? group.lot_status;
 
   const payWeight = group.pay_weight_lbs;
+  const shrunkWeight = group.shrunk_weight_lbs;
+  const receivedWeight = group.received_weight_lbs;
   const avgWeightIn = group.avg_weight_lbs;
-  const shrinkPct =
-    payWeight != null && avgWeightIn != null && payWeight > 0
-      ? ((payWeight - avgWeightIn) / payWeight) * 100
-      : null;
+  const payToShrunk = shrinkPct(payWeight, shrunkWeight);
+  const shrunkToReceived = shrinkPct(shrunkWeight, receivedWeight);
+  const payToReceived = shrinkPct(payWeight, receivedWeight);
   const breakevenPerHead =
     summary.heads_sold > 0 ? totalExpenses / summary.heads_sold : null;
   const feedPerHeadDay =
@@ -78,11 +80,29 @@ export async function getLotCloseoutPrintData(
 
   const performanceRows: CloseoutRow[] = [];
   if (payWeight != null) performanceRows.push({ label: "Pay weight", value: `${Math.round(payWeight)} lb` });
+  if (shrunkWeight != null) {
+    performanceRows.push({ label: "Shrunk weight", value: `${Math.round(shrunkWeight)} lb` });
+  }
+  if (receivedWeight != null) {
+    performanceRows.push({ label: "Received weight", value: `${Math.round(receivedWeight)} lb` });
+  }
   if (avgWeightIn != null) {
     performanceRows.push({ label: "Avg weight in", value: `${Math.round(avgWeightIn)} lb` });
   }
-  if (shrinkPct != null) {
-    performanceRows.push({ label: "Shrink (pay → received)", value: `${shrinkPct.toFixed(1)}%` });
+  if (payToShrunk != null) {
+    performanceRows.push({ label: "Shrink (pay → shrunk)", value: `${payToShrunk.toFixed(1)}%` });
+  }
+  if (shrunkToReceived != null) {
+    performanceRows.push({
+      label: "Shrink (shrunk → received)",
+      value: `${shrunkToReceived.toFixed(1)}%`,
+    });
+  }
+  if (payToReceived != null) {
+    performanceRows.push({
+      label: "Shrink (pay → received)",
+      value: `${payToReceived.toFixed(1)}%`,
+    });
   }
   if (group.purchase_price_per_lb != null) {
     performanceRows.push({

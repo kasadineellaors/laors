@@ -61,6 +61,8 @@ export interface LotFields {
   arrival_date: string | null;
   starting_head: number | null;
   pay_weight_lbs: number | null;
+  shrunk_weight_lbs: number | null;
+  received_weight_lbs: number | null;
   avg_weight_lbs: number | null;
   purchase_price_per_lb: number | null;
   landed_cost: number | null;

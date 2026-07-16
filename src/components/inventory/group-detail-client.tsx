@@ -19,6 +19,7 @@ import {
 } from "@/lib/actions/inventory";
 import { closeLot } from "@/lib/actions/lots";
 import { LotSummaryPanel } from "@/components/lots/lot-summary-panel";
+import { PurchaseWeightsCard } from "@/components/lots/purchase-weights-card";
 import { LotQuickActions } from "@/components/lots/lot-quick-actions";
 import { LotExpensesPanel } from "@/components/lots/lot-expenses-panel";
 import { Button } from "@/components/ui/button";
@@ -62,6 +63,15 @@ export function GroupDetailClient({
   const [notes, setNotes] = useState(group.notes ?? "");
   const [ownershipGroupId, setOwnershipGroupId] = useState(group.ownership_group_id ?? "");
   const [customerId, setCustomerId] = useState(group.customer_id ?? "");
+  const [payWeight, setPayWeight] = useState(
+    group.pay_weight_lbs != null ? String(group.pay_weight_lbs) : "",
+  );
+  const [shrunkWeight, setShrunkWeight] = useState(
+    group.shrunk_weight_lbs != null ? String(group.shrunk_weight_lbs) : "",
+  );
+  const [receivedWeight, setReceivedWeight] = useState(
+    group.received_weight_lbs != null ? String(group.received_weight_lbs) : "",
+  );
   const [editingMeta, setEditingMeta] = useState(false);
   const [editingCount, setEditingCount] = useState(false);
   const [headCount, setHeadCount] = useState(String(group.total_head));
@@ -78,6 +88,9 @@ export function GroupDetailClient({
       notes,
       ownershipGroupId: ownershipGroupId || null,
       customerId: customerId || null,
+      payWeightLbs: payWeight.trim() ? parseFloat(payWeight) : null,
+      shrunkWeightLbs: shrunkWeight.trim() ? parseFloat(shrunkWeight) : null,
+      receivedWeightLbs: receivedWeight.trim() ? parseFloat(receivedWeight) : null,
     });
     setLoading(false);
     if (result.error) setError(result.error);
@@ -144,6 +157,8 @@ export function GroupDetailClient({
         onCloseLot={canManageCattle ? handleCloseLot : undefined}
         closing={closing}
       />
+
+      <PurchaseWeightsCard group={group} />
 
       {canManageCattle ? <LotQuickActions orgId={orgId} groupId={group.id} /> : null}
 
@@ -261,6 +276,41 @@ export function GroupDetailClient({
                 </select>
               </div>
             ) : null}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div>
+                <Label htmlFor="editPayWeight">Pay weight (lb)</Label>
+                <Input
+                  id="editPayWeight"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={payWeight}
+                  onChange={(e) => setPayWeight(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="editShrunkWeight">Shrunk weight (lb)</Label>
+                <Input
+                  id="editShrunkWeight"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={shrunkWeight}
+                  onChange={(e) => setShrunkWeight(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="editReceivedWeight">Received weight (lb)</Label>
+                <Input
+                  id="editReceivedWeight"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={receivedWeight}
+                  onChange={(e) => setReceivedWeight(e.target.value)}
+                />
+              </div>
+            </div>
             <div className="flex gap-2">
               <Button onClick={saveMeta} disabled={loading}>
                 Save
