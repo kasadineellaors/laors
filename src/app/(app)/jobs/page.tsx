@@ -1,59 +1,31 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { requireOnboardedUser } from "@/lib/auth/session";
 import { listTasks } from "@/lib/tasks/queries";
+import { computeJobsSummary } from "@/lib/tasks/summary";
+import { JobsPageHeader } from "@/components/tasks/jobs-page-header";
+import { JobsSummaryMetrics } from "@/components/tasks/jobs-summary-metrics";
 import { TaskList } from "@/components/tasks/task-list";
-import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = {
   title: "Jobs — LAORS",
 };
 
-export default async function JobsPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ filter?: string }>;
-}) {
-  const { filter } = await searchParams;
+export default async function JobsPage() {
   const session = await requireOnboardedUser();
   const orgId = session.organization!.id;
-  const showAll = filter === "all";
+  const userId = session.user.id;
 
-  const tasks = await listTasks(orgId, showAll ? "all" : "open");
+  const tasks = await listTasks(orgId, "all");
+  const summary = computeJobsSummary(tasks);
+  const showMetrics = tasks.length > 0;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-charcoal">Jobs</h1>
-          <p className="text-charcoal/70">Fence, water, feeding — what needs doing</p>
-        </div>
-        <Link href="/jobs/new">
-          <Button size="lg">+ Task</Button>
-        </Link>
-      </div>
+    <div className="flex min-h-[calc(100dvh-8.5rem)] flex-1 flex-col gap-6 pb-4">
+      <JobsPageHeader />
 
-      <div className="flex gap-2">
-        <Link href="/jobs">
-          <Button variant={showAll ? "outline" : "primary"} size="sm">
-            Open
-          </Button>
-        </Link>
-        <Link href="/jobs?filter=all">
-          <Button variant={showAll ? "primary" : "outline"} size="sm">
-            All
-          </Button>
-        </Link>
-      </div>
+      {showMetrics ? <JobsSummaryMetrics summary={summary} /> : null}
 
-      <TaskList
-        tasks={tasks}
-        emptyMessage={
-          showAll
-            ? "No tasks recorded yet."
-            : "Nothing open — tap + Task to add work."
-        }
-      />
+      <TaskList orgId={orgId} tasks={tasks} currentUserId={userId} />
     </div>
   );
 }

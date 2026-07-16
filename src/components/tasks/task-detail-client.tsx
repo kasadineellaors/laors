@@ -1,17 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { SelectOption } from "@/lib/locations/options";
 import type { OrgMemberOption, TaskRecord } from "@/lib/tasks/types";
 import { archiveTask, completeTask, updateTask } from "@/lib/actions/tasks";
+import {
+  formatDueLabel,
+  formatShortDate,
+  isOpenTask,
+  isOverdue,
+  priorityLabel,
+  todayIso,
+} from "@/lib/tasks/display";
 import { TaskForm } from "@/components/tasks/task-form";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils/cn";
 
 interface TaskDetailClientProps {
   orgId: string;
+  currentUserId?: string;
   task: TaskRecord;
   categoryOptions: SelectOption[];
   locationOptions: SelectOption[];
@@ -21,6 +30,7 @@ interface TaskDetailClientProps {
 
 export function TaskDetailClient({
   orgId,
+  currentUserId,
   task,
   categoryOptions,
   locationOptions,
@@ -31,10 +41,15 @@ export function TaskDetailClient({
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
 
-  const isOpen = task.status === "open" || task.status === "in_progress";
+  const today = todayIso();
+  const open = isOpenTask(task.status);
+  const dueLabel = formatDueLabel(task, today);
+  const overdue = isOverdue(task, today);
 
   async function markDone() {
+    if (loading) return;
     setLoading(true);
     setError(null);
     const result = await completeTask(orgId, task.id);
@@ -52,7 +67,7 @@ export function TaskDetailClient({
   }
 
   async function handleArchive() {
-    if (!window.confirm("Archive this task?")) return;
+    if (!window.confirm("Archive this task? It will be removed from active lists.")) return;
     setLoading(true);
     const result = await archiveTask(orgId, task.id);
     setLoading(false);
@@ -62,12 +77,13 @@ export function TaskDetailClient({
 
   if (editing) {
     return (
-      <div className="space-y-4">
-        <Link href="/jobs" className="text-sm font-medium text-olive hover:underline">
+      <div className="space-y-4 pb-4">
+        <Link href="/jobs" className="text-sm font-medium text-brown hover:underline">
           ← Jobs
         </Link>
         <TaskForm
           orgId={orgId}
+          currentUserId={currentUserId}
           task={task}
           categoryOptions={categoryOptions}
           locationOptions={locationOptions}
@@ -86,69 +102,104 @@ export function TaskDetailClient({
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <Link href="/jobs" className="text-sm font-medium text-olive hover:underline">
-          ← Jobs
-        </Link>
-        <h1 className="mt-1 text-2xl font-bold text-charcoal">{task.title}</h1>
-        <p className="text-sm capitalize text-charcoal/60">
-          {task.status.replace("_", " ")} · {task.priority} priority
+    <div className="space-y-6 pb-4">
+      <Link href="/jobs" className="text-sm font-medium text-brown hover:underline">
+        ← Jobs
+      </Link>
+
+      <div className="rounded-[var(--radius-card)] border border-border-neutral bg-surface-white px-4 py-5 shadow-[var(--shadow-card)]">
+        <div className="flex flex-wrap items-center gap-2">
+          <h1 className="text-2xl font-bold text-navy">{task.title}</h1>
+          {overdue ? (
+            <span className="inline-flex rounded-full bg-status-critical-bg px-2.5 py-0.5 text-xs font-semibold text-status-critical">
+              Overdue
+            </span>
+          ) : null}
+          {task.status === "done" ? (
+            <span className="inline-flex rounded-full bg-status-success/15 px-2.5 py-0.5 text-xs font-semibold text-status-success">
+              Completed
+            </span>
+          ) : null}
+        </div>
+        <p className="mt-1 text-sm capitalize text-text-secondary">
+          {task.status.replace("_", " ")} · {priorityLabel(task.priority)}
         </p>
+
+        {task.description ? (
+          <p className="mt-4 text-text-primary whitespace-pre-wrap">{task.description}</p>
+        ) : null}
+
+        <dl className="mt-6 space-y-4 text-sm">
+          {task.category_name ? (
+            <div>
+              <dt className="text-text-secondary">Category</dt>
+              <dd className="font-medium text-text-primary">{task.category_name}</dd>
+            </div>
+          ) : null}
+          {task.location_label ? (
+            <div>
+              <dt className="text-text-secondary">Location</dt>
+              <dd className="font-medium text-text-primary">{task.location_label}</dd>
+            </div>
+          ) : null}
+          {task.cattle_group_name ? (
+            <div>
+              <dt className="text-text-secondary">Cattle group</dt>
+              <dd className="font-medium text-text-primary">{task.cattle_group_name}</dd>
+            </div>
+          ) : null}
+          {task.assigned_to_name ? (
+            <div>
+              <dt className="text-text-secondary">Assigned to</dt>
+              <dd className="font-medium text-text-primary">{task.assigned_to_name}</dd>
+            </div>
+          ) : open ? (
+            <div>
+              <dt className="text-text-secondary">Assigned to</dt>
+              <dd className="font-medium text-text-secondary">Unassigned</dd>
+            </div>
+          ) : null}
+          {dueLabel ? (
+            <div>
+              <dt className="text-text-secondary">Due</dt>
+              <dd
+                className={cn(
+                  "font-medium",
+                  overdue ? "text-status-critical" : "text-text-primary",
+                )}
+              >
+                {dueLabel}
+              </dd>
+            </div>
+          ) : null}
+          {task.completed_at ? (
+            <div>
+              <dt className="text-text-secondary">Completed</dt>
+              <dd className="font-medium text-text-primary">
+                {formatShortDate(task.completed_at.slice(0, 10))}
+              </dd>
+            </div>
+          ) : null}
+          {task.notes ? (
+            <div>
+              <dt className="text-text-secondary">Internal notes</dt>
+              <dd className="font-medium text-text-primary whitespace-pre-wrap">{task.notes}</dd>
+            </div>
+          ) : null}
+        </dl>
       </div>
 
-      {task.description ? (
-        <p className="text-charcoal/80">{task.description}</p>
+      {error ? (
+        <p className="text-sm text-status-critical" role="alert">
+          {error}
+        </p>
       ) : null}
 
-      <dl className="space-y-2 text-sm">
-        {task.category_name ? (
-          <div>
-            <dt className="text-charcoal/50">Category</dt>
-            <dd className="font-medium">{task.category_name}</dd>
-          </div>
-        ) : null}
-        {task.location_label ? (
-          <div>
-            <dt className="text-charcoal/50">Location</dt>
-            <dd className="font-medium">{task.location_label}</dd>
-          </div>
-        ) : null}
-        {task.cattle_group_name ? (
-          <div>
-            <dt className="text-charcoal/50">Cattle group</dt>
-            <dd className="font-medium">{task.cattle_group_name}</dd>
-          </div>
-        ) : null}
-        {task.assigned_to_name ? (
-          <div>
-            <dt className="text-charcoal/50">Assigned to</dt>
-            <dd className="font-medium">{task.assigned_to_name}</dd>
-          </div>
-        ) : null}
-        {task.due_date ? (
-          <div>
-            <dt className="text-charcoal/50">Due</dt>
-            <dd className="font-medium">
-              {new Date(task.due_date + "T12:00:00").toLocaleDateString()}
-            </dd>
-          </div>
-        ) : null}
-        {task.notes ? (
-          <div>
-            <dt className="text-charcoal/50">Notes</dt>
-            <dd className="font-medium">{task.notes}</dd>
-          </div>
-        ) : null}
-      </dl>
-
-      {error ? <p className="text-sm text-rust">{error}</p> : null}
-
       <div className="grid gap-3">
-        {isOpen ? (
+        {open ? (
           <>
             <Button size="lg" fullWidth onClick={markDone} disabled={loading}>
-              Mark done
+              Mark Complete
             </Button>
             {task.status === "open" ? (
               <Button
@@ -174,7 +225,15 @@ export function TaskDetailClient({
           <Button
             variant="outline"
             fullWidth
-            onClick={() => setStatus("open")}
+            onClick={() => {
+              startTransition(async () => {
+                setLoading(true);
+                const result = await updateTask(orgId, task.id, { status: "open" });
+                setLoading(false);
+                if (result.error) setError(result.error);
+                else router.refresh();
+              });
+            }}
             disabled={loading}
           >
             Reopen task
@@ -186,7 +245,7 @@ export function TaskDetailClient({
         <Button
           variant="ghost"
           fullWidth
-          className={cn("text-rust")}
+          className="text-status-critical"
           onClick={handleArchive}
           disabled={loading}
         >
