@@ -4,6 +4,7 @@ import { requireOnboardedUser } from "@/lib/auth/session";
 import { canManageTeam } from "@/lib/auth/roles";
 import { isCalendarEnabled } from "@/lib/org/settings";
 import { CalendarPreferencesForm } from "@/components/calendar/calendar-preferences-form";
+import { OperationModesForm } from "@/components/setup/operation-modes-form";
 import { ManageSubpageHeader } from "@/components/setup/manage-subpage-header";
 import { ManageSubpageShell } from "@/components/setup/manage-subpage-shell";
 
@@ -25,6 +26,10 @@ export default async function SetupPreferencesPage() {
       <ManageSubpageHeader
         title="Ranch Settings"
         subtitle="Manage ranch details, preferences, and account settings."
+      />
+      <OperationModesForm
+        orgId={orgId}
+        enabledModes={session.organization!.enabled_modes ?? []}
       />
       <CalendarPreferencesForm orgId={orgId} calendarEnabled={calendarEnabled} />
     </ManageSubpageShell>

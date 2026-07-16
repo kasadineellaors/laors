@@ -525,6 +525,10 @@ export async function saveOperationModes(
     return { error: "Organization not found" };
   }
 
+  if (modes.length === 0) {
+    return { error: "Select at least one operation module." };
+  }
+
   try {
     await requireOrgManager(orgId);
   } catch {
@@ -539,7 +543,13 @@ export async function saveOperationModes(
 
   if (error) return { error: formatDbError(error.message) };
   revalidatePath("/onboarding");
-  return { success: "Modes saved" };
+  revalidatePath("/setup/preferences");
+  revalidatePath("/dashboard");
+  revalidatePath("/cattle");
+  revalidatePath("/feed");
+  revalidatePath("/cow-calf");
+  revalidatePath("/seedstock");
+  return { success: "Modules saved" };
 }
 
 export async function completeOnboarding(orgId: string): Promise<AuthActionState> {

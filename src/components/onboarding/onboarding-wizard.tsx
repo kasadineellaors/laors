@@ -19,13 +19,13 @@ import {
   ONBOARDING_STEPS,
   ONBOARDING_STEP_LABELS,
   OPERATION_MODES,
-  OPERATION_MODE_LABELS,
   type OperationMode,
 } from "@/types/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { OperationModePicker } from "@/components/setup/operation-mode-picker";
 import { cn } from "@/lib/utils/cn";
 
 const US_STATES = [
@@ -102,12 +102,6 @@ export function OnboardingWizard({
     await seedRanchDefaults(orgId, selectedModes);
     setStepIndex(2);
     setLoading(false);
-  }
-
-  function toggleMode(mode: OperationMode) {
-    setSelectedModes((prev) =>
-      prev.includes(mode) ? prev.filter((m) => m !== mode) : [...prev, mode],
-    );
   }
 
   function updateLocationTypeName(index: number, name: string) {
@@ -266,35 +260,15 @@ export function OnboardingWizard({
       {currentStep === "modes" && (
         <Card>
           <CardHeader>
-            <CardTitle>How do you run cattle?</CardTitle>
-            <CardDescription>Select all that apply.</CardDescription>
+            <CardTitle>Which modules do you need?</CardTitle>
+            <CardDescription>Select all that apply — you can turn more on later in Ranch Settings.</CardDescription>
           </CardHeader>
           <form onSubmit={handleModesSubmit} className="space-y-4">
-            <div className="space-y-3">
-              {OPERATION_MODES.map((mode) => (
-                <button
-                  key={mode}
-                  type="button"
-                  onClick={() => toggleMode(mode)}
-                  className={cn(
-                    "flex w-full touch-target items-center justify-between rounded-xl border-2 px-5 py-4 text-left",
-                    selectedModes.includes(mode)
-                      ? "border-navy bg-navy/10"
-                      : "border-border-neutral bg-surface-white",
-                  )}
-                >
-                  <span className="text-lg font-semibold">
-                    {OPERATION_MODE_LABELS[mode]}
-                  </span>
-                  <span className={cn(
-                    "flex h-6 w-6 items-center justify-center rounded-full border-2",
-                    selectedModes.includes(mode) ? "border-navy bg-navy text-white" : "border-border-neutral",
-                  )}>
-                    {selectedModes.includes(mode) ? "✓" : ""}
-                  </span>
-                </button>
-              ))}
-            </div>
+            <OperationModePicker
+              value={selectedModes}
+              onChange={setSelectedModes}
+              disabled={loading}
+            />
             <Button type="submit" fullWidth size="xl" disabled={loading || selectedModes.length === 0}>
               {loading ? "Saving…" : "Continue"}
             </Button>

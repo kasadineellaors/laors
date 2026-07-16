@@ -20,6 +20,12 @@ export const OPERATION_MODE_LABELS: Record<OperationMode, string> = {
   seedstock: "Seedstock",
 };
 
+export const OPERATION_MODE_DESCRIPTIONS: Record<OperationMode, string> = {
+  cow_calf: "Herds, pairs, breeding, calving, weaning, and ranch foreman checks.",
+  stocker: "Lots, receive cattle, moves, feed billing, sales, and closeouts.",
+  seedstock: "Registered animals, EPDs, maternal records, and seedstock sales.",
+};
+
 export const ONBOARDING_STEPS = [
   "ranch",
   "modes",
