@@ -63,9 +63,16 @@ export default async function LotCloseoutPage({
     summary.heads_sold > 0 ? netProfit / summary.heads_sold : netProfit / Math.max(1, endingHead);
 
   const avgWeightIn = group.avg_weight_lbs;
-  const totalGainLbs =
-    avgWeightIn != null && group.pay_weight_lbs != null
-      ? null
+  const payWeight = group.pay_weight_lbs;
+  const shrinkPct =
+    payWeight != null && avgWeightIn != null && payWeight > 0
+      ? ((payWeight - avgWeightIn) / payWeight) * 100
+      : null;
+  const breakevenPerHead =
+    summary.heads_sold > 0 ? totalExpenses / summary.heads_sold : null;
+  const feedPerHeadDay =
+    startingHead > 0 && summary.days_on_feed > 0
+      ? summary.estimated_feed_cost / startingHead / summary.days_on_feed
       : null;
 
   const enterprise =
@@ -142,6 +149,36 @@ export default async function LotCloseoutPage({
 
       <Card>
         <CardHeader>
+          <CardTitle>Performance</CardTitle>
+          <CardDescription>Weight and efficiency metrics</CardDescription>
+        </CardHeader>
+        <dl className="grid grid-cols-2 gap-3 px-4 pb-4 text-sm">
+          {payWeight != null ? (
+            <Dt label="Pay weight" value={`${Math.round(payWeight)} lb`} />
+          ) : null}
+          {avgWeightIn != null ? (
+            <Dt label="Avg weight in" value={`${Math.round(avgWeightIn)} lb`} />
+          ) : null}
+          {shrinkPct != null ? (
+            <Dt label="Shrink (pay → received)" value={`${shrinkPct.toFixed(1)}%`} />
+          ) : null}
+          {group.purchase_price_per_lb != null ? (
+            <Dt
+              label="Purchase $/lb"
+              value={`$${Number(group.purchase_price_per_lb).toFixed(2)}`}
+            />
+          ) : null}
+          {breakevenPerHead != null ? (
+            <Dt label="Breakeven $/head sold" value={money(breakevenPerHead)} />
+          ) : null}
+          {feedPerHeadDay != null ? (
+            <Dt label="Feed $/head/day" value={money(feedPerHeadDay)} />
+          ) : null}
+        </dl>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle>Financial performance</CardTitle>
         </CardHeader>
         <dl className="grid grid-cols-2 gap-3 px-4 pb-4 text-sm">
@@ -155,12 +192,6 @@ export default async function LotCloseoutPage({
           />
           <Dt label="Profit per head" value={money(profitPerHead)} />
           <Dt label="Cost per head (invested)" value={money(summary.estimated_cost_per_head)} />
-          {avgWeightIn != null ? (
-            <Dt label="Avg weight in" value={`${Math.round(avgWeightIn)} lb`} />
-          ) : null}
-          {totalGainLbs != null ? (
-            <Dt label="Total gain" value={`${totalGainLbs} lb`} />
-          ) : null}
         </dl>
       </Card>
 

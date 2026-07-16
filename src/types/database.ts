@@ -788,6 +788,8 @@ export interface Database {
           is_active?: boolean;
         };
         Update: {
+          financial_category_id?: string | null;
+          expense_date?: string;
           amount?: number;
           description?: string | null;
           vendor_name?: string | null;

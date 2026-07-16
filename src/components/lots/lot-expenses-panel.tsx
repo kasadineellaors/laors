@@ -4,7 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { LotExpenseRecord } from "@/lib/expenses/types";
 import type { SelectOption } from "@/lib/locations/options";
-import { createLotExpense } from "@/lib/actions/expenses";
+import {
+  archiveLotExpense,
+  createLotExpense,
+  updateLotExpense,
+} from "@/lib/actions/expenses";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,6 +35,7 @@ export function LotExpensesPanel({
 }: LotExpensesPanelProps) {
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,6 +49,27 @@ export function LotExpensesPanel({
   const selectClass =
     "flex h-12 w-full rounded-lg border-2 border-border bg-surface px-4 text-base";
 
+  function resetForm() {
+    setExpenseDate(new Date().toISOString().slice(0, 10));
+    setAmount("");
+    setCategoryId(categoryOptions[0]?.value ?? "");
+    setDescription("");
+    setVendorName("");
+    setEditingId(null);
+    setShowForm(false);
+  }
+
+  function startEdit(expense: LotExpenseRecord) {
+    setEditingId(expense.id);
+    setShowForm(false);
+    setExpenseDate(expense.expense_date);
+    setAmount(String(expense.amount));
+    setCategoryId(expense.financial_category_id ?? "");
+    setDescription(expense.description ?? "");
+    setVendorName(expense.vendor_name ?? "");
+    setError(null);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const parsed = parseFloat(amount);
@@ -53,23 +79,46 @@ export function LotExpensesPanel({
     }
     setLoading(true);
     setError(null);
-    const result = await createLotExpense(orgId, groupId, {
+
+    const payload = {
       expenseDate,
       amount: parsed,
-      financialCategoryId: categoryId || undefined,
-      description: description || undefined,
-      vendorName: vendorName || undefined,
-    });
+      financialCategoryId: categoryId || null,
+      description: description || null,
+      vendorName: vendorName || null,
+    };
+
+    const result = editingId
+      ? await updateLotExpense(orgId, editingId, groupId, payload)
+      : await createLotExpense(orgId, groupId, {
+          ...payload,
+          financialCategoryId: categoryId || undefined,
+          description: description || undefined,
+          vendorName: vendorName || undefined,
+        });
+
     setLoading(false);
     if (result.error) setError(result.error);
     else {
-      setShowForm(false);
-      setAmount("");
-      setDescription("");
-      setVendorName("");
+      resetForm();
       router.refresh();
     }
   }
+
+  async function handleArchive(expenseId: string) {
+    if (!window.confirm("Remove this expense?")) return;
+    setLoading(true);
+    setError(null);
+    const result = await archiveLotExpense(orgId, expenseId, groupId);
+    setLoading(false);
+    if (result.error) setError(result.error);
+    else {
+      if (editingId === expenseId) resetForm();
+      router.refresh();
+    }
+  }
+
+  const showExpenseForm = showForm || editingId != null;
 
   return (
     <Card>
@@ -89,14 +138,24 @@ export function LotExpensesPanel({
           <Button
             type="button"
             variant={showForm ? "primary" : "secondary"}
-            onClick={() => setShowForm((v) => !v)}
+            onClick={() => {
+              if (showForm) resetForm();
+              else {
+                setEditingId(null);
+                setShowForm(true);
+              }
+            }}
+            disabled={loading}
           >
             {showForm ? "Cancel" : "Log expense"}
           </Button>
         ) : null}
 
-        {showForm ? (
+        {showExpenseForm ? (
           <form onSubmit={handleSubmit} className="space-y-3 rounded-lg border border-border p-3">
+            <p className="text-sm font-semibold text-charcoal">
+              {editingId ? "Edit expense" : "New expense"}
+            </p>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="expDate">Date</Label>
@@ -155,23 +214,61 @@ export function LotExpensesPanel({
                 onChange={(e) => setVendorName(e.target.value)}
               />
             </div>
-            <Button type="submit" fullWidth disabled={loading}>
-              {loading ? "Saving…" : "Save expense"}
-            </Button>
+            <div className="grid grid-cols-2 gap-2">
+              <Button type="submit" fullWidth disabled={loading}>
+                {loading ? "Saving…" : editingId ? "Save changes" : "Save expense"}
+              </Button>
+              {editingId ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  fullWidth
+                  disabled={loading}
+                  onClick={resetForm}
+                >
+                  Cancel
+                </Button>
+              ) : null}
+            </div>
           </form>
         ) : null}
 
         {expenses.length > 0 ? (
           <ul className="divide-y divide-border text-sm">
             {expenses.map((e) => (
-              <li key={e.id} className="flex justify-between py-2">
-                <span>
-                  {e.expense_date}
-                  {e.category_name ? ` · ${e.category_name}` : ""}
-                  {e.description ? ` · ${e.description}` : ""}
-                  {e.vendor_name ? ` · ${e.vendor_name}` : ""}
-                </span>
-                <span className="font-semibold tabular-nums">{money(e.amount)}</span>
+              <li key={e.id} className="flex items-start justify-between gap-3 py-2">
+                <div>
+                  <p className="font-medium text-charcoal">
+                    {e.expense_date}
+                    {e.category_name ? ` · ${e.category_name}` : ""}
+                  </p>
+                  <p className="text-charcoal/70">
+                    {[e.description, e.vendor_name].filter(Boolean).join(" · ") || "—"}
+                  </p>
+                </div>
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  <span className="font-semibold tabular-nums">{money(e.amount)}</span>
+                  {canManage ? (
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        className="text-xs font-medium text-olive hover:underline"
+                        onClick={() => startEdit(e)}
+                        disabled={loading}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        className="text-xs font-medium text-rust hover:underline"
+                        onClick={() => handleArchive(e.id)}
+                        disabled={loading}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
               </li>
             ))}
           </ul>

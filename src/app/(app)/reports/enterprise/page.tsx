@@ -2,6 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { requireOnboardedUser } from "@/lib/auth/session";
 import { getEnterprisePlReport } from "@/lib/reports/enterprise";
+import {
+  currentMonthKey,
+  formatShortMonth,
+  monthBounds,
+  shiftMonth,
+} from "@/lib/reports/period";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const metadata: Metadata = {
@@ -12,9 +18,15 @@ function money(n: number) {
   return n.toLocaleString(undefined, { style: "currency", currency: "USD" });
 }
 
-export default async function EnterpriseReportPage() {
+export default async function EnterpriseReportPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ month?: string }>;
+}) {
   const session = await requireOnboardedUser();
-  const rows = await getEnterprisePlReport(session.organization!.id);
+  const { month: monthParam } = await searchParams;
+  const month = monthParam?.match(/^\d{4}-\d{2}$/) ? monthParam : undefined;
+  const rows = await getEnterprisePlReport(session.organization!.id, month);
 
   const totals = rows.reduce(
     (acc, r) => ({
@@ -27,6 +39,10 @@ export default async function EnterpriseReportPage() {
     { lots: 0, head: 0, invested: 0, revenue: 0, net: 0 },
   );
 
+  const periodLabel = month ? monthBounds(month).label : "All time";
+  const prev = month ? shiftMonth(month, -1) : undefined;
+  const next = month ? shiftMonth(month, 1) : undefined;
+
   return (
     <div className="space-y-6">
       <div>
@@ -35,21 +51,67 @@ export default async function EnterpriseReportPage() {
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-charcoal">Enterprise P&amp;L</h1>
         <p className="text-charcoal/70">
-          Costs and sales rolled up by lot enterprise type (all active lots).
+          Costs and sales by enterprise type — {periodLabel.toLowerCase()}.
         </p>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <Link
+          href="/reports/enterprise"
+          className={`rounded-lg border px-3 py-2 text-sm font-semibold ${
+            !month
+              ? "border-olive bg-olive/10 text-olive"
+              : "border-border text-olive hover:bg-olive/10"
+          }`}
+        >
+          All time
+        </Link>
+        <Link
+          href={`/reports/enterprise?month=${month ?? currentMonthKey()}`}
+          className={`rounded-lg border px-3 py-2 text-sm font-semibold ${
+            month
+              ? "border-olive bg-olive/10 text-olive"
+              : "border-border text-olive hover:bg-olive/10"
+          }`}
+        >
+          By month
+        </Link>
+        {month && prev && next ? (
+          <>
+            <Link
+              href={`/reports/enterprise?month=${prev}`}
+              className="rounded-lg border border-border px-3 py-2 text-sm font-semibold text-olive hover:bg-olive/10"
+            >
+              ← {formatShortMonth(prev)}
+            </Link>
+            <Link
+              href={`/reports/enterprise?month=${next}`}
+              className="rounded-lg border border-border px-3 py-2 text-sm font-semibold text-olive hover:bg-olive/10"
+            >
+              {formatShortMonth(next)} →
+            </Link>
+          </>
+        ) : null}
       </div>
 
       {rows.length === 0 ? (
         <Card>
           <CardHeader>
             <CardTitle>No lot data yet</CardTitle>
-            <CardDescription>Receive a lot to see enterprise breakdown.</CardDescription>
+            <CardDescription>
+              {month
+                ? "No enterprise activity logged this month."
+                : "Receive a lot to see enterprise breakdown."}
+            </CardDescription>
           </CardHeader>
         </Card>
       ) : (
         <>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <MiniStat label="Active lots" value={String(totals.lots)} />
+            <MiniStat
+              label={month ? "Lots active" : "Active lots"}
+              value={String(totals.lots)}
+            />
             <MiniStat label="Head on feed" value={String(totals.head)} />
             <MiniStat label="Total invested" value={money(totals.invested)} />
             <MiniStat
@@ -64,8 +126,9 @@ export default async function EnterpriseReportPage() {
               <CardHeader>
                 <CardTitle>{row.label}</CardTitle>
                 <CardDescription>
-                  {row.lot_count} lot{row.lot_count === 1 ? "" : "s"} · {row.current_head} head
-                  currently
+                  {row.lot_count} lot{row.lot_count === 1 ? "" : "s"} with
+                  {month ? " activity" : " lifetime costs"}
+                  {row.current_head > 0 ? ` · ${row.current_head} head currently` : ""}
                 </CardDescription>
               </CardHeader>
               <dl className="grid grid-cols-2 gap-3 px-4 pb-4 text-sm sm:grid-cols-3">

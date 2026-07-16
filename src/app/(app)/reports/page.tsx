@@ -51,7 +51,7 @@ export default async function ReportsPage() {
           <CardHeader>
             <CardTitle>By enterprise</CardTitle>
             <CardDescription>
-              Stocker, cow-calf, custom-fed, and other enterprises — costs vs sales.
+              Stocker, cow-calf, custom-fed — all time or by month.
             </CardDescription>
           </CardHeader>
           <Link href="/reports/enterprise">
