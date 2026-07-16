@@ -1,5 +1,7 @@
 import Link from "next/link";
 import type { AttentionLot, LowFeedAlert } from "@/lib/dashboard/queries";
+import { EnterpriseBadge } from "@/components/enterprise/enterprise-badge";
+import { SectionHeader } from "@/components/ui/section-header";
 import { Button } from "@/components/ui/button";
 
 interface OperationalAlertsProps {
@@ -14,11 +16,12 @@ export function OperationalAlerts({ attentionLots, lowFeedItems }: OperationalAl
     <div className="space-y-4">
       {attentionLots.length > 0 ? (
         <section className="rounded-[var(--radius-card)] border border-border-neutral bg-surface-white p-5 shadow-[var(--shadow-card)]">
-          <h2 className="text-lg font-bold text-navy">Lots Needing Attention</h2>
-          <p className="mt-0.5 text-sm text-text-secondary">
-            Receiving, hospital, ready to sell, or partially sold
-          </p>
-          <ul className="mt-3 divide-y divide-border-neutral">
+          <EnterpriseBadge enterprise="stocker" className="mb-3" />
+          <SectionHeader
+            title="Lots needing attention"
+            description="Receiving, hospital, ready to sell, or partially sold"
+          />
+          <ul className="mt-4 divide-y divide-border-neutral">
             {attentionLots.map((lot) => (
               <li key={lot.id}>
                 <Link

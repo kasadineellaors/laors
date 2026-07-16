@@ -28,6 +28,11 @@
   --radius-card: 13px;
   --radius-button: 9px;
 
+  /* Layout rhythm — 8px base */
+  --page-padding-x: 1rem;
+  --section-gap: 1.5rem;
+  --card-padding: 1.25rem;
+
   --background: color-mix(in srgb, var(--laors-cream) 35%, var(--surface-white));
   --foreground: var(--text-primary);
   --surface: var(--surface-white);

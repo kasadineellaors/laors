@@ -16,6 +16,9 @@ import { createClient } from "@/lib/supabase/server";
 import { AppPageShell } from "@/components/layout/app-page-shell";
 import { AppPageHeader } from "@/components/layout/app-page-header";
 import { ForemanSummaryPanel } from "@/components/cow-calf/foreman-summary-panel";
+import { EnterpriseBadge } from "@/components/enterprise/enterprise-badge";
+import { MetricCard } from "@/components/ui/metric-card";
+import { SectionHeader } from "@/components/ui/section-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -88,6 +91,9 @@ export default async function CowCalfPage() {
 
   return (
     <AppPageShell>
+      <div className="flex flex-wrap items-center gap-2">
+        <EnterpriseBadge enterprise="cow_calf" />
+      </div>
       <AppPageHeader
         title="Cow-Calf"
         subtitle="Herds, pairs, breeding, calving, and ranch foreman checks."
@@ -100,15 +106,11 @@ export default async function CowCalfPage() {
           { label: "Calves at side", value: inventory.calvesAtSide.toString() },
           { label: "Bulls turned out", value: activeBullsTurnedOut.toString() },
         ].map((stat) => (
-          <div
-            key={stat.label}
-            className="rounded-xl border border-border-neutral bg-surface-white px-3 py-4 text-center"
-          >
-            <p className="text-2xl font-bold text-brown">{stat.value}</p>
-            <p className="text-xs text-text-secondary">{stat.label}</p>
-          </div>
+          <MetricCard key={stat.label} label={stat.label} value={stat.value} centered />
         ))}
       </div>
+
+      <SectionHeader title="Herd snapshot" />
 
       <div className="grid gap-3 text-sm sm:grid-cols-4">
         <div className="rounded-lg bg-tan/20 px-3 py-2 text-center">

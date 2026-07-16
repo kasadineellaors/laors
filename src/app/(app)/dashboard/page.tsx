@@ -16,6 +16,8 @@ import { GettingStartedChecklist } from "@/components/dashboard/getting-started-
 import { getDashboardCommandCenter } from "@/lib/dashboard/queries";
 import { getDbSetupIssues } from "@/lib/system/db-status";
 import { hasCowCalfMode } from "@/lib/cow-calf/constants";
+import { getEnterpriseInventorySummary } from "@/lib/cow-calf/herd-queries";
+import { showEnterpriseSwitcher } from "@/lib/enterprise/ui";
 import { hasSeedstockMode } from "@/lib/seedstock/constants";
 import { getCalvingSummary } from "@/lib/cow-calf/queries";
 import { isCalendarEnabled } from "@/lib/org/settings";
@@ -33,6 +35,7 @@ import { HeadByEnterpriseCard } from "@/components/dashboard/head-by-enterprise-
 import { RecentActivityCard } from "@/components/dashboard/recent-activity-card";
 import { OperationalAlerts } from "@/components/dashboard/operational-alerts";
 import { DashboardEmptyLots } from "@/components/dashboard/dashboard-empty-lots";
+import { RanchEnterpriseHub } from "@/components/dashboard/ranch-enterprise-hub";
 
 export const metadata: Metadata = {
   title: "Dashboard — LAORS",
@@ -144,6 +147,7 @@ export default async function DashboardPage() {
   const role = session.membership?.system_role;
 
   const showCowCalf = hasCowCalfMode(modes);
+  const showDualEnterprise = showEnterpriseSwitcher(modes);
   const showSeedstock = hasSeedstockMode(modes);
   const showCalendar = isCalendarEnabled(org);
 
@@ -160,6 +164,7 @@ export default async function DashboardPage() {
     calvingSummary,
     commandCenter,
     recentActivity,
+    cowCalfInventory,
   ] = await Promise.all([
     getRanchTotalHeadCount(orgId),
     getLocationTreeWithRollups(orgId),
@@ -173,6 +178,7 @@ export default async function DashboardPage() {
     showCowCalf ? getCalvingSummary(orgId) : Promise.resolve({ total: 0, live: 0, thisMonth: 0 }),
     getDashboardCommandCenter(orgId),
     listAuditLog(orgId, 5),
+    showDualEnterprise ? getEnterpriseInventorySummary(orgId) : Promise.resolve(null),
   ]);
 
   const propertyCount = tree.length;
@@ -216,7 +222,10 @@ export default async function DashboardPage() {
     { label: "New Task", href: "/jobs/new", variant: "outline" as const },
     { label: "Rainfall", href: "/weather/rainfall/new", variant: "outline" as const },
     ...(showCowCalf
-      ? [{ label: "Log Calving", href: "/cow-calf/calving/new", variant: "outline" as const }]
+      ? [
+          { label: "Cow-Calf overview", href: "/cow-calf", variant: "outline" as const },
+          { label: "Log Calving", href: "/cow-calf/calving/new", variant: "outline" as const },
+        ]
       : []),
     ...(showSeedstock
       ? [{ label: "Seedstock", href: "/seedstock", variant: "outline" as const }]
@@ -263,6 +272,27 @@ export default async function DashboardPage() {
       </div>
 
       <ForemanSummary items={foremanItems} />
+
+      {showDualEnterprise ? (
+        <RanchEnterpriseHub
+          stocker={{
+            activeLots: commandCenter.active_lots,
+            headOnFeed: commandCenter.total_open_head,
+            attentionLots: commandCenter.attention_lots.length,
+            openInvoices: showInvoices ? invoiceSummary.openCount : undefined,
+          }}
+          cowCalf={
+            cowCalfInventory
+              ? {
+                  herdCount: cowCalfInventory.herdCount,
+                  pairs: cowCalfInventory.pairs,
+                  calvesAtSide: cowCalfInventory.calvesAtSide,
+                  calvesThisMonth: calvingSummary.thisMonth,
+                }
+              : undefined
+          }
+        />
+      ) : null}
 
       <DbSetupBanner issues={dbIssues} />
 
@@ -331,7 +361,8 @@ export default async function DashboardPage() {
 
       {showCowCalf && calvingSummary.thisMonth > 0 ? (
         <AlertBanner href="/cow-calf/calving" linkLabel="View calving" variant="info">
-          {calvingSummary.thisMonth} calf{calvingSummary.thisMonth === 1 ? "" : "ves"} logged this month
+          <span className="font-semibold">Cow-Calf</span> — {calvingSummary.thisMonth} calf
+          {calvingSummary.thisMonth === 1 ? "" : "ves"} logged this month
         </AlertBanner>
       ) : null}
 

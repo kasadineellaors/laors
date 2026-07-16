@@ -3,6 +3,8 @@ import type { ReactNode } from "react";
 import type { CowCalfReportSnapshot } from "@/lib/cow-calf/report-types";
 import { formatLbs, formatPct } from "@/lib/cow-calf/report-metrics";
 import { ForemanSummaryPanel } from "@/components/cow-calf/foreman-summary-panel";
+import { MetricCard } from "@/components/ui/metric-card";
+import { SectionHeader } from "@/components/ui/section-header";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 function StatCard({
@@ -14,16 +16,10 @@ function StatCard({
   value: string;
   context?: string;
 }) {
-  return (
-    <div className="rounded-xl border border-border-neutral bg-surface-white px-3 py-4 text-center">
-      <p className="text-2xl font-bold text-brown">{value}</p>
-      <p className="text-xs font-medium text-navy">{label}</p>
-      {context ? <p className="mt-1 text-xs text-text-secondary">{context}</p> : null}
-    </div>
-  );
+  return <MetricCard label={label} value={value} context={context} centered className="min-h-0" />;
 }
 
-function Section({
+function ReportSection({
   title,
   description,
   children,
@@ -34,10 +30,7 @@ function Section({
 }) {
   return (
     <section className="space-y-3">
-      <div>
-        <h2 className="text-lg font-semibold text-navy">{title}</h2>
-        {description ? <p className="text-sm text-text-secondary">{description}</p> : null}
-      </div>
+      <SectionHeader title={title} description={description} />
       {children}
     </section>
   );
@@ -48,16 +41,19 @@ export function CowCalfReportsView({ report }: { report: CowCalfReportSnapshot }
 
   return (
     <div className="space-y-8">
-      <Section title="Inventory" description="Current cow-calf head and pairs (individual + group herds).">
+      <ReportSection
+        title="Inventory"
+        description="Current cow-calf head and pairs (individual + group herds)."
+      >
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <StatCard label="Cow-calf pairs" value={report.inventory.pairs.toString()} />
           <StatCard label="Cows & heifers" value={report.inventory.cows.toString()} />
           <StatCard label="Calves at side" value={report.inventory.calvesAtSide.toString()} />
           <StatCard label="Active herds" value={report.inventory.herdCount.toString()} />
         </div>
-      </Section>
+      </ReportSection>
 
-      <Section
+      <ReportSection
         title="Reproduction"
         description="Breeding program status — separate from stocker lot records."
       >
@@ -87,9 +83,9 @@ export function CowCalfReportsView({ report }: { report: CowCalfReportSnapshot }
         <Link href="/cow-calf/breeding" className="text-sm font-medium text-brown hover:underline">
           Open breeding hub →
         </Link>
-      </Section>
+      </ReportSection>
 
-      <Section title={`Calving ${year}`} description="Cow-calf calving records only.">
+      <ReportSection title={`Calving ${year}`} description="Cow-calf calving records only.">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <StatCard label="YTD calvings" value={report.calving.yearToDate.toString()} />
           <StatCard
@@ -107,15 +103,15 @@ export function CowCalfReportsView({ report }: { report: CowCalfReportSnapshot }
         <Link href="/cow-calf/calving" className="text-sm font-medium text-brown hover:underline">
           Calving records →
         </Link>
-      </Section>
+      </ReportSection>
 
-      <Section title={`Weaning & exits`} description={`${year} weaning and last 30 days of sales/loss.`}>
+      <ReportSection
+        title="Weaning & exits"
+        description={`${year} weaning and last 30 days of sales/loss.`}
+      >
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <StatCard label="YTD weaned" value={report.weaning.yearToDate.toString()} />
-          <StatCard
-            label="Avg weaning wt"
-            value={formatLbs(report.weaning.avgWeaningWeightLbs)}
-          />
+          <StatCard label="Avg weaning wt" value={formatLbs(report.weaning.avgWeaningWeightLbs)} />
           <StatCard
             label="Ready to wean"
             value={report.weaning.calvesReadyToWean.toString()}
@@ -137,9 +133,9 @@ export function CowCalfReportsView({ report }: { report: CowCalfReportSnapshot }
             Death & loss →
           </Link>
         </div>
-      </Section>
+      </ReportSection>
 
-      <Section
+      <ReportSection
         title="Inventory by herd"
         description="Current head count per active cow-calf herd."
       >
@@ -179,14 +175,14 @@ export function CowCalfReportsView({ report }: { report: CowCalfReportSnapshot }
             </table>
           </div>
         )}
-      </Section>
+      </ReportSection>
 
-      <Section
+      <ReportSection
         title="Data quality & foreman"
         description="Rule-based checks — review before breeding season or weaning."
       >
         <ForemanSummaryPanel items={report.dataQuality} />
-      </Section>
+      </ReportSection>
 
       <Card>
         <CardHeader>

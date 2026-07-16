@@ -1,3 +1,4 @@
+import { MetricCard } from "@/components/ui/metric-card";
 import { cn } from "@/lib/utils/cn";
 
 interface MetricProps {
@@ -6,12 +7,7 @@ interface MetricProps {
 }
 
 function CompactMetric({ value, label }: MetricProps) {
-  return (
-    <div className="rounded-[var(--radius-card)] border border-border-neutral bg-surface-white px-4 py-3 shadow-[var(--shadow-card)]">
-      <p className="text-xl font-bold tabular-nums leading-tight text-navy">{value}</p>
-      <p className="mt-0.5 text-xs font-medium text-text-secondary">{label}</p>
-    </div>
-  );
+  return <MetricCard label={label} value={value} className="min-h-0 px-4 py-3 [&_p:first-child]:text-xl" />;
 }
 
 interface CattleSummaryMetricsProps {

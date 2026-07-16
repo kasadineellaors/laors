@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { COW_CALF_NAV_ITEMS } from "@/lib/cow-calf/statuses";
+import { cn } from "@/lib/utils/cn";
 
 export function CowCalfEnterpriseNav() {
   const pathname = usePathname();
@@ -22,11 +23,14 @@ export function CowCalfEnterpriseNav() {
           <Link
             key={item.href}
             href={item.href}
-            className={`shrink-0 rounded-full px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2 ${
+            className={cn(
+              "shrink-0 rounded-full px-3 py-2 text-sm font-medium transition-colors",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2",
               active
                 ? "bg-navy text-surface-white"
-                : "bg-tan/30 text-text-secondary hover:bg-tan/50 hover:text-navy"
-            }`}
+                : "bg-tan/30 text-text-secondary hover:bg-tan/50 hover:text-navy",
+            )}
+            aria-current={active ? "page" : undefined}
           >
             {item.label}
           </Link>

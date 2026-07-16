@@ -6,6 +6,7 @@ import { canWriteInventory } from "@/lib/auth/roles";
 import { hasCowCalfMode } from "@/lib/cow-calf/constants";
 import { listBulls } from "@/lib/cow-calf/queries";
 import { BullList } from "@/components/cow-calf/bull-list";
+import { AppPageHeader } from "@/components/layout/app-page-header";
 import { Button } from "@/components/ui/button";
 import type { OperationMode } from "@/types/auth";
 
@@ -24,22 +25,19 @@ export default async function BullsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <Link href="/cow-calf" className="text-sm font-medium text-brown hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2">
-            ← Cow-Calf
-          </Link>
-          <h1 className="mt-1 text-[1.75rem] font-bold leading-tight text-navy sm:text-[2rem]">Bulls</h1>
-          <p className="text-text-secondary">
-            {bulls.filter((b) => b.status === "active").length} active
-          </p>
-        </div>
-        {canManage ? (
-          <Link href="/cow-calf/bulls/new">
-            <Button size="lg">+ Bull</Button>
-          </Link>
-        ) : null}
-      </div>
+      <AppPageHeader
+        title="Bulls"
+        subtitle={`${bulls.filter((b) => b.status === "active").length} active`}
+        backHref="/cow-calf"
+        backLabel="Cow-Calf"
+        actions={
+          canManage ? (
+            <Link href="/cow-calf/bulls/new">
+              <Button size="lg">+ Bull</Button>
+            </Link>
+          ) : undefined
+        }
+      />
       <BullList bulls={bulls} />
     </div>
   );

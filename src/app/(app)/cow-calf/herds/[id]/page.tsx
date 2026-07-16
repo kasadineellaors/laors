@@ -5,6 +5,7 @@ import { getCowCalfHerd, getHerdInventorySummary } from "@/lib/cow-calf/herd-que
 import { RECORDKEEPING_MODE_LABELS, HERD_STATUS_LABELS } from "@/lib/cow-calf/statuses";
 import { HerdQuickActions } from "@/components/cow-calf/herd-quick-actions";
 import { AppPageHeader } from "@/components/layout/app-page-header";
+import { MetricCard } from "@/components/ui/metric-card";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const metadata: Metadata = {
@@ -37,13 +38,13 @@ export default async function HerdDetailPage({
           { label: "Bulls", value: inventory.bulls },
           { label: "Total head", value: inventory.totalPhysicalHead },
         ].map((stat) => (
-          <div
+          <MetricCard
             key={stat.label}
-            className="rounded-xl border border-border-neutral bg-surface-white px-3 py-4 text-center"
-          >
-            <p className="text-2xl font-bold text-brown">{stat.value}</p>
-            <p className="text-xs text-text-secondary">{stat.label}</p>
-          </div>
+            label={stat.label}
+            value={stat.value.toString()}
+            centered
+            className="min-h-0"
+          />
         ))}
       </div>
 

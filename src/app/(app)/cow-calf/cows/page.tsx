@@ -6,6 +6,7 @@ import { canWriteInventory } from "@/lib/auth/roles";
 import { hasCowCalfMode } from "@/lib/cow-calf/constants";
 import { getCowSummary, listCows } from "@/lib/cow-calf/queries";
 import { CowList } from "@/components/cow-calf/cow-list";
+import { AppPageHeader } from "@/components/layout/app-page-header";
 import { Button } from "@/components/ui/button";
 import type { OperationMode } from "@/types/auth";
 
@@ -24,22 +25,19 @@ export default async function CowsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <Link href="/cow-calf" className="text-sm font-medium text-brown hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2">
-            ← Cow-Calf
-          </Link>
-          <h1 className="mt-1 text-[1.75rem] font-bold leading-tight text-navy sm:text-[2rem]">Cows & heifers</h1>
-          <p className="text-text-secondary">
-            {summary.active} active · {summary.cows} cows · {summary.heifers} heifers
-          </p>
-        </div>
-        {canManage ? (
-          <Link href="/cow-calf/cows/new">
-            <Button size="lg">+ Register</Button>
-          </Link>
-        ) : null}
-      </div>
+      <AppPageHeader
+        title="Cows & heifers"
+        subtitle={`${summary.active} active · ${summary.cows} cows · ${summary.heifers} heifers`}
+        backHref="/cow-calf"
+        backLabel="Cow-Calf"
+        actions={
+          canManage ? (
+            <Link href="/cow-calf/cows/new">
+              <Button size="lg">+ Register</Button>
+            </Link>
+          ) : undefined
+        }
+      />
       <CowList cows={cows} />
     </div>
   );
