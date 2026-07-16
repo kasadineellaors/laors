@@ -73,7 +73,7 @@ function revalidateFeed() {
   revalidatePath("/feed/rations");
   revalidatePath("/feed/log");
   revalidatePath("/cow-calf");
-  revalidatePath("/cow-calf/feed");
+  revalidatePath("/feed/cow-calf");
   revalidatePath("/dashboard");
   revalidatePath("/invoices/generate");
   revalidatePath("/reports");

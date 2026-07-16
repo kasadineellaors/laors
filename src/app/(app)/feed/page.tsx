@@ -70,7 +70,7 @@ export default async function FeedPage() {
         />
         {showCowCalf ? (
           <FeedModuleCard
-            href="/cow-calf/feed"
+            href="/feed/cow-calf"
             title="Cow-Calf Feed"
             description="Hay, mineral, and supplement for pairs and pastures."
             metric={`${cowCalfSummary?.last7Days ?? 0} feeding${cowCalfSummary?.last7Days === 1 ? "" : "s"} this week`}

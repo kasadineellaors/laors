@@ -36,6 +36,13 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  async redirects() {
+    return [
+      { source: "/cow-calf/feed", destination: "/feed/cow-calf", permanent: true },
+      { source: "/cow-calf/feed/new", destination: "/feed/cow-calf/new", permanent: true },
+      { source: "/cow-calf/feed/:id", destination: "/feed/cow-calf/:id", permanent: true },
+    ];
+  },
   async headers() {
     return [
       {
