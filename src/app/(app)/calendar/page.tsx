@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireOnboardedUser } from "@/lib/auth/session";
 import { isCalendarEnabled } from "@/lib/org/settings";
 import { listCalendarEventsForRange } from "@/lib/calendar/queries";
-import { CalendarMonth } from "@/components/calendar/calendar-month";
-import { Button } from "@/components/ui/button";
+import { addDaysIso, todayIso } from "@/lib/calendar/display";
+import { computeCalendarSummary } from "@/lib/calendar/summary";
+import { CalendarPageHeader } from "@/components/calendar/calendar-page-header";
+import { CalendarSummaryMetrics } from "@/components/calendar/calendar-summary-metrics";
+import { CalendarView } from "@/components/calendar/calendar-view";
 
 export const metadata: Metadata = {
   title: "Calendar — LAORS",
@@ -48,31 +50,41 @@ export default async function CalendarPage({
   const { month: monthQuery } = await searchParams;
   const { year, month } = parseMonth({ month: monthQuery });
   const { start, end } = monthRange(year, month);
-  const events = await listCalendarEventsForRange(orgId, start, end);
+
+  const today = todayIso();
+  const agendaStart = addDaysIso(today, -30);
+  const agendaEnd = addDaysIso(today, 60);
+
+  const [monthEvents, agendaEvents] = await Promise.all([
+    listCalendarEventsForRange(orgId, start, end),
+    listCalendarEventsForRange(orgId, agendaStart, agendaEnd, { includeOverdueTasks: true }),
+  ]);
+
+  const summary = computeCalendarSummary(agendaEvents, today);
+  const showMetrics =
+    summary.today > 0 ||
+    summary.next7Days > 0 ||
+    summary.overdueJobs > 0 ||
+    summary.livestockDates > 0;
 
   const prev = shiftMonth(year, month, -1);
   const next = shiftMonth(year, month, 1);
+  const now = new Date();
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-charcoal">Calendar</h1>
-          <p className="text-charcoal/70">
-            Ranch schedule — events, job due dates, and calving due dates
-          </p>
-        </div>
-        <Link href="/calendar/new">
-          <Button size="lg">+ Event</Button>
-        </Link>
-      </div>
+    <div className="flex min-h-[calc(100dvh-8.5rem)] flex-1 flex-col gap-6 pb-4">
+      <CalendarPageHeader />
 
-      <CalendarMonth
+      {showMetrics ? <CalendarSummaryMetrics summary={summary} /> : null}
+
+      <CalendarView
         year={year}
         month={month}
-        events={events}
+        monthEvents={monthEvents}
+        agendaEvents={agendaEvents}
         prevHref={`/calendar?month=${monthParam(prev.year, prev.month)}`}
         nextHref={`/calendar?month=${monthParam(next.year, next.month)}`}
+        todayHref={`/calendar?month=${monthParam(now.getFullYear(), now.getMonth() + 1)}`}
       />
     </div>
   );

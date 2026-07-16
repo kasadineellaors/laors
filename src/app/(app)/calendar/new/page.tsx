@@ -34,19 +34,23 @@ export default async function NewCalendarEventPage({
     ),
   ]);
 
+  const defaultDate = date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : undefined;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-4">
       <div>
-        <Link href="/calendar" className="text-sm font-medium text-olive hover:underline">
+        <Link href="/calendar" className="text-sm font-medium text-brown hover:underline">
           ← Calendar
         </Link>
-        <h1 className="mt-1 text-2xl font-bold text-charcoal">New event</h1>
+        <h1 className="mt-1 text-[1.75rem] font-bold leading-tight text-navy sm:text-[2rem]">
+          New event
+        </h1>
       </div>
       <CalendarEventForm
         orgId={orgId}
         locationOptions={locations}
         groupOptions={groups}
-        defaultDate={date}
+        defaultDate={defaultDate}
       />
     </div>
   );

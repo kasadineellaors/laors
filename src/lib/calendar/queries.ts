@@ -12,6 +12,7 @@ export async function listCalendarEventsForRange(
   orgId: string,
   rangeStart: string,
   rangeEnd: string,
+  options?: { includeOverdueTasks?: boolean },
 ): Promise<CalendarEventRecord[]> {
   const supabase = await createClient();
   const items: CalendarEventRecord[] = [];
@@ -79,6 +80,8 @@ export async function listCalendarEventsForRange(
         color: e.color,
         created_by: e.created_by,
         created_by_name: null,
+        assigned_to_name: null,
+        priority: null,
         editable: true,
         source: "event",
       });
@@ -87,8 +90,11 @@ export async function listCalendarEventsForRange(
 
   const tasks = await listTasks(orgId, "all");
   for (const t of tasks) {
-    if (!t.due_date || t.due_date < rangeStart || t.due_date > rangeEnd) continue;
+    if (!t.due_date) continue;
     if (t.status === "done" || t.status === "cancelled") continue;
+    const inRange = t.due_date >= rangeStart && t.due_date <= rangeEnd;
+    const isOverdue = options?.includeOverdueTasks && t.due_date < rangeStart;
+    if (!inRange && !isOverdue) continue;
     items.push({
       id: `task-${t.id}`,
       title: `Job: ${t.title}`,
@@ -104,6 +110,8 @@ export async function listCalendarEventsForRange(
       color: null,
       created_by: t.created_by,
       created_by_name: t.created_by_name,
+      assigned_to_name: t.assigned_to_name,
+      priority: t.priority,
       editable: false,
       source: "task",
     });
@@ -129,6 +137,8 @@ export async function listCalendarEventsForRange(
       color: null,
       created_by: null,
       created_by_name: null,
+      assigned_to_name: null,
+      priority: null,
       editable: false,
       source: "breeding",
     });

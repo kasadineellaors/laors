@@ -8,7 +8,7 @@ export type CalendarEventType =
   | "sale"
   | "other";
 
-export type CalendarItemSource = "event" | "task" | "breeding" | "job";
+export type CalendarItemSource = "event" | "task" | "breeding";
 
 export interface CalendarEventRecord {
   id: string;
@@ -25,6 +25,8 @@ export interface CalendarEventRecord {
   color: string | null;
   created_by: string | null;
   created_by_name: string | null;
+  assigned_to_name: string | null;
+  priority: string | null;
   editable: boolean;
   source: CalendarItemSource;
 }

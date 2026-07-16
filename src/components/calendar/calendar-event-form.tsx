@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { SelectOption } from "@/lib/locations/options";
 import type { CalendarEventRecord, CalendarEventType } from "@/lib/calendar/types";
@@ -40,9 +40,7 @@ export function CalendarEventForm({
   const [description, setDescription] = useState(event?.description ?? "");
   const [allDay, setAllDay] = useState(event?.all_day ?? true);
   const [startsAt, setStartsAt] = useState(
-    event
-      ? toLocalDatetimeValue(event.starts_at, event.all_day)
-      : defaultDate ?? "",
+    event ? toLocalDatetimeValue(event.starts_at, event.all_day) : defaultDate ?? "",
   );
   const [endsAt, setEndsAt] = useState(
     event?.ends_at ? toLocalDatetimeValue(event.ends_at, event.all_day) : "",
@@ -51,7 +49,13 @@ export function CalendarEventForm({
   const [locationId, setLocationId] = useState(event?.location_id ?? "");
   const [groupId, setGroupId] = useState(event?.cattle_group_id ?? "");
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!defaultDate || event) return;
+    if (!startsAt) setStartsAt(defaultDate);
+  }, [defaultDate, event, startsAt]);
 
   function toIso(local: string, isAllDay: boolean) {
     if (!local) return "";
@@ -61,12 +65,27 @@ export function CalendarEventForm({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (loading) return;
     setLoading(true);
     setError(null);
+    setFieldErrors({});
+
+    const trimmedTitle = title.trim();
+    if (!trimmedTitle) {
+      setFieldErrors({ title: "Enter an event title" });
+      setLoading(false);
+      return;
+    }
+
+    if (!startsAt) {
+      setFieldErrors({ startsAt: "Select a date" });
+      setLoading(false);
+      return;
+    }
 
     const payload = {
-      title,
-      description: description || undefined,
+      title: trimmedTitle,
+      description: description.trim() || undefined,
       allDay,
       startsAt: toIso(startsAt, allDay),
       endsAt: endsAt ? toIso(endsAt, allDay) : undefined,
@@ -78,7 +97,7 @@ export function CalendarEventForm({
     const result = isEdit
       ? await updateCalendarEvent(orgId, event!.id, {
           ...payload,
-          description: description || null,
+          description: description.trim() || null,
           endsAt: endsAt ? toIso(endsAt, allDay) : null,
           locationId: locationId || null,
           cattleGroupId: groupId || null,
@@ -101,47 +120,56 @@ export function CalendarEventForm({
     router.refresh();
   }
 
+  const selectClass =
+    "flex h-12 min-h-12 w-full rounded-lg border border-border-neutral bg-surface-white px-4 text-base text-text-primary";
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6 pb-4">
       <Card>
         <CardHeader>
-          <CardTitle>{isEdit ? "Edit event" : "New calendar event"}</CardTitle>
+          <CardTitle className="text-navy">{isEdit ? "Edit event" : "New event"}</CardTitle>
           <CardDescription>
-            Shared with everyone on the ranch — vet visits, shipping, pasture moves, and more.
+            Schedule ranch activity, deadlines, appointments, and reminders.
           </CardDescription>
         </CardHeader>
-        <div className="space-y-4 px-4 pb-4">
-          <div className="space-y-2">
+        <div className="space-y-4">
+          <div>
             <Label htmlFor="title">Title</Label>
             <Input
               id="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="preg check, ship cattle, brand…"
+              placeholder="Preg check, ship cattle, brand…"
               required
+              aria-invalid={Boolean(fieldErrors.title)}
             />
+            {fieldErrors.title ? (
+              <p className="mt-1 text-sm text-status-critical" role="alert">
+                {fieldErrors.title}
+              </p>
+            ) : null}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Notes</Label>
+          <div>
+            <Label htmlFor="description">Notes (optional)</Label>
             <textarea
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
-              placeholder="Optional details for the crew"
+              className="flex min-h-[5rem] w-full rounded-lg border border-border-neutral bg-surface-white px-4 py-3 text-base"
+              placeholder="Details for the crew"
             />
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="eventType">Type</Label>
+            <div>
+              <Label htmlFor="eventType">Category</Label>
               <select
                 id="eventType"
                 value={eventType}
                 onChange={(e) => setEventType(e.target.value as CalendarEventType)}
-                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+                className={selectClass}
               >
                 {Object.entries(CALENDAR_EVENT_TYPE_LABELS).map(([value, label]) => (
                   <option key={value} value={value}>
@@ -150,31 +178,37 @@ export function CalendarEventForm({
                 ))}
               </select>
             </div>
-            <div className="flex items-end gap-2 pb-1">
+            <div className="flex min-h-12 items-center gap-2 pt-6">
               <input
                 id="allDay"
                 type="checkbox"
                 checked={allDay}
                 onChange={(e) => setAllDay(e.target.checked)}
-                className="h-4 w-4 rounded border-border"
+                className="h-5 w-5 rounded border-border-neutral"
               />
               <Label htmlFor="allDay">All day</Label>
             </div>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="startsAt">Starts</Label>
+            <div>
+              <Label htmlFor="startsAt">{allDay ? "Date" : "Start"}</Label>
               <Input
                 id="startsAt"
                 type={allDay ? "date" : "datetime-local"}
                 value={startsAt}
                 onChange={(e) => setStartsAt(e.target.value)}
                 required
+                aria-invalid={Boolean(fieldErrors.startsAt)}
               />
+              {fieldErrors.startsAt ? (
+                <p className="mt-1 text-sm text-status-critical" role="alert">
+                  {fieldErrors.startsAt}
+                </p>
+              ) : null}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="endsAt">Ends (optional)</Label>
+            <div>
+              <Label htmlFor="endsAt">{allDay ? "End date (optional)" : "End (optional)"}</Label>
               <Input
                 id="endsAt"
                 type={allDay ? "date" : "datetime-local"}
@@ -185,15 +219,15 @@ export function CalendarEventForm({
           </div>
 
           {locationOptions.length > 0 ? (
-            <div className="space-y-2">
-              <Label htmlFor="location">Location</Label>
+            <div>
+              <Label htmlFor="location">Location (optional)</Label>
               <select
                 id="location"
                 value={locationId}
                 onChange={(e) => setLocationId(e.target.value)}
-                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+                className={selectClass}
               >
-                <option value="">— Any / not set —</option>
+                <option value="">Ranch-wide</option>
                 {locationOptions.map((o) => (
                   <option key={o.value} value={o.value}>
                     {o.label}
@@ -204,15 +238,15 @@ export function CalendarEventForm({
           ) : null}
 
           {groupOptions.length > 0 ? (
-            <div className="space-y-2">
-              <Label htmlFor="group">Herd / group</Label>
+            <div>
+              <Label htmlFor="group">Cattle group (optional)</Label>
               <select
                 id="group"
                 value={groupId}
                 onChange={(e) => setGroupId(e.target.value)}
-                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+                className={selectClass}
               >
-                <option value="">— Not set —</option>
+                <option value="">None</option>
                 {groupOptions.map((g) => (
                   <option key={g.value} value={g.value}>
                     {g.label}
@@ -224,13 +258,15 @@ export function CalendarEventForm({
         </div>
       </Card>
 
-      {error ? <p className="text-sm font-medium text-red-600">{error}</p> : null}
+      {error ? (
+        <p className="text-sm text-status-critical" role="alert">
+          {error}
+        </p>
+      ) : null}
 
-      <div className="flex gap-3">
-        <Button type="submit" size="lg" disabled={loading}>
-          {loading ? "Saving…" : isEdit ? "Save changes" : "Add event"}
-        </Button>
-      </div>
+      <Button type="submit" size="lg" fullWidth disabled={loading}>
+        {loading ? "Saving…" : isEdit ? "Save changes" : "Create Event"}
+      </Button>
     </form>
   );
 }
