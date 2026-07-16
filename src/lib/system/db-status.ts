@@ -186,6 +186,18 @@ export async function getDbSetupIssues(): Promise<DbSetupIssue[]> {
       fix: "Run supabase/RUN_PHASE30.sql or supabase/RUN_THIS_IN_SUPABASE.sql",
     },
     {
+      id: "phase32-customer-portal",
+      probe: async () => {
+        const { error } = await supabase
+          .from("customer_portal_access")
+          .select("portal_token")
+          .limit(1);
+        return !error;
+      },
+      message: "Customer portal links are not set up",
+      fix: "Run supabase/RUN_PHASE32.sql or supabase/RUN_THIS_IN_SUPABASE.sql",
+    },
+    {
       id: "phase13-calendar",
       probe: async () => {
         const { error } = await supabase.from("calendar_events").select("id").limit(1);

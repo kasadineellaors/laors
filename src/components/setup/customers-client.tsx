@@ -8,6 +8,7 @@ import {
   createCustomer,
   updateCustomer,
 } from "@/lib/actions/customers";
+import { CustomerPortalPanel } from "@/components/setup/customer-portal-panel";
 import { SetupEditableRow } from "@/components/setup/setup-editable-row";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +18,8 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 interface CustomersClientProps {
   orgId: string;
   customers: CustomerRecord[];
+  portalUrls: Record<string, string>;
+  emailConfigured: boolean;
 }
 
 function formatRate(value: number | null) {
@@ -24,7 +27,12 @@ function formatRate(value: number | null) {
   return String(value);
 }
 
-export function CustomersClient({ orgId, customers }: CustomersClientProps) {
+export function CustomersClient({
+  orgId,
+  customers,
+  portalUrls,
+  emailConfigured,
+}: CustomersClientProps) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -77,8 +85,8 @@ export function CustomersClient({ orgId, customers }: CustomersClientProps) {
             <li className="text-sm text-charcoal/60">None yet — add below</li>
           ) : (
             customers.map((c) => (
-              <SetupEditableRow
-                key={c.id}
+              <li key={c.id} className="space-y-2">
+                <SetupEditableRow
                 badge={
                   c.email?.trim()
                     ? c.email
@@ -130,7 +138,16 @@ export function CustomersClient({ orgId, customers }: CustomersClientProps) {
                   if (!result.error) router.refresh();
                   return result;
                 }}
-              />
+                />
+                <CustomerPortalPanel
+                  orgId={orgId}
+                  customerId={c.id}
+                  customerName={c.name}
+                  customerEmail={c.email}
+                  initialPortalUrl={portalUrls[c.id] ?? null}
+                  emailConfigured={emailConfigured}
+                />
+              </li>
             ))
           )}
         </ul>
