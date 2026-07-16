@@ -3,6 +3,7 @@ export interface FeedRationRecord {
   name: string;
   unit: string;
   price_per_unit: number | null;
+  effective_from: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -41,6 +42,8 @@ export interface FeedingRecord {
   fed_by: string | null;
   fed_by_name: string | null;
   notes: string | null;
+  unit_cost_snapshot: number | null;
+  total_feed_cost: number | null;
   created_by: string | null;
   created_by_name: string | null;
   created_at: string;

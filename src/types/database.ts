@@ -1567,6 +1567,30 @@ export interface Database {
         };
         Relationships: [];
       };
+      feed_ration_price_history: {
+        Row: {
+          id: string;
+          organization_id: string;
+          feed_ration_id: string;
+          price_per_unit: number;
+          effective_from: string;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          feed_ration_id: string;
+          price_per_unit: number;
+          effective_from: string;
+          created_by?: string | null;
+        };
+        Update: {
+          price_per_unit?: number;
+          effective_from?: string;
+        };
+        Relationships: [];
+      };
       feed_items: {
         Row: {
           id: string;

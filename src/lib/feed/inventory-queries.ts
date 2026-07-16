@@ -5,6 +5,7 @@ import type {
   FeedItemRecord,
   FeedPurchaseRecord,
   FeedRationIngredient,
+  FeedRationPriceHistory,
   FeedStockAdjustment,
 } from "./inventory-types";
 
@@ -215,4 +216,97 @@ export async function getRationUnitPrices(
   }
 
   return prices;
+}
+
+export function rationPriceLookupKey(rationId: string, asOfDate: string): string {
+  return `${rationId}|${asOfDate}`;
+}
+
+export async function listRationPriceHistory(
+  orgId: string,
+  rationId: string,
+  limit = 20,
+): Promise<FeedRationPriceHistory[]> {
+  const supabase = await createClient();
+  const { data: rows } = await supabase
+    .from("feed_ration_price_history")
+    .select("id, feed_ration_id, price_per_unit, effective_from, created_by, created_at")
+    .eq("organization_id", orgId)
+    .eq("feed_ration_id", rationId)
+    .order("effective_from", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (!rows?.length) return [];
+
+  const profileIds = [...new Set(rows.map((r) => r.created_by).filter(Boolean))] as string[];
+  const { data: profiles } = profileIds.length
+    ? await supabase.from("profiles").select("id, full_name").in("id", profileIds)
+    : { data: [] };
+
+  const names = new Map(
+    (profiles ?? []).map((p) => [p.id, p.full_name?.trim() || "Team member"]),
+  );
+
+  return rows.map((r) => ({
+    id: r.id,
+    feed_ration_id: r.feed_ration_id,
+    price_per_unit: Number(r.price_per_unit),
+    effective_from: r.effective_from,
+    created_by_name: r.created_by ? names.get(r.created_by) ?? null : null,
+    created_at: r.created_at,
+  }));
+}
+
+export async function getRationUnitPriceAtDate(
+  orgId: string,
+  rationId: string,
+  asOfDate: string,
+): Promise<number> {
+  const prices = await getRationUnitPricesAtDates(orgId, [{ rationId, asOfDate }]);
+  return prices.get(rationPriceLookupKey(rationId, asOfDate)) ?? 0;
+}
+
+export async function getRationUnitPricesAtDates(
+  orgId: string,
+  items: Array<{ rationId: string; asOfDate: string }>,
+): Promise<Map<string, number>> {
+  const result = new Map<string, number>();
+  if (!items.length) return result;
+
+  const rationIds = [...new Set(items.map((i) => i.rationId))];
+  const supabase = await createClient();
+
+  const [{ data: historyRows }, currentPrices] = await Promise.all([
+    supabase
+      .from("feed_ration_price_history")
+      .select("feed_ration_id, price_per_unit, effective_from")
+      .eq("organization_id", orgId)
+      .in("feed_ration_id", rationIds)
+      .order("effective_from", { ascending: false }),
+    getRationUnitPrices(orgId, rationIds),
+  ]);
+
+  const historyByRation = new Map<
+    string,
+    Array<{ effective_from: string; price_per_unit: number }>
+  >();
+  for (const row of historyRows ?? []) {
+    const list = historyByRation.get(row.feed_ration_id) ?? [];
+    list.push({
+      effective_from: row.effective_from,
+      price_per_unit: Number(row.price_per_unit),
+    });
+    historyByRation.set(row.feed_ration_id, list);
+  }
+
+  for (const item of items) {
+    const key = rationPriceLookupKey(item.rationId, item.asOfDate);
+    const history = historyByRation.get(item.rationId) ?? [];
+    const match = history.find((h) => h.effective_from <= item.asOfDate);
+    const price = match?.price_per_unit ?? currentPrices.get(item.rationId) ?? 0;
+    result.set(key, price);
+  }
+
+  return result;
 }

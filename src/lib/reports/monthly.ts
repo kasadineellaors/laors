@@ -1,4 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
+import {
+  getRationUnitPricesAtDates,
+  rationPriceLookupKey,
+} from "@/lib/feed/inventory-queries";
 import type { MonthlyOperationsSummary } from "./types";
 
 function monthBounds(month: string): { start: string; end: string; label: string } {
@@ -42,7 +46,7 @@ export async function getMonthlyOperationsSummary(
       .lte("sale_date", end),
     supabase
       .from("feeding_records")
-      .select("quantity, total_feed_cost, feed_ration_id")
+      .select("quantity, total_feed_cost, feed_ration_id, fed_at, unit_cost_snapshot")
       .eq("organization_id", orgId)
       .eq("is_active", true)
       .gte("fed_at", start)
@@ -77,12 +81,23 @@ export async function getMonthlyOperationsSummary(
       .lte("purchase_date", end),
   ]);
 
+  const missingPriceLookups = (feedings ?? [])
+    .filter((f) => f.total_feed_cost == null)
+    .map((f) => ({ rationId: f.feed_ration_id, asOfDate: f.fed_at }));
+  const historicalPrices = await getRationUnitPricesAtDates(orgId, missingPriceLookups);
+
   let feedCost = 0;
   let feedQuantity = 0;
   for (const f of feedings ?? []) {
     feedQuantity += Number(f.quantity);
     if (f.total_feed_cost != null) {
       feedCost += Number(f.total_feed_cost);
+    } else {
+      const unitCost =
+        f.unit_cost_snapshot != null
+          ? Number(f.unit_cost_snapshot)
+          : historicalPrices.get(rationPriceLookupKey(f.feed_ration_id, f.fed_at)) ?? 0;
+      feedCost += unitCost * Number(f.quantity);
     }
   }
 

@@ -20,6 +20,7 @@ export async function listFeedRations(orgId: string): Promise<FeedRationRecord[]
     name: r.name,
     unit: r.unit,
     price_per_unit: r.price_per_unit != null ? Number(r.price_per_unit) : null,
+    effective_from: r.effective_from ?? null,
     notes: r.notes,
     created_at: r.created_at,
     updated_at: r.updated_at,
@@ -43,6 +44,7 @@ export async function getFeedRation(orgId: string, id: string): Promise<FeedRati
     name: data.name,
     unit: data.unit,
     price_per_unit: data.price_per_unit != null ? Number(data.price_per_unit) : null,
+    effective_from: data.effective_from ?? null,
     notes: data.notes,
     created_at: data.created_at,
     updated_at: data.updated_at,
@@ -66,6 +68,8 @@ type FeedingRow = {
   feed_ration_id: string;
   quantity: number;
   head_count: number | null;
+  unit_cost_snapshot?: number | null;
+  total_feed_cost?: number | null;
   cattle_group_id: string | null;
   location_id: string | null;
   ownership_group_id: string | null;
@@ -159,6 +163,9 @@ async function enrichFeedings(orgId: string, rows: FeedingRow[]): Promise<Feedin
       fed_by: row.fed_by,
       fed_by_name: row.fed_by ? profileMap.get(row.fed_by) ?? null : null,
       notes: row.notes,
+      unit_cost_snapshot:
+        row.unit_cost_snapshot != null ? Number(row.unit_cost_snapshot) : null,
+      total_feed_cost: row.total_feed_cost != null ? Number(row.total_feed_cost) : null,
       created_by: row.created_by,
       created_by_name: row.created_by ? profileMap.get(row.created_by) ?? null : null,
       created_at: row.created_at,

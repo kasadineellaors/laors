@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { FeedRationRecord } from "@/lib/feed/types";
-import type { FeedItemOption, FeedRationIngredient } from "@/lib/feed/inventory-types";
+import type { FeedItemOption, FeedRationIngredient, FeedRationPriceHistory } from "@/lib/feed/inventory-types";
 import { computeRationRecipeCost, resolveRationUnitPrice } from "@/lib/feed/costing";
 import { archiveFeedRation } from "@/lib/actions/feed";
 import { RationForm } from "@/components/feed/ration-form";
@@ -16,6 +16,7 @@ interface RationDetailClientProps {
   canManage: boolean;
   feedItems: FeedItemOption[];
   ingredients: FeedRationIngredient[];
+  priceHistory?: FeedRationPriceHistory[];
 }
 
 export function RationDetailClient({
@@ -24,6 +25,7 @@ export function RationDetailClient({
   canManage,
   feedItems,
   ingredients,
+  priceHistory = [],
 }: RationDetailClientProps) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
@@ -82,6 +84,18 @@ export function RationDetailClient({
               {ration.price_per_unit == null && recipeCost > 0 ? " (from recipe)" : ""}
             </dd>
           </div>
+          {ration.effective_from ? (
+            <div>
+              <dt className="text-charcoal/50">Current price since</dt>
+              <dd className="font-medium text-charcoal">
+                {new Date(ration.effective_from + "T12:00:00").toLocaleDateString(undefined, {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </dd>
+            </div>
+          ) : null}
           {recipeCost > 0 ? (
             <div>
               <dt className="text-charcoal/50">Recipe cost</dt>
@@ -115,6 +129,31 @@ export function RationDetailClient({
           ) : null}
         </dl>
       </div>
+
+      {priceHistory.length > 0 ? (
+        <div className="rounded-xl border border-border bg-surface px-4 py-5">
+          <h2 className="text-lg font-semibold text-charcoal">Price history</h2>
+          <ul className="mt-4 space-y-2 text-sm">
+            {priceHistory.map((row) => (
+              <li
+                key={row.id}
+                className="flex items-center justify-between gap-3 border-b border-border/60 pb-2 last:border-0"
+              >
+                <span className="text-charcoal/70">
+                  {new Date(row.effective_from + "T12:00:00").toLocaleDateString(undefined, {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </span>
+                <span className="font-medium text-charcoal">
+                  ${row.price_per_unit.toFixed(2)}/{ration.unit}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       {error ? (
         <p className="text-sm text-rust" role="alert">

@@ -1,6 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { getCustomer } from "@/lib/customers/queries";
 import { computeCustomerHeadDays } from "@/lib/invoices/head-days";
+import {
+  getRationUnitPricesAtDates,
+  rationPriceLookupKey,
+} from "@/lib/feed/inventory-queries";
 import type { BillingLinePreview, BillingPreview, GroupHeadDaysBreakdown } from "./types";
 
 function daysInclusive(start: string, end: string): number {
@@ -164,7 +168,9 @@ export async function buildBillingPreview(
 
     const feedRes = await supabase
       .from("feeding_records")
-      .select("id, fed_at, cattle_group_id, feed_ration_id, quantity, invoiced_at, feeding_context")
+      .select(
+        "id, fed_at, cattle_group_id, feed_ration_id, quantity, invoiced_at, feeding_context, unit_cost_snapshot",
+      )
       .eq("organization_id", orgId)
       .eq("is_active", true)
       .eq("feeding_context", "general")
@@ -180,6 +186,7 @@ export async function buildBillingPreview(
       cattle_group_id: string | null;
       feed_ration_id: string;
       quantity: number;
+      unit_cost_snapshot?: number | null;
     }> | null = feedRes.data;
 
     if (feedRes.error?.message.includes("feeding_records")) {
@@ -219,11 +226,22 @@ export async function buildBillingPreview(
     );
     const rationNames = new Map((rations ?? []).map((r) => [r.id, { name: r.name, unit: r.unit }]));
 
+    const missingPriceLookups = (feedings ?? [])
+      .filter((f) => f.unit_cost_snapshot == null)
+      .map((f) => ({ rationId: f.feed_ration_id, asOfDate: f.fed_at }));
+    const historicalPrices = await getRationUnitPricesAtDates(orgId, missingPriceLookups);
+
     const feedMarkup = customer.feed_markup_percent ?? 0;
     const feedMarkupFactor = 1 + feedMarkup / 100;
 
     for (const f of feedings ?? []) {
-      const pricePerUnit = rationPrices.get(f.feed_ration_id);
+      const snapshot =
+        f.unit_cost_snapshot != null ? Number(f.unit_cost_snapshot) : null;
+      const pricePerUnit =
+        snapshot ??
+        historicalPrices.get(rationPriceLookupKey(f.feed_ration_id, f.fed_at)) ??
+        rationPrices.get(f.feed_ration_id) ??
+        null;
       const ration = rationNames.get(f.feed_ration_id);
       if (pricePerUnit == null) {
         warnings.push(

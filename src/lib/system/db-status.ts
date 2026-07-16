@@ -138,6 +138,18 @@ export async function getDbSetupIssues(): Promise<DbSetupIssue[]> {
       fix: "Run supabase/RUN_PHASE21.sql or supabase/RUN_THIS_IN_SUPABASE.sql",
     },
     {
+      id: "phase22-ration-price-history",
+      probe: async () => {
+        const { error } = await supabase
+          .from("feed_ration_price_history")
+          .select("id")
+          .limit(1);
+        return !error;
+      },
+      message: "Ration price history is not set up",
+      fix: "Run supabase/RUN_PHASE22.sql or supabase/RUN_THIS_IN_SUPABASE.sql",
+    },
+    {
       id: "phase13-calendar",
       probe: async () => {
         const { error } = await supabase.from("calendar_events").select("id").limit(1);

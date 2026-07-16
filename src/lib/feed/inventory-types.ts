@@ -63,3 +63,12 @@ export interface FeedPurchaseRecord {
   notes: string | null;
   created_at: string;
 }
+
+export interface FeedRationPriceHistory {
+  id: string;
+  feed_ration_id: string;
+  price_per_unit: number;
+  effective_from: string;
+  created_by_name: string | null;
+  created_at: string;
+}

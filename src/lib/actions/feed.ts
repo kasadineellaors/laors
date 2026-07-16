@@ -3,7 +3,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { syncFeedingStock, saveFeedRationIngredients } from "@/lib/actions/feed-inventory";
 import type { FeedRationIngredientInput } from "@/lib/feed/inventory-types";
-import { getRationUnitPrices } from "@/lib/feed/inventory-queries";
+import {
+  getRationUnitPriceAtDate,
+  getRationUnitPrices,
+} from "@/lib/feed/inventory-queries";
 import { revalidatePath } from "next/cache";
 import type { Database } from "@/types/database";
 import type { FeedingContext } from "@/lib/feed/types";
@@ -18,12 +21,13 @@ export type FeedActionState = {
   feedingId?: string;
 };
 
-const DB_HINT = "Run supabase/RUN_PHASE21.sql in Supabase SQL Editor, then retry.";
+const DB_HINT = "Run supabase/RUN_PHASE22.sql in Supabase SQL Editor, then retry.";
 
 function formatDbError(message: string): string {
   if (
     message.includes("feed_rations") ||
     message.includes("feeding_records") ||
+    message.includes("feed_ration_price_history") ||
     message.includes("unit_cost_snapshot") ||
     message.includes("total_feed_cost") ||
     message.includes("schema cache")
@@ -33,9 +37,34 @@ function formatDbError(message: string): string {
   return message;
 }
 
-async function rationUnitCost(orgId: string, rationId: string): Promise<number> {
+function todayIso(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+async function resolvedRationUnitCost(orgId: string, rationId: string): Promise<number> {
   const prices = await getRationUnitPrices(orgId, [rationId]);
   return prices.get(rationId) ?? 0;
+}
+
+async function recordRationPriceHistory(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  orgId: string,
+  userId: string,
+  rationId: string,
+  pricePerUnit: number,
+  effectiveFrom: string,
+) {
+  if (pricePerUnit <= 0) return;
+
+  const { error } = await supabase.from("feed_ration_price_history").insert({
+    organization_id: orgId,
+    feed_ration_id: rationId,
+    price_per_unit: pricePerUnit,
+    effective_from: effectiveFrom,
+    created_by: userId,
+  });
+
+  if (error) throw new Error(formatDbError(error.message));
 }
 
 function revalidateFeed() {
@@ -47,6 +76,9 @@ function revalidateFeed() {
   revalidatePath("/cow-calf/feed");
   revalidatePath("/dashboard");
   revalidatePath("/invoices/generate");
+  revalidatePath("/reports");
+  revalidatePath("/reports/monthly");
+  revalidatePath("/reports/enterprise");
 }
 
 async function requireMember(orgId: string) {
@@ -82,6 +114,7 @@ export async function createFeedRation(
     name: string;
     unit?: string;
     pricePerUnit?: number;
+    priceEffectiveFrom?: string;
     notes?: string;
     ingredients?: FeedRationIngredientInput[];
   },
@@ -91,6 +124,7 @@ export async function createFeedRation(
 
   try {
     const { supabase, user } = await requireManager(orgId);
+    const effectiveFrom = input.priceEffectiveFrom?.trim() || todayIso();
     const { data, error } = await supabase
       .from("feed_rations")
       .insert({
@@ -98,6 +132,7 @@ export async function createFeedRation(
         name,
         unit: input.unit?.trim() || "ton",
         price_per_unit: input.pricePerUnit ?? null,
+        effective_from: effectiveFrom,
         notes: input.notes?.trim() || null,
         created_by: user.id,
       })
@@ -109,6 +144,16 @@ export async function createFeedRation(
     if (input.ingredients?.length) {
       const recipe = await saveFeedRationIngredients(orgId, data.id, input.ingredients);
       if (recipe.error) return { error: recipe.error };
+    }
+
+    const unitCost = await resolvedRationUnitCost(orgId, data.id);
+    if (unitCost > 0) {
+      await supabase
+        .from("feed_rations")
+        .update({ price_per_unit: unitCost, effective_from: effectiveFrom })
+        .eq("id", data.id)
+        .eq("organization_id", orgId);
+      await recordRationPriceHistory(supabase, orgId, user.id, data.id, unitCost, effectiveFrom);
     }
 
     revalidateFeed();
@@ -125,29 +170,49 @@ export async function updateFeedRation(
     name?: string;
     unit?: string;
     pricePerUnit?: number | null;
+    priceEffectiveFrom?: string;
     notes?: string | null;
     ingredients?: FeedRationIngredientInput[];
   },
 ): Promise<FeedActionState> {
   try {
-    const { supabase } = await requireManager(orgId);
+    const { supabase, user } = await requireManager(orgId);
+    const previousCost = await resolvedRationUnitCost(orgId, rationId);
+
     const updates: RationUpdate = {};
     if (input.name !== undefined) updates.name = input.name.trim();
     if (input.unit !== undefined) updates.unit = input.unit.trim() || "ton";
     if (input.pricePerUnit !== undefined) updates.price_per_unit = input.pricePerUnit;
     if (input.notes !== undefined) updates.notes = input.notes?.trim() || null;
 
-    const { error } = await supabase
-      .from("feed_rations")
-      .update(updates)
-      .eq("id", rationId)
-      .eq("organization_id", orgId);
+    if (Object.keys(updates).length > 0) {
+      const { error } = await supabase
+        .from("feed_rations")
+        .update(updates)
+        .eq("id", rationId)
+        .eq("organization_id", orgId);
 
-    if (error) return { error: formatDbError(error.message) };
+      if (error) return { error: formatDbError(error.message) };
+    }
 
     if (input.ingredients !== undefined) {
       const recipe = await saveFeedRationIngredients(orgId, rationId, input.ingredients);
       if (recipe.error) return { error: recipe.error };
+    }
+
+    const nextCost = await resolvedRationUnitCost(orgId, rationId);
+    const priceChanged = Math.abs(nextCost - previousCost) >= 0.0001;
+
+    if (priceChanged && nextCost > 0) {
+      const effectiveFrom = input.priceEffectiveFrom?.trim() || todayIso();
+      const { error } = await supabase
+        .from("feed_rations")
+        .update({ price_per_unit: nextCost, effective_from: effectiveFrom })
+        .eq("id", rationId)
+        .eq("organization_id", orgId);
+
+      if (error) return { error: formatDbError(error.message) };
+      await recordRationPriceHistory(supabase, orgId, user.id, rationId, nextCost, effectiveFrom);
     }
 
     revalidateFeed();
@@ -203,7 +268,8 @@ export async function createFeeding(
 
   try {
     const { supabase, user } = await requireMember(orgId);
-    const unitCost = await rationUnitCost(orgId, input.feedRationId);
+    const fedAt = input.fedAt || todayIso();
+    const unitCost = await getRationUnitPriceAtDate(orgId, input.feedRationId, fedAt);
     const totalFeedCost = Math.round(unitCost * input.quantity * 100) / 100;
 
     const { data, error } = await supabase
@@ -212,7 +278,7 @@ export async function createFeeding(
         organization_id: orgId,
         feed_ration_id: input.feedRationId,
         quantity: input.quantity,
-        fed_at: input.fedAt || new Date().toISOString().slice(0, 10),
+        fed_at: fedAt,
         cattle_group_id: input.cattleGroupId || null,
         location_id: input.locationId || null,
         ownership_group_id: input.ownershipGroupId || null,
@@ -269,7 +335,7 @@ export async function updateFeeding(
 
     const { data: existing } = await supabase
       .from("feeding_records")
-      .select("feed_ration_id, quantity")
+      .select("feed_ration_id, quantity, fed_at")
       .eq("id", feedingId)
       .eq("organization_id", orgId)
       .maybeSingle();
@@ -278,7 +344,8 @@ export async function updateFeeding(
 
     const nextRationId = input.feedRationId ?? existing.feed_ration_id;
     const nextQty = input.quantity ?? Number(existing.quantity);
-    const unitCost = await rationUnitCost(orgId, nextRationId);
+    const nextFedAt = input.fedAt ?? existing.fed_at;
+    const unitCost = await getRationUnitPriceAtDate(orgId, nextRationId, nextFedAt);
     const totalFeedCost = Math.round(unitCost * nextQty * 100) / 100;
 
     const stock = await syncFeedingStock(

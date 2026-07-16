@@ -122,6 +122,20 @@ export function FeedingDetailClient({
               <dd className="font-medium text-charcoal">{feeding.head_count}</dd>
             </div>
           ) : null}
+          {feeding.total_feed_cost != null && feeding.total_feed_cost > 0 ? (
+            <div>
+              <dt className="text-charcoal/50">Feed cost</dt>
+              <dd className="font-medium text-charcoal">
+                ${feeding.total_feed_cost.toFixed(2)}
+                {feeding.unit_cost_snapshot != null ? (
+                  <span className="text-charcoal/60">
+                    {" "}
+                    (${feeding.unit_cost_snapshot.toFixed(2)}/{feeding.feed_ration_unit})
+                  </span>
+                ) : null}
+              </dd>
+            </div>
+          ) : null}
           {feeding.fed_by_name ? (
             <div>
               <dt className="text-charcoal/50">Fed by</dt>

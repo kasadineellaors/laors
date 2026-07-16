@@ -44,6 +44,9 @@ export function RationForm({
   const [pricePerUnit, setPricePerUnit] = useState(
     ration?.price_per_unit != null ? String(ration.price_per_unit) : "",
   );
+  const [priceEffectiveFrom, setPriceEffectiveFrom] = useState(
+    ration?.effective_from ?? new Date().toISOString().slice(0, 10),
+  );
   const [notes, setNotes] = useState(ration?.notes ?? "");
   const [ingredientLines, setIngredientLines] = useState<IngredientLine[]>(
     ingredients.length > 0
@@ -85,6 +88,7 @@ export function RationForm({
           name,
           unit,
           pricePerUnit: pricePerUnit.trim() ? price! : null,
+          priceEffectiveFrom,
           notes: notes || null,
           ingredients: parsedIngredients,
         })
@@ -92,6 +96,7 @@ export function RationForm({
           name,
           unit,
           pricePerUnit: price,
+          priceEffectiveFrom,
           notes: notes || undefined,
           ingredients: parsedIngredients,
         });
@@ -157,6 +162,18 @@ export function RationForm({
               placeholder="Optional"
             />
           </div>
+        </div>
+        <div>
+          <Label htmlFor="priceEffectiveFrom">Price effective from</Label>
+          <Input
+            id="priceEffectiveFrom"
+            type="date"
+            value={priceEffectiveFrom}
+            onChange={(e) => setPriceEffectiveFrom(e.target.value)}
+          />
+          <p className="mt-1 text-xs text-charcoal/60">
+            When the bill rate changes, past feedings keep their locked-in cost.
+          </p>
         </div>
 
         <RationIngredientBuilder

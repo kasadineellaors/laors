@@ -47,6 +47,9 @@ export function FeedingList({ records, emptyMessage, detailBasePath = "/feed/log
             <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-charcoal/60">
               {r.cattle_group_name ? <span>{r.cattle_group_name}</span> : null}
               {r.head_count != null ? <span>{r.head_count} head</span> : null}
+              {r.total_feed_cost != null && r.total_feed_cost > 0 ? (
+                <span>${r.total_feed_cost.toFixed(2)}</span>
+              ) : null}
               {r.fed_by_name ? <span>Fed by {r.fed_by_name}</span> : null}
             </div>
           </Link>
