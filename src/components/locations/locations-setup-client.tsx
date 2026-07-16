@@ -2,13 +2,14 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import type { LocationTreeNode } from "@/lib/locations/types";
+import type { LocationCattleGroup } from "@/lib/locations/rollups";
 import type { SelectOption } from "@/lib/locations/options";
 import { LocationTreeView } from "@/components/locations/location-tree-view";
 import { AddLocationForm } from "@/components/locations/add-location-form";
 import { EditLocationPanel } from "@/components/locations/edit-location-panel";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ManageSubpageHeader } from "@/components/setup/manage-subpage-header";
+import { ManageSubpageShell } from "@/components/setup/manage-subpage-shell";
 
 interface LocationsSetupClientProps {
   tree: LocationTreeNode[];
@@ -16,6 +17,8 @@ interface LocationsSetupClientProps {
   orgId: string;
   parentOptions: SelectOption[];
   locationTypeOptions: SelectOption[];
+  cattleGroupsByLocation: Record<string, LocationCattleGroup[]>;
+  locationNamesById: Record<string, string>;
 }
 
 function flattenTree(nodes: LocationTreeNode[]): LocationTreeNode[] {
@@ -28,6 +31,8 @@ export function LocationsSetupClient({
   orgId,
   parentOptions,
   locationTypeOptions,
+  cattleGroupsByLocation,
+  locationNamesById,
 }: LocationsSetupClientProps) {
   const router = useRouter();
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -36,35 +41,39 @@ export function LocationsSetupClient({
   const selected = flat.find((n) => n.id === selectedId) ?? null;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <Link href="/setup" className="text-sm font-medium text-olive hover:underline">
-            ← Ranch Setup
-          </Link>
-          <h1 className="mt-1 text-2xl font-bold text-charcoal">Ranch Map</h1>
-          <p className="text-charcoal/70">{totalHead} head ranch-wide</p>
-        </div>
+    <ManageSubpageShell>
+      <div>
+        <ManageSubpageHeader
+          title="Properties & Locations"
+          subtitle="Organize your ranch into properties, pastures, pens, traps, and other locations."
+        />
+        <p className="mt-2 text-sm font-semibold tabular-nums text-navy">
+          {totalHead} head ranch-wide
+        </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Your land</CardTitle>
-          <CardDescription>
-            Tap a property or location to edit. Head counts roll up automatically.
-          </CardDescription>
-        </CardHeader>
+      <section aria-labelledby="ranch-structure-heading">
+        <h2 id="ranch-structure-heading" className="sr-only">
+          Ranch structure
+        </h2>
+        <p className="mb-3 text-sm text-text-secondary">
+          Tap a property or location to edit. Head counts roll up automatically.
+        </p>
         <LocationTreeView
           nodes={tree}
           selectedId={selectedId ?? undefined}
           onSelect={(node) => setSelectedId(node.id)}
         />
-      </Card>
+      </section>
 
       {selected ? (
         <EditLocationPanel
           orgId={orgId}
           location={selected}
+          parentName={
+            selected.parent_id ? locationNamesById[selected.parent_id] : null
+          }
+          cattleGroups={cattleGroupsByLocation[selected.id] ?? []}
           onClose={() => setSelectedId(null)}
           onUpdated={() => setSelectedId(null)}
         />
@@ -76,6 +85,6 @@ export function LocationsSetupClient({
         locationTypeOptions={locationTypeOptions}
         onCreated={() => router.refresh()}
       />
-    </div>
+    </ManageSubpageShell>
   );
 }

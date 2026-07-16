@@ -147,7 +147,7 @@ export function SaleForm({
   }
 
   const selectClass =
-    "flex h-12 w-full rounded-lg border-2 border-border bg-surface px-4 text-base";
+    "flex h-12 w-full rounded-lg border-2 border-border-neutral bg-surface-white px-4 text-base";
 
   return (
     <Card>
@@ -205,7 +205,7 @@ export function SaleForm({
           ) : (
             <div>
               <Label>Head sold</Label>
-              <p className="flex h-12 items-center text-xl font-bold text-olive">
+              <p className="flex h-12 items-center text-xl font-bold text-brown">
                 {sale!.head_count}
               </p>
             </div>
@@ -257,7 +257,7 @@ export function SaleForm({
           </div>
         ) : null}
         {!isEdit && groupId && canDeductInventory ? (
-          <label className="flex items-center gap-3 rounded-lg border border-border px-3 py-3 text-sm">
+          <label className="flex items-center gap-3 rounded-lg border border-border-neutral px-3 py-3 text-sm">
             <input
               type="checkbox"
               checked={deductInventory}
@@ -346,7 +346,7 @@ export function SaleForm({
           <Input id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
         </div>
         {error ? (
-          <p className="text-sm text-rust" role="alert">
+          <p className="text-sm text-status-critical" role="alert">
             {error}
           </p>
         ) : null}

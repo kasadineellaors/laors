@@ -32,7 +32,7 @@ export function LotQuickActions({ orgId, groupId }: LotQuickActionsProps) {
   const [cause, setCause] = useState("");
 
   const selectClass =
-    "flex h-12 w-full rounded-lg border-2 border-border bg-surface px-4 text-base";
+    "flex h-12 w-full rounded-lg border-2 border-border-neutral bg-surface-white px-4 text-base";
 
   async function submitProcessing(e: React.FormEvent) {
     e.preventDefault();
@@ -107,7 +107,7 @@ export function LotQuickActions({ orgId, groupId }: LotQuickActionsProps) {
         </div>
 
         {mode === "processing" ? (
-          <form onSubmit={submitProcessing} className="space-y-3 rounded-lg border border-border p-3">
+          <form onSubmit={submitProcessing} className="space-y-3 rounded-lg border border-border-neutral p-3">
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="processedAt">Date</Label>
@@ -166,7 +166,7 @@ export function LotQuickActions({ orgId, groupId }: LotQuickActionsProps) {
         ) : null}
 
         {mode === "death" ? (
-          <form onSubmit={submitDeath} className="space-y-3 rounded-lg border border-border p-3">
+          <form onSubmit={submitDeath} className="space-y-3 rounded-lg border border-border-neutral p-3">
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="diedAt">Date</Label>
@@ -188,7 +188,7 @@ export function LotQuickActions({ orgId, groupId }: LotQuickActionsProps) {
         ) : null}
 
         {error ? (
-          <p className="text-sm text-rust" role="alert">
+          <p className="text-sm text-status-critical" role="alert">
             {error}
           </p>
         ) : null}

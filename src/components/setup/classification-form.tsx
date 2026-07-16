@@ -61,7 +61,7 @@ export function ClassificationForm({ orgId, createAction }: ClassificationFormPr
             maxLength={4}
           />
         </div>
-        {error ? <p className="text-sm text-rust">{error}</p> : null}
+        {error ? <p className="text-sm text-status-critical">{error}</p> : null}
         <Button type="submit" disabled={loading}>
           {loading ? "Adding…" : "Add Classification"}
         </Button>

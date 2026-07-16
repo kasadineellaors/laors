@@ -97,7 +97,7 @@ export function RationIngredientBuilder({
   onModeChange,
 }: RationIngredientBuilderProps) {
   const selectClass =
-    "flex h-12 w-full rounded-lg border-2 border-border bg-surface px-4 text-base";
+    "flex h-12 w-full rounded-lg border-2 border-border-neutral bg-surface-white px-4 text-base";
 
   const percentTotal = mode === "percent" ? computePercentTotal(lines) : 0;
   const percentOk = Math.abs(percentTotal - 100) < 0.5;
@@ -121,7 +121,7 @@ export function RationIngredientBuilder({
 
   if (feedItems.length === 0) {
     return (
-      <p className="rounded-lg bg-tan-light/40 px-4 py-3 text-sm text-charcoal/70">
+      <p className="rounded-lg bg-tan-light/40 px-4 py-3 text-sm text-text-secondary">
         Add feedstuff to inventory first, then build this ration from what you have on hand.
       </p>
     );
@@ -132,15 +132,15 @@ export function RationIngredientBuilder({
       <div className="flex items-center justify-between gap-3">
         <div>
           <Label>Recipe — per 1 {rationUnit} of this ration</Label>
-          <p className="text-xs text-charcoal/60">
+          <p className="text-xs text-text-secondary">
             Logging feed deducts these amounts from inventory automatically.
           </p>
         </div>
-        <div className="flex rounded-lg border border-border p-0.5 text-sm">
+        <div className="flex rounded-lg border border-border-neutral p-0.5 text-sm">
           <button
             type="button"
             className={`rounded-md px-3 py-1.5 font-semibold ${
-              mode === "amount" ? "bg-olive text-white" : "text-charcoal/70"
+              mode === "amount" ? "bg-navy text-white" : "text-text-secondary"
             }`}
             onClick={() => onModeChange("amount")}
           >
@@ -149,7 +149,7 @@ export function RationIngredientBuilder({
           <button
             type="button"
             className={`rounded-md px-3 py-1.5 font-semibold ${
-              mode === "percent" ? "bg-olive text-white" : "text-charcoal/70"
+              mode === "percent" ? "bg-navy text-white" : "text-text-secondary"
             }`}
             onClick={() => onModeChange("percent")}
           >
@@ -160,7 +160,7 @@ export function RationIngredientBuilder({
 
       {mode === "percent" ? (
         <p
-          className={`text-sm font-semibold ${percentOk ? "text-olive" : "text-rust"}`}
+          className={`text-sm font-semibold ${percentOk ? "text-brown" : "text-status-critical"}`}
         >
           Inclusion total: {percentTotal.toFixed(1)}%
           {!percentOk ? " — should equal 100%" : ""}
@@ -168,9 +168,9 @@ export function RationIngredientBuilder({
       ) : null}
 
       {recipeCost > 0 ? (
-        <p className="text-sm text-charcoal/70">
+        <p className="text-sm text-text-secondary">
           Estimated recipe cost:{" "}
-          <span className="font-bold text-charcoal">
+          <span className="font-bold text-navy">
             ${recipeCost.toFixed(2)}/{rationUnit}
           </span>
         </p>
@@ -225,7 +225,7 @@ export function RationIngredientBuilder({
                   aria-label={`Amount of ${item?.name ?? "feedstuff"}`}
                 />
               )}
-              <p className="mt-0.5 text-xs text-charcoal/50">
+              <p className="mt-0.5 text-xs text-text-secondary">
                 {mode === "percent" ? "% of ration" : (item?.unit ?? "units")}
               </p>
             </div>

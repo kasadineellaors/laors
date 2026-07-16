@@ -88,9 +88,9 @@ export function CustomerPortalPanel({
   }
 
   return (
-    <div className="rounded-lg border border-dashed border-border bg-cream/40 px-3 py-3 text-sm">
-      <p className="font-semibold text-charcoal">Customer portal</p>
-      <p className="text-xs text-charcoal/60">
+    <div className="rounded-lg border border-dashed border-border-neutral bg-cream/40 px-3 py-3 text-sm">
+      <p className="font-semibold text-navy">Customer portal</p>
+      <p className="text-xs text-text-secondary">
         {customerName} can view lots, closeouts, and invoices without logging in.
       </p>
       <div className="mt-2 flex flex-wrap gap-2">
@@ -106,7 +106,7 @@ export function CustomerPortalPanel({
         ) : null}
       </div>
       {portalUrl ? (
-        <p className="mt-2 break-all text-xs text-charcoal/60">{portalUrl}</p>
+        <p className="mt-2 break-all text-xs text-text-secondary">{portalUrl}</p>
       ) : null}
       <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto] sm:items-end">
         <div>
@@ -131,17 +131,17 @@ export function CustomerPortalPanel({
         </Button>
       </div>
       {!emailConfigured ? (
-        <p className="mt-2 text-xs text-charcoal/50">
+        <p className="mt-2 text-xs text-navy/50">
           Configure Resend to email portal invites. Copy link works without email.
         </p>
       ) : null}
       {error ? (
-        <p className="mt-2 text-xs text-rust" role="alert">
+        <p className="mt-2 text-xs text-status-critical" role="alert">
           {error}
         </p>
       ) : null}
       {success ? (
-        <p className="mt-2 text-xs text-olive" role="status">
+        <p className="mt-2 text-xs text-brown" role="status">
           {success}
         </p>
       ) : null}

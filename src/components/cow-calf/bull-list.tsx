@@ -12,7 +12,7 @@ interface BullListProps {
 export function BullList({ bulls, emptyMessage }: BullListProps) {
   if (bulls.length === 0) {
     return (
-      <p className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-charcoal/60">
+      <p className="rounded-xl border border-dashed border-border-neutral px-4 py-8 text-center text-sm text-text-secondary">
         {emptyMessage ?? "No bulls registered yet."}
       </p>
     );
@@ -24,15 +24,15 @@ export function BullList({ bulls, emptyMessage }: BullListProps) {
         <li key={b.id}>
           <Link
             href={`/cow-calf/bulls/${b.id}`}
-            className="block rounded-xl border border-border bg-surface px-4 py-3 hover:border-olive/40"
+            className="block rounded-xl border border-border-neutral bg-surface-white px-4 py-3 hover:border-navy/40"
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="font-semibold text-charcoal">
+                <p className="font-semibold text-navy">
                   {b.tag_number}
                   {b.name ? ` · ${b.name}` : ""}
                 </p>
-                <p className="text-sm text-charcoal/70">
+                <p className="text-sm text-text-secondary">
                   {ANIMAL_STATUS_LABELS[b.status]}
                   {b.cattle_group_name ? ` · ${b.cattle_group_name}` : ""}
                   {b.location_name ? ` · ${b.location_name}` : ""}

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { inviteTeamMember } from "@/lib/actions/onboarding";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,7 +49,7 @@ export function TeamSetupClient({
   return (
     <div className="space-y-6">
       {!emailConfigured ? (
-        <div className="rounded-xl border border-rust/30 bg-rust/10 px-4 py-3 text-sm text-rust">
+        <div className="rounded-[var(--radius-card)] border border-status-warning/40 bg-status-warning/10 px-4 py-3 text-sm text-status-warning">
           {emailSetupMessage ||
             "Email is not configured. Add RESEND_API_KEY, INVOICE_FROM_EMAIL, and SUPABASE_SERVICE_ROLE_KEY to send invites."}
         </div>
@@ -63,15 +62,15 @@ export function TeamSetupClient({
         </CardHeader>
         <ul className="space-y-2">
           {members.length === 0 ? (
-            <li className="text-sm text-charcoal/60">Just you for now</li>
+            <li className="text-sm text-text-secondary">Just you for now</li>
           ) : (
             members.map((m) => (
               <li
                 key={`${m.email}-${m.name}`}
-                className="flex justify-between rounded-lg border border-border px-3 py-2 text-sm"
+                className="flex justify-between rounded-lg border border-border-neutral px-3 py-2 text-sm"
               >
-                <span className="font-medium text-charcoal">{m.name}</span>
-                <span className="text-charcoal/60 capitalize">{m.role}</span>
+                <span className="font-medium text-navy">{m.name}</span>
+                <span className="capitalize text-text-secondary">{m.role}</span>
               </li>
             ))
           )}
@@ -87,10 +86,10 @@ export function TeamSetupClient({
             {pendingInvites.map((inv) => (
               <li
                 key={inv.email}
-                className="flex justify-between rounded-lg bg-cream px-3 py-2 text-sm"
+                className="flex justify-between rounded-lg bg-cream px-3 py-2 text-sm text-navy"
               >
                 <span>{inv.email}</span>
-                <span className="capitalize text-charcoal/60">{inv.role}</span>
+                <span className="capitalize text-text-secondary">{inv.role}</span>
               </li>
             ))}
           </ul>
@@ -120,7 +119,7 @@ export function TeamSetupClient({
               id="role"
               value={role}
               onChange={(e) => setRole(e.target.value)}
-              className="flex h-12 w-full rounded-lg border-2 border-border bg-surface px-4 text-base"
+              className="flex h-12 w-full rounded-lg border-2 border-border-neutral bg-surface-white px-4 text-base"
             >
               <option value="worker">Worker</option>
               <option value="manager">Manager</option>
@@ -128,7 +127,7 @@ export function TeamSetupClient({
             </select>
           </div>
           {error ? (
-            <p className="text-sm text-rust" role="alert">
+            <p className="text-sm text-status-critical" role="alert">
               {error}
             </p>
           ) : null}
@@ -137,10 +136,6 @@ export function TeamSetupClient({
           </Button>
         </form>
       </Card>
-
-      <Link href="/setup" className="block text-center text-sm text-olive hover:underline">
-        ← Ranch Setup
-      </Link>
     </div>
   );
 }

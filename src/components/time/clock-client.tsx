@@ -53,12 +53,12 @@ export function ClockClient({
 
   return (
     <div className="space-y-6">
-      <Link href="/dashboard" className="text-sm font-medium text-olive hover:underline">
+      <Link href="/dashboard" className="text-sm font-medium text-brown hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2">
         ← Dashboard
       </Link>
 
       {showTeamLink ? (
-        <Link href="/time/team" className="block text-sm font-semibold text-olive hover:underline">
+        <Link href="/time/team" className="block text-sm font-semibold text-brown hover:underline">
           View team time →
         </Link>
       ) : null}
@@ -82,7 +82,7 @@ export function ClockClient({
           {loading ? "…" : status.isClockedIn ? "Clock out" : "Clock in"}
         </Button>
         {error ? (
-          <p className="mt-3 text-sm text-rust" role="alert">
+          <p className="mt-3 text-sm text-status-critical" role="alert">
             {error}
           </p>
         ) : null}
@@ -90,29 +90,29 @@ export function ClockClient({
 
       {recentEntries.length > 0 ? (
         <div>
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-charcoal/50">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-text-secondary">
             Recent shifts
           </h2>
           <ul className="space-y-2">
             {recentEntries.map((entry) => (
               <li
                 key={entry.id}
-                className="rounded-lg border border-border bg-surface px-3 py-3 text-sm"
+                className="rounded-lg border border-border-neutral bg-surface-white px-3 py-3 text-sm"
               >
                 <div className="flex justify-between gap-2">
-                  <span className="font-medium text-charcoal">
+                  <span className="font-medium text-navy">
                     {formatTime(entry.clock_in_at)}
                   </span>
-                  <span className="text-charcoal/60">
+                  <span className="text-text-secondary">
                     {formatDuration(entry.duration_minutes)}
                   </span>
                 </div>
                 {entry.clock_out_at ? (
-                  <p className="text-xs text-charcoal/50">
+                  <p className="text-xs text-text-secondary">
                     Out {formatTime(entry.clock_out_at)}
                   </p>
                 ) : (
-                  <p className="text-xs font-semibold text-olive">Open shift</p>
+                  <p className="text-xs font-semibold text-brown">Open shift</p>
                 )}
               </li>
             ))}

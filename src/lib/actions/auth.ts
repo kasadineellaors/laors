@@ -1,5 +1,6 @@
 "use server";
 
+import type { EmailOtpType } from "@supabase/supabase-js";
 import { getAppUrl } from "@/lib/auth/app-url";
 import { createSignUpConfirmationLink } from "@/lib/auth/confirmation-link";
 import { isAuthEmailConfigured, sendSignUpConfirmationEmail } from "@/lib/email/auth-emails";
@@ -48,7 +49,7 @@ async function deliverSignUpConfirmation(input: {
   fullName?: string;
 }): Promise<AuthActionState | { delivered: true; existingAccount?: boolean; sessionReady?: boolean }> {
   const appUrl = await getAppUrl();
-  const redirectTo = `${appUrl}/auth/callback`;
+  const redirectTo = `${appUrl}/signup/verify`;
 
   if (isAuthEmailConfigured()) {
     const link = await createSignUpConfirmationLink({
@@ -69,6 +70,7 @@ async function deliverSignUpConfirmation(input: {
       to: input.email,
       fullName: input.fullName,
       confirmUrl: link.actionLink,
+      emailOtp: link.emailOtp,
     });
     if (!sent.ok) return { error: sent.error };
     return { delivered: true };
@@ -161,6 +163,99 @@ export async function resendSignUpConfirmation(
   }
 
   return { success: "Confirmation email sent. Check your inbox and spam folder." };
+}
+
+const emailOtpTypes: EmailOtpType[] = [
+  "signup",
+  "email",
+  "invite",
+  "magiclink",
+  "recovery",
+  "email_change",
+];
+
+async function verifyEmailOtpWithFallback(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  input:
+    | { token_hash: string; type: EmailOtpType }
+    | { email: string; token: string; type: EmailOtpType },
+) {
+  const primary = await supabase.auth.verifyOtp(input);
+  if (!primary.error) return primary;
+
+  if ("token_hash" in input) {
+    const fallbacks = emailOtpTypes.filter((type) => type !== input.type);
+    for (const type of fallbacks) {
+      const retry = await supabase.auth.verifyOtp({
+        token_hash: input.token_hash,
+        type,
+      });
+      if (!retry.error) return retry;
+    }
+  } else {
+    for (const type of ["signup", "email"] as const) {
+      if (type === input.type) continue;
+      const retry = await supabase.auth.verifyOtp({
+        email: input.email,
+        token: input.token,
+        type,
+      });
+      if (!retry.error) return retry;
+    }
+  }
+
+  return primary;
+}
+
+export async function confirmEmailWithToken(
+  _prev: AuthActionState,
+  formData: FormData,
+): Promise<AuthActionState> {
+  const tokenHash = formData.get("token_hash");
+  const type = formData.get("type");
+
+  if (typeof tokenHash !== "string" || !tokenHash.trim()) {
+    return { error: "Confirmation link is missing its token." };
+  }
+
+  const otpType =
+    typeof type === "string" && emailOtpTypes.includes(type as EmailOtpType)
+      ? (type as EmailOtpType)
+      : "signup";
+
+  const supabase = await createClient();
+  const { error } = await verifyEmailOtpWithFallback(supabase, {
+    token_hash: tokenHash.trim(),
+    type: otpType,
+  });
+
+  if (error) return { error: error.message };
+  return redirectAfterAuth();
+}
+
+export async function confirmEmailWithOtp(
+  _prev: AuthActionState,
+  formData: FormData,
+): Promise<AuthActionState> {
+  const email = formData.get("email");
+  const otp = formData.get("otp");
+
+  if (typeof email !== "string" || !z.string().email().safeParse(email).success) {
+    return { error: "Enter the email address you signed up with." };
+  }
+  if (typeof otp !== "string" || !/^\d{6,8}$/.test(otp.trim())) {
+    return { error: "Enter the 6-digit code from your email." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await verifyEmailOtpWithFallback(supabase, {
+    email: email.trim(),
+    token: otp.trim(),
+    type: "signup",
+  });
+
+  if (error) return { error: error.message };
+  return redirectAfterAuth();
 }
 
 export async function signIn(

@@ -1,5 +1,5 @@
 export type BreedingMethod = "natural" | "ai" | "embryo" | "other";
-export type PregnancyStatus = "bred" | "confirmed" | "open" | "unknown";
+export type PregnancyStatus = "bred" | "confirmed" | "open" | "unknown" | "recheck";
 export type BreedingContext = "cow_calf" | "seedstock";
 
 export interface BreedingRecord {
@@ -8,6 +8,8 @@ export interface BreedingRecord {
   breeding_context: BreedingContext;
   cattle_group_id: string | null;
   cattle_group_name: string | null;
+  cow_calf_herd_id: string | null;
+  herd_name: string | null;
   location_id: string | null;
   location_name: string | null;
   dam_id: string | null;
@@ -29,5 +31,10 @@ export interface BreedingRecord {
 export interface BreedingSummary {
   activeBred: number;
   confirmed: number;
+  open: number;
+  recheck: number;
+  dueNext14Days: number;
   dueNext30Days: number;
+  activeExposures: number;
+  overduePulls: number;
 }

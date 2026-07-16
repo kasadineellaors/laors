@@ -10,7 +10,7 @@ interface CowListProps {
 export function CowList({ cows, emptyMessage }: CowListProps) {
   if (cows.length === 0) {
     return (
-      <p className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-charcoal/60">
+      <p className="rounded-xl border border-dashed border-border-neutral px-4 py-8 text-center text-sm text-text-secondary">
         {emptyMessage ?? "No cows registered yet."}
       </p>
     );
@@ -22,15 +22,15 @@ export function CowList({ cows, emptyMessage }: CowListProps) {
         <li key={c.id}>
           <Link
             href={`/cow-calf/cows/${c.id}`}
-            className="block rounded-xl border border-border bg-surface px-4 py-3 hover:border-olive/40"
+            className="block rounded-xl border border-border-neutral bg-surface-white px-4 py-3 hover:border-navy/40"
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="font-semibold text-charcoal">
+                <p className="font-semibold text-navy">
                   {c.tag_number}
                   {c.name ? ` · ${c.name}` : ""}
                 </p>
-                <p className="text-sm text-charcoal/70">
+                <p className="text-sm text-text-secondary">
                   {COW_TYPE_LABELS[c.animal_type]} · {ANIMAL_STATUS_LABELS[c.status]}
                   {c.cattle_group_name ? ` · ${c.cattle_group_name}` : ""}
                   {c.location_name ? ` · ${c.location_name}` : ""}

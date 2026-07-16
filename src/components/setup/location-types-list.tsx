@@ -30,7 +30,7 @@ export function LocationTypesList({ orgId, types }: LocationTypesListProps) {
         </CardHeader>
         <ul className="space-y-2">
           {types.length === 0 ? (
-            <li className="text-sm text-charcoal/60">No types yet</li>
+            <li className="text-sm text-text-secondary">No types yet</li>
           ) : (
             types.map((t) => (
               <SetupEditableRow

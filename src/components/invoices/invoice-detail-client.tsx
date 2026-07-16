@@ -81,7 +81,7 @@ export function InvoiceDetailClient({
   if (editing && canEdit) {
     return (
       <div className="space-y-4 no-print">
-        <Link href="/invoices" className="text-sm font-medium text-olive hover:underline">
+        <Link href="/invoices" className="text-sm font-medium text-brown hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2">
           ← Invoices
         </Link>
         <InvoiceForm
@@ -100,7 +100,7 @@ export function InvoiceDetailClient({
   return (
     <div className="space-y-6">
       <div className="no-print flex flex-wrap items-center justify-between gap-3">
-        <Link href="/invoices" className="text-sm font-medium text-olive hover:underline">
+        <Link href="/invoices" className="text-sm font-medium text-brown hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2">
           ← Invoices
         </Link>
         <div className="flex flex-wrap gap-2">
@@ -122,7 +122,7 @@ export function InvoiceDetailClient({
       {canEdit ? (
         <div className="no-print space-y-3">
           {!hasEmail ? (
-            <p className="rounded-lg border border-rust/30 bg-rust/10 px-4 py-3 text-sm text-rust">
+            <p className="rounded-lg border border-status-critical/30 bg-status-critical/10 px-4 py-3 text-sm text-status-critical">
               Add a customer email on this invoice or in{" "}
               <Link href="/setup/customers" className="font-semibold underline">
                 Customers
@@ -132,7 +132,7 @@ export function InvoiceDetailClient({
           ) : null}
 
           {!emailConfigured ? (
-            <p className="rounded-lg border border-border bg-surface px-4 py-3 text-sm text-charcoal/70">
+            <p className="rounded-lg border border-border-neutral bg-surface-white px-4 py-3 text-sm text-text-secondary">
               To email invoices, set <code className="text-xs">RESEND_API_KEY</code> and{" "}
               <code className="text-xs">INVOICE_FROM_EMAIL</code> in your environment. You can still
               print or download PDF.
@@ -177,12 +177,12 @@ export function InvoiceDetailClient({
       ) : null}
 
       {success ? (
-        <p className="no-print text-sm font-medium text-olive" role="status">
+        <p className="no-print text-sm font-medium text-brown" role="status">
           {success}
         </p>
       ) : null}
       {error ? (
-        <p className="no-print text-sm text-rust" role="alert">
+        <p className="no-print text-sm text-status-critical" role="alert">
           {error}
         </p>
       ) : null}

@@ -105,7 +105,7 @@ export function BullForm({
             id="location"
             value={locationId}
             onChange={(e) => setLocationId(e.target.value)}
-            className="touch-target w-full rounded-lg border border-border bg-surface px-3 py-2"
+            className="touch-target w-full rounded-lg border border-border-neutral bg-surface-white px-3 py-2"
           >
             <option value="">— Optional —</option>
             {locationOptions.map((o) => (
@@ -122,7 +122,7 @@ export function BullForm({
             id="group"
             value={groupId}
             onChange={(e) => setGroupId(e.target.value)}
-            className="touch-target w-full rounded-lg border border-border bg-surface px-3 py-2"
+            className="touch-target w-full rounded-lg border border-border-neutral bg-surface-white px-3 py-2"
           >
             <option value="">— Optional —</option>
             {groupOptions.map((o) => (
@@ -140,7 +140,7 @@ export function BullForm({
               id="status"
               value={status}
               onChange={(e) => setStatus(e.target.value as BullRecord["status"])}
-              className="touch-target w-full rounded-lg border border-border bg-surface px-3 py-2"
+              className="touch-target w-full rounded-lg border border-border-neutral bg-surface-white px-3 py-2"
             >
               {(Object.keys(ANIMAL_STATUS_LABELS) as BullRecord["status"][]).map((key) => (
                 <option key={key} value={key}>
@@ -167,7 +167,7 @@ export function BullForm({
         </div>
 
         {error ? (
-          <p className="text-sm text-rust" role="alert">
+          <p className="text-sm text-status-critical" role="alert">
             {error}
           </p>
         ) : null}

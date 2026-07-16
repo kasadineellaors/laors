@@ -34,7 +34,7 @@ interface SeedstockBreedingFormProps {
 }
 
 const selectClass =
-  "touch-target w-full rounded-lg border border-border bg-surface px-3 py-2";
+  "touch-target w-full rounded-lg border border-border-neutral bg-surface-white px-3 py-2";
 
 export function SeedstockBreedingForm({
   orgId,
@@ -299,7 +299,7 @@ export function SeedstockBreedingForm({
         </div>
 
         {error ? (
-          <p className="text-sm text-rust" role="alert">
+          <p className="text-sm text-status-critical" role="alert">
             {error}
           </p>
         ) : null}

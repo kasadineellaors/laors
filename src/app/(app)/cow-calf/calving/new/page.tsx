@@ -2,12 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireOnboardedUser } from "@/lib/auth/session";
-import { canWriteInventory } from "@/lib/auth/roles";
 import { hasCowCalfMode } from "@/lib/cow-calf/constants";
-import { listCalfClassifications } from "@/lib/cow-calf/queries";
-import { listCattleGroups } from "@/lib/inventory/queries";
+import {
+  listActiveBullOptions,
+  listCowCalfDamOptions,
+  listCowCalfHerdOptions,
+} from "@/lib/cow-calf/breeding-queries";
 import { getTreePickerOptions } from "@/lib/locations/options";
-import { CalvingForm } from "@/components/cow-calf/calving-form";
+import { EnterpriseCalvingForm } from "@/components/cow-calf/enterprise-calving-form";
 import type { OperationMode } from "@/types/auth";
 
 export const metadata: Metadata = {
@@ -20,32 +22,35 @@ export default async function NewCalvingPage() {
   if (!hasCowCalfMode(modes)) redirect("/cattle");
 
   const orgId = session.organization!.id;
-  const canManage = canWriteInventory(session.membership?.system_role);
 
-  const [locations, groups, classifications] = await Promise.all([
+  const [locations, herds, dams, bulls] = await Promise.all([
     getTreePickerOptions(orgId).then((nodes) =>
       nodes.map((n) => ({ value: n.id, label: n.breadcrumb })),
     ),
-    listCattleGroups(orgId).then((gs) =>
-      gs.map((g) => ({ value: g.id, label: `${g.name} (${g.total_head} hd)` })),
-    ),
-    listCalfClassifications(orgId),
+    listCowCalfHerdOptions(orgId),
+    listCowCalfDamOptions(orgId),
+    listActiveBullOptions(orgId),
   ]);
 
   return (
     <div className="space-y-6">
       <div>
-        <Link href="/cow-calf/calving" className="text-sm font-medium text-olive hover:underline">
+        <Link
+          href="/cow-calf/calving"
+          className="text-sm font-medium text-brown hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2"
+        >
           ← Calving
         </Link>
-        <h1 className="mt-1 text-2xl font-bold text-charcoal">Log calving</h1>
+        <h1 className="mt-1 text-[1.75rem] font-bold leading-tight text-navy sm:text-[2rem]">
+          Record calving
+        </h1>
       </div>
-      <CalvingForm
+      <EnterpriseCalvingForm
         orgId={orgId}
         locationOptions={locations}
-        groupOptions={groups}
-        classificationOptions={classifications}
-        canAddToInventory={canManage}
+        herdOptions={herds}
+        damOptions={dams}
+        bullOptions={bulls}
       />
     </div>
   );

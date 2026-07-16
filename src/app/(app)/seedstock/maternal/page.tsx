@@ -24,11 +24,11 @@ export default async function MaternalIntelligencePage() {
   } catch {
     return (
       <div className="space-y-4">
-        <Link href="/seedstock" className="text-sm font-medium text-olive hover:underline">
+        <Link href="/seedstock" className="text-sm font-medium text-brown hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2">
           ← Seedstock
         </Link>
-        <h1 className="text-2xl font-bold text-charcoal">Maternal intelligence</h1>
-        <p className="rounded-xl border border-rust/30 bg-rust/5 px-4 py-3 text-sm text-charcoal">
+        <h1 className="text-[1.75rem] font-bold leading-tight text-navy sm:text-[2rem]">Maternal intelligence</h1>
+        <p className="rounded-xl border border-status-critical/30 bg-status-critical/5 px-4 py-3 text-sm text-text-primary">
           Run <code className="text-xs">supabase/RUN_PHASE16.sql</code> in Supabase, then refresh.
         </p>
       </div>
@@ -38,11 +38,11 @@ export default async function MaternalIntelligencePage() {
   return (
     <div className="space-y-6">
       <div>
-        <Link href="/seedstock" className="text-sm font-medium text-olive hover:underline">
+        <Link href="/seedstock" className="text-sm font-medium text-brown hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2">
           ← Seedstock
         </Link>
-        <h1 className="mt-1 text-2xl font-bold text-charcoal">Maternal intelligence</h1>
-        <p className="text-charcoal/70">
+        <h1 className="mt-1 text-[1.75rem] font-bold leading-tight text-navy sm:text-[2rem]">Maternal intelligence</h1>
+        <p className="text-text-secondary">
           Fertility scores, calving distribution, family performance, and lifetime value
         </p>
       </div>

@@ -33,11 +33,11 @@ export default async function SeedstockSalesPage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <Link href="/seedstock" className="text-sm font-medium text-olive hover:underline">
+          <Link href="/seedstock" className="text-sm font-medium text-brown hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2">
             ← Seedstock
           </Link>
-          <h1 className="mt-1 text-2xl font-bold text-charcoal">Seedstock sales</h1>
-          <p className="text-charcoal/70">Live animals, semen, and embryos linked to your registry</p>
+          <h1 className="mt-1 text-[1.75rem] font-bold leading-tight text-navy sm:text-[2rem]">Seedstock sales</h1>
+          <p className="text-text-secondary">Live animals, semen, and embryos linked to your registry</p>
         </div>
         {canManage ? (
           <Link href="/sales/new">
@@ -47,7 +47,7 @@ export default async function SeedstockSalesPage() {
       </div>
 
       {sales.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-charcoal/60">
+        <p className="rounded-xl border border-dashed border-border-neutral px-4 py-8 text-center text-sm text-text-secondary">
           No seedstock sales yet — record one from an animal or the sales screen.
         </p>
       ) : (
@@ -56,16 +56,16 @@ export default async function SeedstockSalesPage() {
             <li key={sale.id}>
               <Link
                 href={`/sales/${sale.id}`}
-                className="flex items-start justify-between gap-3 rounded-xl border border-border bg-surface px-4 py-4 transition-colors hover:border-olive hover:bg-olive/5"
+                className="flex items-start justify-between gap-3 rounded-xl border border-border-neutral bg-surface-white px-4 py-4 transition-colors hover:border-navy hover:bg-tan/5"
               >
                 <div>
-                  <p className="font-semibold text-charcoal">
+                  <p className="font-semibold text-navy">
                     {sale.individual_animal_tag ?? "Animal"}
                     {sale.seedstock_sale_type
                       ? ` · ${SEEDSTOCK_SALE_TYPE_LABELS[sale.seedstock_sale_type]}`
                       : ""}
                   </p>
-                  <p className="text-sm text-charcoal/70">
+                  <p className="text-sm text-text-secondary">
                     {sale.buyer_name || sale.customer_name || "No buyer"}
                     {sale.total_amount != null
                       ? ` · ${sale.total_amount.toLocaleString(undefined, {
@@ -75,7 +75,7 @@ export default async function SeedstockSalesPage() {
                       : ""}
                   </p>
                 </div>
-                <span className="shrink-0 text-xs text-charcoal/50">
+                <span className="shrink-0 text-xs text-text-secondary">
                   {formatDate(sale.sale_date)}
                 </span>
               </Link>

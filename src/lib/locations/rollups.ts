@@ -155,3 +155,32 @@ export async function getRanchTotalHeadCount(orgId: string): Promise<number> {
   const tree = await getLocationTreeWithRollups(orgId);
   return tree.reduce((sum, node) => sum + node.head_count, 0);
 }
+
+export interface LocationCattleGroup {
+  id: string;
+  name: string;
+}
+
+export async function getCattleGroupsByLocation(
+  orgId: string,
+): Promise<Map<string, LocationCattleGroup[]>> {
+  const supabase = await createClient();
+
+  const { data: groups } = await supabase
+    .from("cattle_groups")
+    .select("id, name, location_id")
+    .eq("organization_id", orgId)
+    .eq("is_active", true)
+    .not("location_id", "is", null)
+    .order("name");
+
+  const result = new Map<string, LocationCattleGroup[]>();
+  for (const group of groups ?? []) {
+    if (!group.location_id) continue;
+    const list = result.get(group.location_id) ?? [];
+    list.push({ id: group.id, name: group.name });
+    result.set(group.location_id, list);
+  }
+
+  return result;
+}

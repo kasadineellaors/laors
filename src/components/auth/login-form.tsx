@@ -56,7 +56,7 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
             />
           </div>
           {passwordState.error ? (
-            <p className="text-sm text-rust" role="alert">
+            <p className="text-sm text-status-critical" role="alert">
               {passwordState.error}
             </p>
           ) : null}
@@ -86,7 +86,7 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
             />
           </div>
           {magicState.error ? (
-            <p className="text-sm text-rust" role="alert">
+            <p className="text-sm text-status-critical" role="alert">
               {magicState.error}
             </p>
           ) : null}
@@ -107,9 +107,9 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
         </form>
       </Card>
 
-      <p className="text-center text-sm text-charcoal/70">
+      <p className="text-center text-sm text-text-secondary">
         New to LAORS?{" "}
-        <Link href="/signup" className="font-semibold text-olive hover:underline">
+        <Link href="/signup" className="font-semibold text-brown hover:underline">
           Create an account
         </Link>
       </p>

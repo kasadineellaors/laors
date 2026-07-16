@@ -33,11 +33,11 @@ export default async function OperationPlPage({
   return (
     <div className="space-y-6">
       <div>
-        <Link href="/reports" className="text-sm font-medium text-olive hover:underline">
+        <Link href="/reports" className="text-sm font-medium text-brown hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2">
           ← Reports
         </Link>
-        <h1 className="mt-2 text-2xl font-bold text-charcoal">Operation P&amp;L</h1>
-        <p className="text-charcoal/70">
+        <h1 className="mt-2 text-[1.75rem] font-bold leading-tight text-navy sm:text-[2rem]">Operation P&amp;L</h1>
+        <p className="text-text-secondary">
           Ranch-wide profit and loss for {pl.monthLabel}.
         </p>
       </div>
@@ -45,13 +45,13 @@ export default async function OperationPlPage({
       <div className="flex gap-2">
         <Link
           href={`/reports/pl?month=${prev}`}
-          className="rounded-lg border border-border px-3 py-2 text-sm font-semibold text-olive hover:bg-olive/10"
+          className="rounded-lg border border-border-neutral px-3 py-2 text-sm font-semibold text-brown hover:bg-tan/10"
         >
           ← {formatShortMonth(prev)}
         </Link>
         <Link
           href={`/reports/pl?month=${next}`}
-          className="rounded-lg border border-border px-3 py-2 text-sm font-semibold text-olive hover:bg-olive/10"
+          className="rounded-lg border border-border-neutral px-3 py-2 text-sm font-semibold text-brown hover:bg-tan/10"
         >
           {formatShortMonth(next)} →
         </Link>
@@ -106,14 +106,14 @@ export default async function OperationPlPage({
         </dl>
       </Card>
 
-      <Card className="border-olive/30 bg-olive/5">
+      <Card className="border-navy/30 bg-navy/5">
         <CardHeader>
           <CardTitle>Net operating P&amp;L</CardTitle>
           <CardDescription>Sale revenue minus operating costs</CardDescription>
         </CardHeader>
         <p
           className={`px-4 pb-4 text-3xl font-bold tabular-nums ${
-            pl.netOperatingPl >= 0 ? "text-olive" : "text-rust"
+            pl.netOperatingPl >= 0 ? "text-brown" : "text-status-critical"
           }`}
         >
           {money(pl.netOperatingPl)}
@@ -134,14 +134,14 @@ function Stat({
 }) {
   return (
     <div>
-      <dt className="text-charcoal/60">{label}</dt>
+      <dt className="text-text-secondary">{label}</dt>
       <dd
         className={`font-semibold tabular-nums ${
           highlight === "positive"
-            ? "text-olive"
+            ? "text-brown"
             : highlight === "negative"
-              ? "text-rust"
-              : "text-charcoal"
+              ? "text-status-critical"
+              : "text-text-primary"
         }`}
       >
         {value}
@@ -160,19 +160,19 @@ function MiniStat({
   highlight?: "positive" | "negative";
 }) {
   return (
-    <div className="rounded-xl border border-border bg-surface px-3 py-4 text-center">
+    <div className="rounded-xl border border-border-neutral bg-surface-white px-3 py-4 text-center">
       <p
         className={`text-xl font-bold tabular-nums ${
           highlight === "positive"
-            ? "text-olive"
+            ? "text-brown"
             : highlight === "negative"
-              ? "text-rust"
-              : "text-olive"
+              ? "text-status-critical"
+              : "text-brown"
         }`}
       >
         {value}
       </p>
-      <p className="text-xs text-charcoal/60">{label}</p>
+      <p className="text-xs text-text-secondary">{label}</p>
     </div>
   );
 }

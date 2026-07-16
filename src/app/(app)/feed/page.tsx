@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireOnboardedUser } from "@/lib/auth/session";
+import { hasCowCalfMode } from "@/lib/cow-calf/constants";
 import { getFeedingSummary, listFeedRations, listFeedingRecords } from "@/lib/feed/queries";
 import { listFeedItems } from "@/lib/feed/inventory-queries";
 import { FeedPageHeader } from "@/components/feed/feed-page-header";
 import { FeedSummaryMetrics } from "@/components/feed/feed-summary-metrics";
 import { FeedLowStockAlert } from "@/components/feed/feed-low-stock-alert";
 import { FeedModuleCard } from "@/components/feed/feed-module-card";
+import { AppPageShell } from "@/components/layout/app-page-shell";
 import { FeedingList } from "@/components/feed/feeding-list";
+import type { OperationMode } from "@/types/auth";
 
 export const metadata: Metadata = {
   title: "Feed — LAORS",
@@ -16,19 +19,22 @@ export const metadata: Metadata = {
 export default async function FeedPage() {
   const session = await requireOnboardedUser();
   const orgId = session.organization!.id;
+  const modes = (session.organization!.enabled_modes ?? []) as OperationMode[];
+  const showCowCalf = hasCowCalfMode(modes);
 
-  const [rations, recentFeedings, feedItems, summary] = await Promise.all([
+  const [rations, recentFeedings, feedItems, summary, cowCalfSummary] = await Promise.all([
     listFeedRations(orgId),
     listFeedingRecords(orgId, { limit: 5, context: "general" }),
     listFeedItems(orgId),
     getFeedingSummary(orgId, "general"),
+    showCowCalf ? getFeedingSummary(orgId, "cow_calf") : Promise.resolve(null),
   ]);
 
   const lowStockCount = feedItems.filter((i) => i.is_low_stock).length;
   const feedingsThisWeek = summary.last7Days;
 
   return (
-    <div className="flex min-h-[calc(100dvh-8.5rem)] flex-1 flex-col gap-6 pb-4">
+    <AppPageShell>
       <FeedPageHeader />
 
       <FeedLowStockAlert items={feedItems} />
@@ -62,6 +68,15 @@ export default async function FeedPage() {
           metric={`${feedingsThisWeek} feeding${feedingsThisWeek === 1 ? "" : "s"} this week`}
           actionLabel="View feed log"
         />
+        {showCowCalf ? (
+          <FeedModuleCard
+            href="/cow-calf/feed"
+            title="Cow-Calf Feed"
+            description="Hay, mineral, and supplement for pairs and pastures."
+            metric={`${cowCalfSummary?.last7Days ?? 0} feeding${cowCalfSummary?.last7Days === 1 ? "" : "s"} this week`}
+            actionLabel="Log cow-calf feed"
+          />
+        ) : null}
       </div>
 
       <section className="flex-1">
@@ -75,6 +90,6 @@ export default async function FeedPage() {
         </div>
         <FeedingList records={recentFeedings} detailBasePath="/feed/log" />
       </section>
-    </div>
+    </AppPageShell>
   );
 }

@@ -4,6 +4,8 @@ import { requireOnboardedUser } from "@/lib/auth/session";
 import { getRainfallSummary, listRainfall } from "@/lib/weather/queries";
 import { RainfallList } from "@/components/weather/rainfall-list";
 import { Button } from "@/components/ui/button";
+import { AppPageHeader } from "@/components/layout/app-page-header";
+import { AppPageShell } from "@/components/layout/app-page-shell";
 
 export const metadata: Metadata = {
   title: "Rainfall — LAORS",
@@ -19,24 +21,22 @@ export default async function RainfallPage() {
   ]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-charcoal">Rainfall</h1>
-          <p className="text-charcoal/70">
-            {summary.totalLast30Days}&quot; in the last 30 days
-            {summary.recordCount > 0 ? ` (${summary.recordCount} entries)` : ""}
-          </p>
-        </div>
-        <Link href="/weather/rainfall/new">
-          <Button size="lg">+ Log</Button>
-        </Link>
-      </div>
-
+    <AppPageShell>
+      <AppPageHeader
+        title="Rainfall"
+        subtitle={`${summary.totalLast30Days}" in the last 30 days${summary.recordCount > 0 ? ` (${summary.recordCount} entries)` : ""}`}
+        actions={
+          <Link href="/weather/rainfall/new">
+            <Button size="md" fullWidth className="sm:w-auto">
+              + Log
+            </Button>
+          </Link>
+        }
+      />
       <RainfallList
         records={records}
         emptyMessage="No rainfall logged yet — tap + Log to record."
       />
-    </div>
+    </AppPageShell>
   );
 }

@@ -40,7 +40,7 @@ export default async function CowDetailPage({
 
   return (
     <div className="space-y-6">
-      <Link href="/cow-calf/cows" className="text-sm font-medium text-olive hover:underline">
+      <Link href="/cow-calf/cows" className="text-sm font-medium text-brown hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2">
         ← Cows
       </Link>
       <CowDetailClient

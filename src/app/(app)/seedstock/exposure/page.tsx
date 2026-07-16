@@ -30,11 +30,11 @@ export default async function SeedstockExposurePage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <Link href="/seedstock" className="text-sm font-medium text-olive hover:underline">
+          <Link href="/seedstock" className="text-sm font-medium text-brown hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2">
             ← Seedstock
           </Link>
-          <h1 className="mt-1 text-2xl font-bold text-charcoal">Exposure records</h1>
-          <p className="text-charcoal/70">Natural service breeding windows by dam and bull</p>
+          <h1 className="mt-1 text-[1.75rem] font-bold leading-tight text-navy sm:text-[2rem]">Exposure records</h1>
+          <p className="text-text-secondary">Natural service breeding windows by dam and bull</p>
         </div>
         {canManage ? (
           <Link href="/seedstock/exposure/new">
@@ -44,7 +44,7 @@ export default async function SeedstockExposurePage() {
       </div>
 
       {records.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-charcoal/60">
+        <p className="rounded-xl border border-dashed border-border-neutral px-4 py-8 text-center text-sm text-text-secondary">
           No exposure records yet.
         </p>
       ) : (
@@ -52,12 +52,12 @@ export default async function SeedstockExposurePage() {
           {records.map((r) => (
             <li
               key={r.id}
-              className="rounded-xl border border-border bg-surface px-4 py-4"
+              className="rounded-xl border border-border-neutral bg-surface-white px-4 py-4"
             >
-              <p className="font-semibold text-charcoal">
+              <p className="font-semibold text-navy">
                 {r.dam_tag ?? "Dam"} × {r.bull_tag ?? r.sire_tag ?? "Bull"}
               </p>
-              <p className="text-sm text-charcoal/70">
+              <p className="text-sm text-text-secondary">
                 {r.exposure_start}
                 {r.exposure_end ? ` – ${r.exposure_end}` : " – ongoing"}
               </p>

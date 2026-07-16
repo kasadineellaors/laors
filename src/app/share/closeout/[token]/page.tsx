@@ -28,14 +28,14 @@ export default async function SharedCloseoutPage({
 
   return (
     <div className="min-h-full bg-cream">
-      <header className="border-b border-border bg-surface px-4 py-4">
+      <header className="border-b border-border-neutral bg-surface-white px-4 py-4">
         <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-olive">
+            <p className="text-sm font-semibold uppercase tracking-wide text-brown">
               {data.orgName}
             </p>
-            <h1 className="text-2xl font-bold text-charcoal">Lot closeout</h1>
-            <p className="text-sm text-charcoal/70">
+            <h1 className="text-[1.75rem] font-bold leading-tight text-navy sm:text-[2rem]">Lot closeout</h1>
+            <p className="text-sm text-text-secondary">
               {data.lotLabel} · {data.subtitle}
             </p>
           </div>
@@ -51,17 +51,17 @@ export default async function SharedCloseoutPage({
         {data.sections.map((section) => (
           <section
             key={section.title}
-            className="rounded-xl border border-border bg-surface p-4"
+            className="rounded-xl border border-border-neutral bg-surface-white p-4"
           >
-            <h2 className="mb-3 text-lg font-bold text-charcoal">{section.title}</h2>
+            <h2 className="mb-3 text-lg font-bold text-navy">{section.title}</h2>
             <dl className="space-y-2 text-sm">
               {section.rows.map((row) => (
                 <div
                   key={row.label}
                   className="flex justify-between gap-4 rounded-lg bg-cream/50 px-3 py-2"
                 >
-                  <dt className="text-charcoal/70">{row.label}</dt>
-                  <dd className="font-semibold tabular-nums text-charcoal">{row.value}</dd>
+                  <dt className="text-text-secondary">{row.label}</dt>
+                  <dd className="font-semibold tabular-nums text-text-primary">{row.value}</dd>
                 </div>
               ))}
             </dl>
@@ -71,16 +71,16 @@ export default async function SharedCloseoutPage({
         <div
           className={`rounded-xl border px-4 py-5 text-center ${
             data.netProfit >= 0
-              ? "border-olive/30 bg-olive/10"
-              : "border-rust/30 bg-rust/10"
+              ? "border-navy/30 bg-navy/10"
+              : "border-status-critical/30 bg-status-critical/10"
           }`}
         >
-          <p className="text-sm font-semibold uppercase tracking-wide text-charcoal/70">
+          <p className="text-sm font-semibold uppercase tracking-wide text-text-secondary">
             {netLabel}
           </p>
           <p
             className={`text-3xl font-bold tabular-nums ${
-              data.netProfit >= 0 ? "text-olive" : "text-rust"
+              data.netProfit >= 0 ? "text-brown" : "text-status-critical"
             }`}
           >
             {data.netProfit.toLocaleString(undefined, {
@@ -90,9 +90,9 @@ export default async function SharedCloseoutPage({
           </p>
         </div>
 
-        <p className="text-center text-xs text-charcoal/50">
+        <p className="text-center text-xs text-text-secondary">
           Shared via{" "}
-          <Link href="https://www.laorsranch.com" className="text-olive hover:underline">
+          <Link href="https://www.laorsranch.com" className="text-brown hover:underline">
             LAORS
           </Link>
         </p>

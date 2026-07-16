@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { buildEmailConfirmUrl } from "@/lib/auth/confirm-url";
 
 type InviteLinkResult =
   | { ok: true; actionLink: string; userId: string }
@@ -31,11 +32,11 @@ export async function createTeamInviteLink(input: {
     return { ok: false, error: result.error.message };
   }
 
-  const actionLink = result.data.properties?.action_link;
+  const inviteUrl = buildEmailConfirmUrl(input.redirectTo, result.data.properties ?? {});
   const userId = result.data.user?.id;
-  if (!actionLink || !userId) {
+  if (!inviteUrl || !userId) {
     return { ok: false, error: "Could not generate invite link." };
   }
 
-  return { ok: true, actionLink, userId };
+  return { ok: true, actionLink: inviteUrl, userId };
 }

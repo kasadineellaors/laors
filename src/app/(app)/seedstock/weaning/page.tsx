@@ -31,11 +31,11 @@ export default async function SeedstockWeaningPage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <Link href="/seedstock" className="text-sm font-medium text-olive hover:underline">
+          <Link href="/seedstock" className="text-sm font-medium text-brown hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2">
             ← Seedstock
           </Link>
-          <h1 className="mt-1 text-2xl font-bold text-charcoal">Weaning log</h1>
-          <p className="text-charcoal/70">
+          <h1 className="mt-1 text-[1.75rem] font-bold leading-tight text-navy sm:text-[2rem]">Weaning log</h1>
+          <p className="text-text-secondary">
             Weaning weights and replacement heifers — feeds maternal lifetime value
           </p>
         </div>
@@ -47,20 +47,20 @@ export default async function SeedstockWeaningPage() {
       </div>
 
       {records.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-charcoal/60">
+        <p className="rounded-xl border border-dashed border-border-neutral px-4 py-8 text-center text-sm text-text-secondary">
           No weaning records yet — record one from a calving or the weaning screen.
         </p>
       ) : (
         <ul className="space-y-2">
           {records.map((w) => (
             <li key={w.id}>
-              <div className="flex items-start justify-between gap-3 rounded-xl border border-border bg-surface px-4 py-4">
+              <div className="flex items-start justify-between gap-3 rounded-xl border border-border-neutral bg-surface-white px-4 py-4">
                 <div>
-                  <p className="font-semibold text-charcoal">
+                  <p className="font-semibold text-navy">
                     {w.calf_tag ?? "Calf"}
                     {w.dam_tag ? ` · dam ${w.dam_tag}` : ""}
                   </p>
-                  <p className="text-sm text-charcoal/70">
+                  <p className="text-sm text-text-secondary">
                     {w.weaned_at}
                     {w.weaning_weight_lbs != null
                       ? ` · ${w.weaning_weight_lbs} lbs`
@@ -71,7 +71,7 @@ export default async function SeedstockWeaningPage() {
                 {w.calf_id ? (
                   <Link
                     href={`/seedstock/animals/${w.calf_id}`}
-                    className="shrink-0 text-sm font-medium text-olive hover:underline"
+                    className="shrink-0 text-sm font-medium text-brown hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2"
                   >
                     View heifer
                   </Link>

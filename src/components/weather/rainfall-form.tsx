@@ -70,7 +70,7 @@ export function RainfallForm({ orgId, locationOptions, record, onSuccess }: Rain
   }
 
   const selectClass =
-    "flex h-12 w-full rounded-lg border-2 border-border bg-surface px-4 text-base";
+    "flex h-12 w-full rounded-lg border-2 border-border-neutral bg-surface-white px-4 text-base";
 
   return (
     <Card>
@@ -127,7 +127,7 @@ export function RainfallForm({ orgId, locationOptions, record, onSuccess }: Rain
           <Input id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
         </div>
         {error ? (
-          <p className="text-sm text-rust" role="alert">
+          <p className="text-sm text-status-critical" role="alert">
             {error}
           </p>
         ) : null}

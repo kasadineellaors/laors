@@ -1,10 +1,16 @@
-import Link from "next/link";
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { requireOnboardedUser } from "@/lib/auth/session";
 import { canManageTeam } from "@/lib/auth/roles";
 import { createClient } from "@/lib/supabase/server";
 import { getEmailDeliveryStatus } from "@/lib/email/setup-status";
 import { TeamSetupClient } from "@/components/setup/team-setup-client";
+import { ManageSubpageHeader } from "@/components/setup/manage-subpage-header";
+import { ManageSubpageShell } from "@/components/setup/manage-subpage-shell";
+
+export const metadata: Metadata = {
+  title: "Team — LAORS",
+};
 
 export default async function TeamSetupPage() {
   const session = await requireOnboardedUser();
@@ -49,14 +55,11 @@ export default async function TeamSetupPage() {
   const emailStatus = getEmailDeliveryStatus();
 
   return (
-    <div className="space-y-6">
-      <div>
-        <Link href="/setup" className="text-sm font-medium text-olive hover:underline">
-          ← Ranch Setup
-        </Link>
-        <h1 className="mt-1 text-2xl font-bold text-charcoal">Team</h1>
-        <p className="text-charcoal/70">Invite managers and hands to this ranch</p>
-      </div>
+    <ManageSubpageShell>
+      <ManageSubpageHeader
+        title="Team"
+        subtitle="Invite workers, assign roles, and manage permissions."
+      />
       <TeamSetupClient
         orgId={orgId}
         pendingInvites={pendingInvites}
@@ -68,6 +71,6 @@ export default async function TeamSetupPage() {
             : `Add ${emailStatus.missing.join(", ")} to .env.local (or Vercel for production), then restart the dev server.`
         }
       />
-    </div>
+    </ManageSubpageShell>
   );
 }

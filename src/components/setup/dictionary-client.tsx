@@ -57,7 +57,7 @@ function AddDictionaryItem({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-3 flex gap-2 border-t border-border pt-3">
+    <form onSubmit={handleSubmit} className="mt-3 flex gap-2 border-t border-border-neutral pt-3">
       <div className="min-w-0 flex-1">
         <Label htmlFor={`add-${table}`} className="sr-only">
           Add item
@@ -73,7 +73,7 @@ function AddDictionaryItem({
       <Button type="submit" size="sm" disabled={loading}>
         Add
       </Button>
-      {error ? <p className="w-full text-xs text-rust">{error}</p> : null}
+      {error ? <p className="w-full text-xs text-status-critical">{error}</p> : null}
     </form>
   );
 }
@@ -91,7 +91,7 @@ export function DictionaryClient({ orgId, sections }: DictionaryClientProps) {
           </CardHeader>
           <ul className="space-y-1">
             {section.items.length === 0 ? (
-              <li className="px-2 text-sm text-charcoal/60">No items yet</li>
+              <li className="px-2 text-sm text-text-secondary">No items yet</li>
             ) : (
               section.items.map((item) => (
                 <SetupEditableRow

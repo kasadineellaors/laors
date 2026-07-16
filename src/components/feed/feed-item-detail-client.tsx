@@ -77,7 +77,7 @@ export function FeedItemDetailClient({
   if (editing) {
     return (
       <div className="space-y-4">
-        <Link href="/feed/inventory" className="text-sm font-medium text-olive hover:underline">
+        <Link href="/feed/inventory" className="text-sm font-medium text-brown hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2">
           ← Feed inventory
         </Link>
         <FeedItemForm
@@ -94,19 +94,19 @@ export function FeedItemDetailClient({
 
   return (
     <div className="space-y-6">
-      <Link href="/feed/inventory" className="text-sm font-medium text-olive hover:underline">
+      <Link href="/feed/inventory" className="text-sm font-medium text-brown hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2">
         ← Feed inventory
       </Link>
 
-      <div className="rounded-xl border border-border bg-surface px-4 py-5">
-        <h1 className="text-2xl font-bold text-charcoal">{item.name}</h1>
-        <p className="text-sm text-charcoal/60">
+      <div className="rounded-xl border border-border-neutral bg-surface-white px-4 py-5">
+        <h1 className="text-[1.75rem] font-bold leading-tight text-navy sm:text-[2rem]">{item.name}</h1>
+        <p className="text-sm text-text-secondary">
           {item.quantity_on_hand} {item.unit} on hand
           {item.price_per_unit != null ? ` · avg $${item.price_per_unit.toFixed(2)}/${item.unit}` : ""}
           {item.reorder_at != null ? ` · alert below ${item.reorder_at}` : ""}
         </p>
         {item.is_low_stock ? (
-          <p className="mt-2 rounded-lg bg-rust/10 px-3 py-2 text-sm font-semibold text-rust">
+          <p className="mt-2 rounded-lg bg-status-critical/10 px-3 py-2 text-sm font-semibold text-status-critical">
             Low stock
           </p>
         ) : null}
@@ -149,7 +149,7 @@ export function FeedItemDetailClient({
       ) : null}
 
       {adjustMode === "receive" || adjustMode === "use" ? (
-        <div className="space-y-3 rounded-xl border border-border p-4">
+        <div className="space-y-3 rounded-xl border border-border-neutral p-4">
           <Label htmlFor="adjQty">Quantity ({item.unit})</Label>
           <Input
             id="adjQty"
@@ -181,7 +181,7 @@ export function FeedItemDetailClient({
       ) : null}
 
       {error ? (
-        <p className="text-sm text-rust" role="alert">
+        <p className="text-sm text-status-critical" role="alert">
           {error}
         </p>
       ) : null}
@@ -197,15 +197,15 @@ export function FeedItemDetailClient({
 
       {purchases.length > 0 ? (
         <div>
-          <h2 className="mb-3 text-lg font-semibold text-charcoal">Purchase history</h2>
+          <h2 className="mb-3 text-lg font-semibold text-navy">Purchase history</h2>
           <ul className="space-y-2 text-sm">
             {purchases.map((p) => (
-              <li key={p.id} className="rounded-lg border border-border px-3 py-2">
+              <li key={p.id} className="rounded-lg border border-border-neutral px-3 py-2">
                 <span className="font-medium">{p.purchased_at}</span>
                 {": "}
                 {p.quantity} {item.unit} for $
                 {p.total_cost.toFixed(2)}
-                <span className="block text-xs text-charcoal/50">
+                <span className="block text-xs text-text-secondary">
                   ${p.unit_cost.toFixed(4)}/{item.unit}
                   {p.vendor_name ? ` · ${p.vendor_name}` : ""}
                   {p.invoice_ref ? ` · #${p.invoice_ref}` : ""}
@@ -218,15 +218,15 @@ export function FeedItemDetailClient({
 
       {adjustments.length > 0 ? (
         <div>
-          <h2 className="mb-3 text-lg font-semibold text-charcoal">Recent adjustments</h2>
+          <h2 className="mb-3 text-lg font-semibold text-navy">Recent adjustments</h2>
           <ul className="space-y-2 text-sm">
             {adjustments.map((a) => (
-              <li key={a.id} className="rounded-lg border border-border px-3 py-2">
+              <li key={a.id} className="rounded-lg border border-border-neutral px-3 py-2">
                 <span className="font-medium capitalize">{a.adjustment_type}</span>
                 {": "}
                 {a.delta > 0 ? "+" : ""}
                 {a.delta} {item.unit} → {a.new_quantity} on hand
-                <span className="block text-xs text-charcoal/50">
+                <span className="block text-xs text-text-secondary">
                   {formatWhen(a.created_at)}
                   {a.created_by_name ? ` · ${a.created_by_name}` : ""}
                 </span>

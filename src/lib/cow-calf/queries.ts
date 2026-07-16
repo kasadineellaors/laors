@@ -20,6 +20,7 @@ type CalvingRow = {
   calving_context?: string;
   location_id: string | null;
   cattle_group_id: string | null;
+  cow_calf_herd_id?: string | null;
   dam_id?: string | null;
   dam_tag: string | null;
   bull_id?: string | null;
@@ -37,6 +38,9 @@ type CalvingRow = {
   add_to_inventory: boolean;
   inventory_added: boolean;
   notes: string | null;
+  calving_event_id?: string | null;
+  twin_status?: string | null;
+  fostered?: boolean;
 };
 
 async function enrichCalving(orgId: string, rows: CalvingRow[]): Promise<CalvingRecord[]> {
@@ -44,12 +48,16 @@ async function enrichCalving(orgId: string, rows: CalvingRow[]): Promise<Calving
   const supabase = await createClient();
 
   const groupIds = [...new Set(rows.map((r) => r.cattle_group_id).filter(Boolean))] as string[];
+  const herdIds = [...new Set(rows.map((r) => r.cow_calf_herd_id).filter(Boolean))] as string[];
   const locationIds = [...new Set(rows.map((r) => r.location_id).filter(Boolean))] as string[];
   const classIds = [...new Set(rows.map((r) => r.classification_id).filter(Boolean))] as string[];
 
-  const [{ data: groups }, { data: locations }, { data: classes }] = await Promise.all([
+  const [{ data: groups }, { data: herds }, { data: locations }, { data: classes }] = await Promise.all([
     groupIds.length
       ? supabase.from("cattle_groups").select("id, name").in("id", groupIds)
+      : Promise.resolve({ data: [] }),
+    herdIds.length
+      ? supabase.from("cow_calf_herds").select("id, name").in("id", herdIds)
       : Promise.resolve({ data: [] }),
     locationIds.length
       ? supabase.from("locations").select("id, name").in("id", locationIds)
@@ -60,6 +68,7 @@ async function enrichCalving(orgId: string, rows: CalvingRow[]): Promise<Calving
   ]);
 
   const groupMap = new Map((groups ?? []).map((g) => [g.id, g.name]));
+  const herdMap = new Map((herds ?? []).map((h) => [h.id, h.name]));
   const locMap = new Map((locations ?? []).map((l) => [l.id, l.name]));
   const classMap = new Map((classes ?? []).map((c) => [c.id, c.name]));
 
@@ -71,6 +80,8 @@ async function enrichCalving(orgId: string, rows: CalvingRow[]): Promise<Calving
     location_name: row.location_id ? locMap.get(row.location_id) ?? null : null,
     cattle_group_id: row.cattle_group_id,
     cattle_group_name: row.cattle_group_id ? groupMap.get(row.cattle_group_id) ?? null : null,
+    cow_calf_herd_id: row.cow_calf_herd_id ?? null,
+    herd_name: row.cow_calf_herd_id ? herdMap.get(row.cow_calf_herd_id) ?? null : null,
     dam_id: row.dam_id ?? null,
     dam_tag: row.dam_tag,
     bull_id: row.bull_id ?? null,
@@ -85,6 +96,9 @@ async function enrichCalving(orgId: string, rows: CalvingRow[]): Promise<Calving
     assistance_type: (row.assistance_type as CalvingRecord["assistance_type"]) ?? null,
     loss_cause: (row.loss_cause as CalvingRecord["loss_cause"]) ?? null,
     breeding_record_id: row.breeding_record_id ?? null,
+    calving_event_id: row.calving_event_id ?? null,
+    twin_status: (row.twin_status as CalvingRecord["twin_status"]) ?? null,
+    fostered: row.fostered ?? false,
     classification_id: row.classification_id,
     classification_name: row.classification_id ? classMap.get(row.classification_id) ?? null : null,
     add_to_inventory: row.add_to_inventory,

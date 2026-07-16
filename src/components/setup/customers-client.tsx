@@ -82,7 +82,7 @@ export function CustomersClient({
         </CardHeader>
         <ul className="space-y-2">
           {customers.length === 0 ? (
-            <li className="text-sm text-charcoal/60">None yet — add below</li>
+            <li className="text-sm text-text-secondary">None yet — add below</li>
           ) : (
             customers.map((c) => (
               <li key={c.id} className="space-y-2">
@@ -172,7 +172,7 @@ export function CustomersClient({
               onChange={(e) => setEmail(e.target.value)}
               placeholder="billing@customer.com"
             />
-            <p className="mt-1 text-xs text-charcoal/60">Used when you send invoices to this customer</p>
+            <p className="mt-1 text-xs text-text-secondary">Used when you send invoices to this customer</p>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -223,7 +223,7 @@ export function CustomersClient({
             />
           </div>
           {error ? (
-            <p className="text-sm text-rust" role="alert">
+            <p className="text-sm text-status-critical" role="alert">
               {error}
             </p>
           ) : null}

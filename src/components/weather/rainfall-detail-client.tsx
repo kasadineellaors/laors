@@ -46,7 +46,7 @@ export function RainfallDetailClient({
   if (editing) {
     return (
       <div className="space-y-4">
-        <Link href="/weather/rainfall" className="text-sm font-medium text-olive hover:underline">
+        <Link href="/weather/rainfall" className="text-sm font-medium text-brown hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2">
           ← Rainfall
         </Link>
         <RainfallForm
@@ -64,38 +64,38 @@ export function RainfallDetailClient({
 
   return (
     <div className="space-y-6">
-      <Link href="/weather/rainfall" className="text-sm font-medium text-olive hover:underline">
+      <Link href="/weather/rainfall" className="text-sm font-medium text-brown hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2">
         ← Rainfall
       </Link>
 
-      <div className="rounded-xl border border-border bg-surface px-4 py-5">
-        <p className="text-4xl font-bold text-olive">{record.amount_inches}&quot;</p>
-        <p className="mt-2 text-sm text-charcoal/60">{formatDate(record.recorded_date)}</p>
+      <div className="rounded-xl border border-border-neutral bg-surface-white px-4 py-5">
+        <p className="text-4xl font-bold text-brown">{record.amount_inches}&quot;</p>
+        <p className="mt-2 text-sm text-text-secondary">{formatDate(record.recorded_date)}</p>
 
         <dl className="mt-6 space-y-3 text-sm">
           <div>
-            <dt className="text-charcoal/50">Location</dt>
-            <dd className="font-medium text-charcoal">
+            <dt className="text-text-secondary">Location</dt>
+            <dd className="font-medium text-navy">
               {record.location_label ?? "Ranch-wide"}
             </dd>
           </div>
           {record.recorded_by_name ? (
             <div>
-              <dt className="text-charcoal/50">Recorded by</dt>
-              <dd className="font-medium text-charcoal">{record.recorded_by_name}</dd>
+              <dt className="text-text-secondary">Recorded by</dt>
+              <dd className="font-medium text-navy">{record.recorded_by_name}</dd>
             </div>
           ) : null}
           {record.notes ? (
             <div>
-              <dt className="text-charcoal/50">Notes</dt>
-              <dd className="font-medium text-charcoal">{record.notes}</dd>
+              <dt className="text-text-secondary">Notes</dt>
+              <dd className="font-medium text-navy">{record.notes}</dd>
             </div>
           ) : null}
         </dl>
       </div>
 
       {error ? (
-        <p className="text-sm text-rust" role="alert">
+        <p className="text-sm text-status-critical" role="alert">
           {error}
         </p>
       ) : null}

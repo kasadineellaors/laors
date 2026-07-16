@@ -13,12 +13,12 @@ export function ResendConfirmationForm({ email }: { email: string }) {
     <form action={action} className="space-y-3">
       <input type="hidden" name="email" value={email} />
       {state.error ? (
-        <p className="text-sm text-rust" role="alert">
+        <p className="text-sm text-status-critical" role="alert">
           {state.error}
         </p>
       ) : null}
       {state.success ? (
-        <p className="rounded-lg bg-olive/10 px-4 py-3 text-sm text-olive" role="status">
+        <p className="rounded-lg bg-navy/10 px-4 py-3 text-sm text-brown" role="status">
           {state.success}
         </p>
       ) : null}

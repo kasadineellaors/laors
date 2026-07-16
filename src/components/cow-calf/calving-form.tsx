@@ -136,7 +136,7 @@ export function CalvingForm({
             id="location"
             value={locationId}
             onChange={(e) => setLocationId(e.target.value)}
-            className="touch-target w-full rounded-lg border border-border bg-surface px-3 py-2"
+            className="touch-target w-full rounded-lg border border-border-neutral bg-surface-white px-3 py-2"
           >
             <option value="">— Optional —</option>
             {locationOptions.map((o) => (
@@ -154,7 +154,7 @@ export function CalvingForm({
               id="group"
               value={groupId}
               onChange={(e) => setGroupId(e.target.value)}
-              className="touch-target w-full rounded-lg border border-border bg-surface px-3 py-2"
+              className="touch-target w-full rounded-lg border border-border-neutral bg-surface-white px-3 py-2"
             >
               <option value="">— Optional —</option>
               {groupOptions.map((o) => (
@@ -201,7 +201,7 @@ export function CalvingForm({
             id="calfSex"
             value={calfSex}
             onChange={(e) => handleSexChange(e.target.value as CalfSex)}
-            className="touch-target w-full rounded-lg border border-border bg-surface px-3 py-2"
+            className="touch-target w-full rounded-lg border border-border-neutral bg-surface-white px-3 py-2"
           >
             {(Object.keys(CALF_SEX_LABELS) as CalfSex[]).map((key) => (
               <option key={key} value={key}>
@@ -217,7 +217,7 @@ export function CalvingForm({
             id="outcome"
             value={outcome}
             onChange={(e) => setOutcome(e.target.value as CalvingOutcome)}
-            className="touch-target w-full rounded-lg border border-border bg-surface px-3 py-2"
+            className="touch-target w-full rounded-lg border border-border-neutral bg-surface-white px-3 py-2"
           >
             {(Object.keys(CALVING_OUTCOME_LABELS) as CalvingOutcome[]).map((key) => (
               <option key={key} value={key}>
@@ -235,7 +235,7 @@ export function CalvingForm({
                 id="classification"
                 value={classificationId}
                 onChange={(e) => setClassificationId(e.target.value)}
-                className="touch-target w-full rounded-lg border border-border bg-surface px-3 py-2"
+                className="touch-target w-full rounded-lg border border-border-neutral bg-surface-white px-3 py-2"
               >
                 <option value="">— Select classification —</option>
                 {classificationOptions.map((c) => (
@@ -246,14 +246,14 @@ export function CalvingForm({
                 ))}
               </select>
             </div>
-            <label className="flex touch-target items-center gap-3 rounded-lg border border-border px-3 py-3">
+            <label className="flex touch-target items-center gap-3 rounded-lg border border-border-neutral px-3 py-3">
               <input
                 type="checkbox"
                 checked={addToInventory}
                 onChange={(e) => setAddToInventory(e.target.checked)}
                 className="size-5 accent-olive"
               />
-              <span className="text-sm font-medium text-charcoal">
+              <span className="text-sm font-medium text-navy">
                 Add 1 live calf to herd inventory
               </span>
             </label>
@@ -266,7 +266,7 @@ export function CalvingForm({
         </div>
 
         {error ? (
-          <p className="text-sm text-rust" role="alert">
+          <p className="text-sm text-status-critical" role="alert">
             {error}
           </p>
         ) : null}

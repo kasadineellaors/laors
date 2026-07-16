@@ -93,7 +93,7 @@ export function OwnersClient({
         </CardHeader>
         <ul className="space-y-2">
           {owners.length === 0 ? (
-            <li className="text-sm text-charcoal/60">None yet — add below</li>
+            <li className="text-sm text-text-secondary">None yet — add below</li>
           ) : (
             owners.map((owner) => (
               <li key={owner.id} className="space-y-2">
@@ -155,7 +155,7 @@ export function OwnersClient({
                   }}
                 />
                 {owner.is_ownership_group && (groupMembers[owner.id]?.length ?? 0) > 0 ? (
-                  <p className="px-1 text-xs text-charcoal/60">
+                  <p className="px-1 text-xs text-text-secondary">
                     Members:{" "}
                     {groupMembers[owner.id]
                       .map((m) => `${m.member_name} (${m.percentage}%)`)
@@ -187,7 +187,7 @@ export function OwnersClient({
           <CardDescription>Individual owners get billed. Groups split invoices to members.</CardDescription>
         </CardHeader>
         <form onSubmit={handleCreate} className="space-y-4">
-          <label className="flex items-center gap-2 text-sm font-medium text-charcoal">
+          <label className="flex items-center gap-2 text-sm font-medium text-navy">
             <input
               type="checkbox"
               checked={isOwnershipGroup}
@@ -221,8 +221,8 @@ export function OwnersClient({
               </div>
             </>
           ) : (
-            <div className="space-y-2 rounded-lg border border-border p-3">
-              <p className="text-sm font-medium text-charcoal">Co-owners & split %</p>
+            <div className="space-y-2 rounded-lg border border-border-neutral p-3">
+              <p className="text-sm font-medium text-navy">Co-owners & split %</p>
               {members.map((member, index) => (
                 <div key={index} className="grid grid-cols-[1fr_80px] gap-2">
                   <select
@@ -232,7 +232,7 @@ export function OwnersClient({
                       next[index] = { ...next[index], memberOwnerId: e.target.value };
                       setMembers(next);
                     }}
-                    className="flex h-10 w-full rounded-lg border-2 border-border bg-surface px-3 text-sm"
+                    className="flex h-10 w-full rounded-lg border-2 border-border-neutral bg-surface-white px-3 text-sm"
                   >
                     <option value="">Select owner</option>
                     {billableOwners.map((o) => (
@@ -266,7 +266,7 @@ export function OwnersClient({
             </div>
           )}
           {error ? (
-            <p className="text-sm text-rust" role="alert">
+            <p className="text-sm text-status-critical" role="alert">
               {error}
             </p>
           ) : null}
@@ -310,8 +310,8 @@ function MiscChargeForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-lg border border-dashed border-border px-3 py-3 text-sm">
-      <p className="font-semibold text-charcoal">Log misc charge — {ownerName}</p>
+    <form onSubmit={handleSubmit} className="rounded-lg border border-dashed border-border-neutral px-3 py-3 text-sm">
+      <p className="font-semibold text-navy">Log misc charge — {ownerName}</p>
       <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_100px_auto]">
         <Input
           value={description}

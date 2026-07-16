@@ -56,11 +56,11 @@ export default async function NewSalePage({
       <div>
         <Link
           href={prefillAnimal ? `/seedstock/animals/${prefillAnimal.id}` : "/sales"}
-          className="text-sm font-medium text-olive hover:underline"
+          className="text-sm font-medium text-brown hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2"
         >
           {prefillAnimal ? `← ${prefillAnimal.tagNumber}` : "← Sales"}
         </Link>
-        <h1 className="mt-1 text-2xl font-bold text-charcoal">
+        <h1 className="mt-1 text-[1.75rem] font-bold leading-tight text-navy sm:text-[2rem]">
           {prefillAnimal ? `Sell ${prefillAnimal.tagNumber}` : "Record sale"}
         </h1>
       </div>

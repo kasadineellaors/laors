@@ -8,6 +8,7 @@ import { computeCalendarSummary } from "@/lib/calendar/summary";
 import { CalendarPageHeader } from "@/components/calendar/calendar-page-header";
 import { CalendarSummaryMetrics } from "@/components/calendar/calendar-summary-metrics";
 import { CalendarView } from "@/components/calendar/calendar-view";
+import { AppPageShell } from "@/components/layout/app-page-shell";
 
 export const metadata: Metadata = {
   title: "Calendar — LAORS",
@@ -72,7 +73,7 @@ export default async function CalendarPage({
   const now = new Date();
 
   return (
-    <div className="flex min-h-[calc(100dvh-8.5rem)] flex-1 flex-col gap-6 pb-4">
+    <AppPageShell>
       <CalendarPageHeader />
 
       {showMetrics ? <CalendarSummaryMetrics summary={summary} /> : null}
@@ -86,6 +87,6 @@ export default async function CalendarPage({
         nextHref={`/calendar?month=${monthParam(next.year, next.month)}`}
         todayHref={`/calendar?month=${monthParam(now.getFullYear(), now.getMonth() + 1)}`}
       />
-    </div>
+    </AppPageShell>
   );
 }

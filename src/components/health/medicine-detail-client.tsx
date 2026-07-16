@@ -136,8 +136,8 @@ export function MedicineDetailClient({
       </div>
 
       {adjustMode ? (
-        <div className="rounded-xl border border-border bg-surface p-4 space-y-3">
-          <p className="font-semibold text-charcoal">
+        <div className="rounded-xl border border-border-neutral bg-surface-white p-4 space-y-3">
+          <p className="font-semibold text-navy">
             {adjustMode === "receive" ? "Receive stock" : "Use or remove stock"}
           </p>
           <div>
@@ -188,23 +188,23 @@ export function MedicineDetailClient({
 
       {adjustments.length > 0 ? (
         <div>
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-charcoal/50">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-text-secondary">
             Recent adjustments
           </h2>
           <ul className="space-y-2">
             {adjustments.map((a) => (
               <li
                 key={a.id}
-                className="rounded-lg border border-border bg-surface px-3 py-2 text-sm"
+                className="rounded-lg border border-border-neutral bg-surface-white px-3 py-2 text-sm"
               >
                 <div className="flex justify-between gap-2">
-                  <span className="font-medium capitalize text-charcoal">{a.adjustment_type}</span>
-                  <span className={a.delta >= 0 ? "text-olive" : "text-rust"}>
+                  <span className="font-medium capitalize text-text-primary">{a.adjustment_type}</span>
+                  <span className={a.delta >= 0 ? "text-brown" : "text-status-critical"}>
                     {a.delta >= 0 ? "+" : ""}
                     {a.delta}
                   </span>
                 </div>
-                <p className="text-xs text-charcoal/50">
+                <p className="text-xs text-text-secondary">
                   {formatWhen(a.created_at)}
                   {a.created_by_name ? ` · ${a.created_by_name}` : ""}
                 </p>
@@ -215,7 +215,7 @@ export function MedicineDetailClient({
       ) : null}
 
       {error ? (
-        <p className="text-sm text-rust" role="alert">
+        <p className="text-sm text-status-critical" role="alert">
           {error}
         </p>
       ) : null}

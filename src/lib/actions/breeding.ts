@@ -7,6 +7,11 @@ import type {
   BreedingMethod,
   PregnancyStatus,
 } from "@/lib/cow-calf/breeding-types";
+import { logCowCalfActivity } from "@/lib/cow-calf/activity-log";
+import {
+  pregnancyStatusToReproductiveStatus,
+} from "@/lib/cow-calf/reproduction-helpers";
+import type { ReproductiveStatus } from "@/lib/cow-calf/inventory-calculations";
 import { revalidatePath } from "next/cache";
 import type { Database } from "@/types/database";
 
@@ -27,6 +32,7 @@ function revalidateBreeding(context: BreedingContext = "cow_calf") {
   } else {
     revalidatePath("/cow-calf");
     revalidatePath("/cow-calf/breeding");
+    revalidatePath("/cow-calf/exposure");
   }
 }
 
@@ -49,12 +55,26 @@ async function requireMember(orgId: string) {
   return { supabase, user };
 }
 
+async function syncDamReproductiveStatus(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  orgId: string,
+  damId: string,
+  status: ReproductiveStatus,
+) {
+  await supabase
+    .from("individual_animals")
+    .update({ reproductive_status: status })
+    .eq("id", damId)
+    .eq("organization_id", orgId);
+}
+
 export async function createBreeding(
   orgId: string,
   input: {
     bredAt?: string;
     breedingContext?: BreedingContext;
     cattleGroupId?: string;
+    cowCalfHerdId?: string;
     locationId?: string;
     damId?: string;
     damTag?: string;
@@ -94,6 +114,8 @@ export async function createBreeding(
       damTag = dam?.tag_number ?? null;
     }
 
+    const pregnancyStatus = input.pregnancyStatus ?? "bred";
+
     const { data, error } = await supabase
       .from("breeding_records")
       .insert({
@@ -101,6 +123,7 @@ export async function createBreeding(
         bred_at: bredAt,
         breeding_context: context,
         cattle_group_id: input.cattleGroupId || null,
+        cow_calf_herd_id: input.cowCalfHerdId || null,
         location_id: input.locationId || null,
         dam_id: input.damId || null,
         dam_tag: damTag,
@@ -111,7 +134,7 @@ export async function createBreeding(
         breeding_method: input.breedingMethod ?? (context === "seedstock" ? "ai" : "natural"),
         expected_calving_date:
           input.expectedCalvingDate?.trim() || expectedCalvingFromBredDate(bredAt),
-        pregnancy_status: input.pregnancyStatus ?? "bred",
+        pregnancy_status: pregnancyStatus,
         pregnancy_check_date: input.pregnancyCheckDate || null,
         notes: input.notes?.trim() || null,
         created_by: user.id,
@@ -120,6 +143,27 @@ export async function createBreeding(
       .single();
 
     if (error) return { error: `${error.message} — ${DB_HINT}` };
+
+    if (context === "cow_calf" && input.damId) {
+      const reproStatus = pregnancyStatusToReproductiveStatus(pregnancyStatus);
+      if (reproStatus) {
+        await syncDamReproductiveStatus(supabase, orgId, input.damId, reproStatus);
+      }
+    }
+
+    if (context === "cow_calf") {
+      await logCowCalfActivity({
+        organizationId: orgId,
+        action: "breeding_recorded",
+        summary: `Breeding recorded${damTag ? ` for dam ${damTag}` : ""}.`,
+        herdId: input.cowCalfHerdId ?? null,
+        animalId: input.damId ?? null,
+        sourceTable: "breeding_records",
+        sourceId: data.id,
+        userId: user.id,
+      });
+    }
+
     revalidateBreeding(context);
     return { success: "Breeding recorded", breedingId: data.id };
   } catch (e) {
@@ -132,6 +176,7 @@ export async function updateBreeding(
   breedingId: string,
   input: {
     bredAt?: string;
+    cowCalfHerdId?: string | null;
     locationId?: string | null;
     damId?: string | null;
     damTag?: string | null;
@@ -147,10 +192,11 @@ export async function updateBreeding(
   },
 ): Promise<BreedingActionState> {
   try {
-    const { supabase } = await requireMember(orgId);
+    const { supabase, user } = await requireMember(orgId);
     const updates: BreedingUpdate = {};
 
     if (input.bredAt !== undefined) updates.bred_at = input.bredAt;
+    if (input.cowCalfHerdId !== undefined) updates.cow_calf_herd_id = input.cowCalfHerdId;
     if (input.locationId !== undefined) updates.location_id = input.locationId;
     if (input.damId !== undefined) updates.dam_id = input.damId;
     if (input.damTag !== undefined) updates.dam_tag = input.damTag;
@@ -172,7 +218,7 @@ export async function updateBreeding(
 
     const { data: existing } = await supabase
       .from("breeding_records")
-      .select("breeding_context")
+      .select("breeding_context, dam_id, cow_calf_herd_id")
       .eq("id", breedingId)
       .eq("organization_id", orgId)
       .maybeSingle();
@@ -184,10 +230,101 @@ export async function updateBreeding(
       .eq("organization_id", orgId);
 
     if (error) return { error: `${error.message} — ${DB_HINT}` };
-    revalidateBreeding((existing?.breeding_context as BreedingContext) ?? "cow_calf");
+
+    const context = (existing?.breeding_context as BreedingContext) ?? "cow_calf";
+    const damId = input.damId ?? existing?.dam_id;
+    if (context === "cow_calf" && damId && input.pregnancyStatus !== undefined) {
+      const reproStatus = pregnancyStatusToReproductiveStatus(input.pregnancyStatus);
+      if (reproStatus) {
+        await syncDamReproductiveStatus(supabase, orgId, damId, reproStatus);
+      }
+    }
+
+    if (context === "cow_calf") {
+      await logCowCalfActivity({
+        organizationId: orgId,
+        action: "breeding_updated",
+        summary: "Breeding record updated.",
+        herdId: input.cowCalfHerdId ?? existing?.cow_calf_herd_id ?? null,
+        animalId: damId ?? null,
+        sourceTable: "breeding_records",
+        sourceId: breedingId,
+        userId: user.id,
+      });
+    }
+
+    revalidateBreeding(context);
     revalidatePath(`/cow-calf/breeding/${breedingId}`);
     revalidatePath(`/seedstock/breeding/${breedingId}`);
     return { success: "Breeding updated" };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function recordPregnancyCheck(
+  orgId: string,
+  breedingId: string,
+  input: {
+    pregnancyStatus: PregnancyStatus;
+    pregnancyCheckDate?: string;
+    notes?: string;
+  },
+): Promise<BreedingActionState> {
+  try {
+    const { supabase, user } = await requireMember(orgId);
+    const checkDate = input.pregnancyCheckDate ?? new Date().toISOString().slice(0, 10);
+
+    const { data: existing } = await supabase
+      .from("breeding_records")
+      .select("breeding_context, dam_id, dam_tag, cow_calf_herd_id, notes")
+      .eq("id", breedingId)
+      .eq("organization_id", orgId)
+      .maybeSingle();
+
+    if (!existing) return { error: "Breeding record not found" };
+
+    const mergedNotes = input.notes?.trim()
+      ? [existing.notes, input.notes.trim()].filter(Boolean).join("\n")
+      : existing.notes;
+
+    const { error } = await supabase
+      .from("breeding_records")
+      .update({
+        pregnancy_status: input.pregnancyStatus,
+        pregnancy_check_date: checkDate,
+        notes: mergedNotes,
+      })
+      .eq("id", breedingId)
+      .eq("organization_id", orgId);
+
+    if (error) return { error: `${error.message} — ${DB_HINT}` };
+
+    const context = (existing.breeding_context as BreedingContext) ?? "cow_calf";
+    if (context === "cow_calf" && existing.dam_id) {
+      const reproStatus = pregnancyStatusToReproductiveStatus(input.pregnancyStatus);
+      if (reproStatus) {
+        await syncDamReproductiveStatus(supabase, orgId, existing.dam_id, reproStatus);
+      }
+    }
+
+    if (context === "cow_calf") {
+      await logCowCalfActivity({
+        organizationId: orgId,
+        action: "pregnancy_check",
+        summary: `Pregnancy check recorded${existing.dam_tag ? ` for ${existing.dam_tag}` : ""}: ${input.pregnancyStatus}.`,
+        herdId: existing.cow_calf_herd_id,
+        animalId: existing.dam_id,
+        sourceTable: "breeding_records",
+        sourceId: breedingId,
+        userId: user.id,
+        details: { pregnancyStatus: input.pregnancyStatus, checkDate },
+      });
+    }
+
+    revalidateBreeding(context);
+    revalidatePath(`/cow-calf/breeding/${breedingId}`);
+    return { success: "Pregnancy check recorded" };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Failed" };
   }

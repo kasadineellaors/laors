@@ -198,7 +198,7 @@ export function OnboardingWizard({
         <p className="text-sm font-semibold text-saddle">
           Step {stepIndex + 1} of {ONBOARDING_STEPS.length}
         </p>
-        <h1 className="mt-1 text-2xl font-bold text-charcoal">
+        <h1 className="mt-1 text-[1.75rem] font-bold leading-tight text-navy sm:text-[2rem]">
           {ONBOARDING_STEP_LABELS[currentStep]}
         </h1>
         <div className="mt-4 flex gap-1">
@@ -207,7 +207,7 @@ export function OnboardingWizard({
               key={i}
               className={cn(
                 "h-2 flex-1 rounded-full",
-                i <= stepIndex ? "bg-olive" : "bg-tan-light",
+                i <= stepIndex ? "bg-navy" : "bg-tan-light",
               )}
             />
           ))}
@@ -215,7 +215,7 @@ export function OnboardingWizard({
       </div>
 
       {error ? (
-        <p className="mb-4 rounded-lg bg-rust/10 px-4 py-3 text-sm text-rust" role="alert">
+        <p className="mb-4 rounded-lg bg-status-critical/10 px-4 py-3 text-sm text-status-critical" role="alert">
           {error}
         </p>
       ) : null}
@@ -245,7 +245,7 @@ export function OnboardingWizard({
               <select
                 id="state"
                 name="state"
-                className="flex h-12 w-full rounded-lg border-2 border-border bg-surface px-4 text-base"
+                className="flex h-12 w-full rounded-lg border-2 border-border-neutral bg-surface-white px-4 text-base"
               >
                 <option value="">Select state</option>
                 {US_STATES.map((s) => (
@@ -279,8 +279,8 @@ export function OnboardingWizard({
                   className={cn(
                     "flex w-full touch-target items-center justify-between rounded-xl border-2 px-5 py-4 text-left",
                     selectedModes.includes(mode)
-                      ? "border-olive bg-olive/10"
-                      : "border-border bg-surface",
+                      ? "border-navy bg-navy/10"
+                      : "border-border-neutral bg-surface-white",
                   )}
                 >
                   <span className="text-lg font-semibold">
@@ -288,7 +288,7 @@ export function OnboardingWizard({
                   </span>
                   <span className={cn(
                     "flex h-6 w-6 items-center justify-center rounded-full border-2",
-                    selectedModes.includes(mode) ? "border-olive bg-olive text-white" : "border-border",
+                    selectedModes.includes(mode) ? "border-navy bg-navy text-white" : "border-border-neutral",
                   )}>
                     {selectedModes.includes(mode) ? "✓" : ""}
                   </span>

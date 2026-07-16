@@ -4,6 +4,7 @@ import { listTasks } from "@/lib/tasks/queries";
 import { computeJobsSummary } from "@/lib/tasks/summary";
 import { JobsPageHeader } from "@/components/tasks/jobs-page-header";
 import { JobsSummaryMetrics } from "@/components/tasks/jobs-summary-metrics";
+import { AppPageShell } from "@/components/layout/app-page-shell";
 import { TaskList } from "@/components/tasks/task-list";
 
 export const metadata: Metadata = {
@@ -20,12 +21,12 @@ export default async function JobsPage() {
   const showMetrics = tasks.length > 0;
 
   return (
-    <div className="flex min-h-[calc(100dvh-8.5rem)] flex-1 flex-col gap-6 pb-4">
+    <AppPageShell>
       <JobsPageHeader />
 
       {showMetrics ? <JobsSummaryMetrics summary={summary} /> : null}
 
       <TaskList orgId={orgId} tasks={tasks} currentUserId={userId} />
-    </div>
+    </AppPageShell>
   );
 }

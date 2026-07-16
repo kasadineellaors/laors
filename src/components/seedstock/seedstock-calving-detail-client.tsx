@@ -45,16 +45,16 @@ export function SeedstockCalvingDetailClient({
   if (!canManage) {
     return (
       <div className="space-y-6">
-        <div className="rounded-xl border border-border bg-surface p-4">
-          <h1 className="text-xl font-bold text-charcoal">
+        <div className="rounded-xl border border-border-neutral bg-surface-white p-4">
+          <h1 className="text-xl font-bold text-navy">
             {record.dam_tag} → {record.calf_tag ?? "Calf"}
           </h1>
           <dl className="mt-4 space-y-2 text-sm">
-            <div><dt className="text-charcoal/50">Date</dt><dd>{record.calved_at}</dd></div>
-            <div><dt className="text-charcoal/50">Outcome</dt><dd>{CALVING_OUTCOME_LABELS[record.outcome]}</dd></div>
-            <div><dt className="text-charcoal/50">Sex</dt><dd>{CALF_SEX_LABELS[record.calf_sex]}</dd></div>
+            <div><dt className="text-text-secondary">Date</dt><dd>{record.calved_at}</dd></div>
+            <div><dt className="text-text-secondary">Outcome</dt><dd>{CALVING_OUTCOME_LABELS[record.outcome]}</dd></div>
+            <div><dt className="text-text-secondary">Sex</dt><dd>{CALF_SEX_LABELS[record.calf_sex]}</dd></div>
             {record.assistance_type ? (
-              <div><dt className="text-charcoal/50">Assistance</dt><dd>{ASSISTANCE_TYPE_LABELS[record.assistance_type]}</dd></div>
+              <div><dt className="text-text-secondary">Assistance</dt><dd>{ASSISTANCE_TYPE_LABELS[record.assistance_type]}</dd></div>
             ) : null}
           </dl>
         </div>
@@ -73,11 +73,11 @@ export function SeedstockCalvingDetailClient({
         record={record}
       />
 
-      <section className="space-y-4 border-t border-border pt-6">
+      <section className="space-y-4 border-t border-border-neutral pt-6">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold text-charcoal">Weaning</h2>
-            <p className="text-sm text-charcoal/60">
+            <h2 className="text-lg font-semibold text-navy">Weaning</h2>
+            <p className="text-sm text-text-secondary">
               Record weaning weight and optionally register a replacement heifer
             </p>
           </div>
@@ -93,7 +93,7 @@ export function SeedstockCalvingDetailClient({
         {record.calf_id ? (
           <Link
             href={`/seedstock/animals/${record.calf_id}`}
-            className="text-sm font-medium text-olive hover:underline"
+            className="text-sm font-medium text-brown hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2"
           >
             View registered calf →
           </Link>

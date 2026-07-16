@@ -5,6 +5,7 @@ import { FeedModuleCard } from "@/components/feed/feed-module-card";
 import { HealthPageHeader } from "@/components/health/health-page-header";
 import { HealthSummaryMetrics } from "@/components/health/health-summary-metrics";
 import { HealthAlerts } from "@/components/health/health-alerts";
+import { AppPageShell } from "@/components/layout/app-page-shell";
 
 export default async function HealthPage() {
   const session = await requireOnboardedUser();
@@ -37,7 +38,7 @@ export default async function HealthPage() {
   }
 
   return (
-    <div className="flex min-h-[calc(100dvh-8.5rem)] flex-1 flex-col gap-6 pb-4">
+    <AppPageShell>
       <HealthPageHeader />
 
       <HealthAlerts summary={summary} lowStockItems={lowStockItems} />
@@ -66,6 +67,6 @@ export default async function HealthPage() {
           actionLabel="View inventory"
         />
       </div>
-    </div>
+    </AppPageShell>
   );
 }

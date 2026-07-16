@@ -105,82 +105,82 @@ export function SeedstockAnimalDetailClient({
 
   return (
     <div className="space-y-6">
-      <Link href="/seedstock/animals" className="text-sm font-medium text-olive hover:underline">
+      <Link href="/seedstock/animals" className="text-sm font-medium text-brown hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2">
         ← Animals
       </Link>
 
-      <div className="rounded-xl border border-border bg-surface px-4 py-5">
-        <p className="text-sm text-charcoal/60">{SEEDSTOCK_TYPE_LABELS[animal.animal_type]}</p>
-        <h1 className="mt-1 text-2xl font-bold text-charcoal">
+      <div className="rounded-xl border border-border-neutral bg-surface-white px-4 py-5">
+        <p className="text-sm text-text-secondary">{SEEDSTOCK_TYPE_LABELS[animal.animal_type]}</p>
+        <h1 className="mt-1 text-[1.75rem] font-bold leading-tight text-navy sm:text-[2rem]">
           {animal.tag_number}
           {animal.name ? ` — ${animal.name}` : ""}
         </h1>
-        <p className="mt-1 text-sm capitalize text-charcoal/60">
+        <p className="mt-1 text-sm capitalize text-text-secondary">
           {ANIMAL_STATUS_LABELS[animal.status]}
         </p>
 
-        <dl className="mt-6 space-y-3 border-t border-border pt-4 text-sm">
+        <dl className="mt-6 space-y-3 border-t border-border-neutral pt-4 text-sm">
           {animal.registration_number ? (
             <div className="flex justify-between gap-4">
-              <dt className="text-charcoal/60">Registration</dt>
-              <dd className="font-medium text-charcoal">{animal.registration_number}</dd>
+              <dt className="text-text-secondary">Registration</dt>
+              <dd className="font-medium text-navy">{animal.registration_number}</dd>
             </div>
           ) : null}
           {animal.breed ? (
             <div className="flex justify-between gap-4">
-              <dt className="text-charcoal/60">Breed</dt>
-              <dd className="font-medium text-charcoal">{animal.breed}</dd>
+              <dt className="text-text-secondary">Breed</dt>
+              <dd className="font-medium text-navy">{animal.breed}</dd>
             </div>
           ) : null}
           {animal.birth_date ? (
             <div className="flex justify-between gap-4">
-              <dt className="text-charcoal/60">Born</dt>
-              <dd className="font-medium text-charcoal">{animal.birth_date}</dd>
+              <dt className="text-text-secondary">Born</dt>
+              <dd className="font-medium text-navy">{animal.birth_date}</dd>
             </div>
           ) : null}
           {animal.sire_tag ? (
             <div className="flex justify-between gap-4">
-              <dt className="text-charcoal/60">Sire</dt>
-              <dd className="font-medium text-charcoal">{animal.sire_tag}</dd>
+              <dt className="text-text-secondary">Sire</dt>
+              <dd className="font-medium text-navy">{animal.sire_tag}</dd>
             </div>
           ) : null}
           {animal.dam_tag ? (
             <div className="flex justify-between gap-4">
-              <dt className="text-charcoal/60">Dam</dt>
-              <dd className="font-medium text-charcoal">{animal.dam_tag}</dd>
+              <dt className="text-text-secondary">Dam</dt>
+              <dd className="font-medium text-navy">{animal.dam_tag}</dd>
             </div>
           ) : null}
           {animal.location_name ? (
             <div className="flex justify-between gap-4">
-              <dt className="text-charcoal/60">Location</dt>
-              <dd className="font-medium text-charcoal">{animal.location_name}</dd>
+              <dt className="text-text-secondary">Location</dt>
+              <dd className="font-medium text-navy">{animal.location_name}</dd>
             </div>
           ) : null}
           {animal.cattle_group_name ? (
             <div className="flex justify-between gap-4">
-              <dt className="text-charcoal/60">Herd</dt>
-              <dd className="font-medium text-charcoal">{animal.cattle_group_name}</dd>
+              <dt className="text-text-secondary">Herd</dt>
+              <dd className="font-medium text-navy">{animal.cattle_group_name}</dd>
             </div>
           ) : null}
         </dl>
 
-        <div className="mt-6 border-t border-border pt-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-charcoal/50">EPDs</p>
+        <div className="mt-6 border-t border-border-neutral pt-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">EPDs</p>
           <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
             {epdFields.map((epd) => (
               <div key={epd.label} className="rounded-lg bg-cream px-3 py-2 text-center">
-                <p className="text-lg font-bold text-olive">{epd.value}</p>
-                <p className="text-xs text-charcoal/60">{epd.label}</p>
+                <p className="text-lg font-bold text-brown">{epd.value}</p>
+                <p className="text-xs text-text-secondary">{epd.label}</p>
               </div>
             ))}
           </div>
         </div>
 
         {animal.pedigree ? (
-          <p className="mt-4 border-t border-border pt-4 text-sm text-charcoal/80">{animal.pedigree}</p>
+          <p className="mt-4 border-t border-border-neutral pt-4 text-sm text-text-primary/80">{animal.pedigree}</p>
         ) : null}
         {animal.notes ? (
-          <p className="mt-4 text-sm text-charcoal/70">{animal.notes}</p>
+          <p className="mt-4 text-sm text-text-secondary">{animal.notes}</p>
         ) : null}
       </div>
 
@@ -205,9 +205,9 @@ export function SeedstockAnimalDetailClient({
 
       <section className="space-y-3">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-charcoal">Breeding</h2>
+          <h2 className="text-lg font-semibold text-navy">Breeding</h2>
           {canManage ? (
-            <Link href={breedingNewHref} className="text-sm font-medium text-olive hover:underline">
+            <Link href={breedingNewHref} className="text-sm font-medium text-brown hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2">
               + Record
             </Link>
           ) : null}
@@ -221,18 +221,18 @@ export function SeedstockAnimalDetailClient({
 
       <section className="space-y-3">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-charcoal">Sales</h2>
+          <h2 className="text-lg font-semibold text-navy">Sales</h2>
           {canManage && animal.status === "active" ? (
             <Link
               href={`/sales/new?animalId=${animal.id}`}
-              className="text-sm font-medium text-olive hover:underline"
+              className="text-sm font-medium text-brown hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2"
             >
               + Record sale
             </Link>
           ) : null}
         </div>
         {salesRecords.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-charcoal/60">
+          <p className="rounded-xl border border-dashed border-border-neutral px-4 py-8 text-center text-sm text-text-secondary">
             No sales linked to this animal yet.
           </p>
         ) : (
@@ -241,24 +241,24 @@ export function SeedstockAnimalDetailClient({
               <li key={sale.id}>
                 <Link
                   href={`/sales/${sale.id}`}
-                  className="block rounded-xl border border-border bg-surface px-4 py-3 hover:border-olive/40"
+                  className="block rounded-xl border border-border-neutral bg-surface-white px-4 py-3 hover:border-navy/40"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="font-semibold text-charcoal">
+                      <p className="font-semibold text-navy">
                         {sale.seedstock_sale_type
                           ? SEEDSTOCK_SALE_TYPE_LABELS[sale.seedstock_sale_type]
                           : "Sale"}
                         {sale.buyer_name ? ` · ${sale.buyer_name}` : ""}
                       </p>
-                      <p className="text-sm text-charcoal/70">
+                      <p className="text-sm text-text-secondary">
                         {sale.customer_name ? `${sale.customer_name} · ` : ""}
                         {sale.total_amount != null
                           ? `$${sale.total_amount.toLocaleString()}`
                           : "Amount not set"}
                       </p>
                     </div>
-                    <p className="shrink-0 text-xs text-charcoal/50">
+                    <p className="shrink-0 text-xs text-text-secondary">
                       {formatSaleDate(sale.sale_date)}
                     </p>
                   </div>
@@ -289,7 +289,7 @@ export function SeedstockAnimalDetailClient({
       ) : null}
 
       {error ? (
-        <p className="text-sm text-rust" role="alert">
+        <p className="text-sm text-status-critical" role="alert">
           {error}
         </p>
       ) : null}

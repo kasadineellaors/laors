@@ -34,7 +34,7 @@ export function ForgotPasswordForm() {
           />
         </div>
         {state.error ? (
-          <p className="text-sm text-rust" role="alert">
+          <p className="text-sm text-status-critical" role="alert">
             {state.error}
           </p>
         ) : null}
@@ -47,8 +47,8 @@ export function ForgotPasswordForm() {
           {pending ? "Sending…" : "Send Reset Link"}
         </Button>
       </form>
-      <p className="mt-6 text-center text-sm text-charcoal/70">
-        <Link href="/login" className="font-semibold text-olive hover:underline">
+      <p className="mt-6 text-center text-sm text-text-secondary">
+        <Link href="/login" className="font-semibold text-brown hover:underline">
           Back to sign in
         </Link>
       </p>

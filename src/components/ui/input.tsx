@@ -18,13 +18,13 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           "placeholder:text-text-secondary",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:border-navy",
           "disabled:cursor-not-allowed disabled:opacity-50",
-          error && "border-rust focus-visible:ring-rust",
+          error && "border-status-critical focus-visible:ring-status-critical",
           className,
         )}
         {...props}
       />
       {error ? (
-        <p className="mt-1.5 text-sm text-rust" role="alert">
+        <p className="mt-1.5 text-sm text-status-critical" role="alert">
           {error}
         </p>
       ) : null}

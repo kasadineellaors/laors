@@ -7,6 +7,8 @@ import { hasSeedstockMode } from "@/lib/seedstock/constants";
 import { getBreedingSummary } from "@/lib/cow-calf/breeding-queries";
 import { getSeedstockSummary } from "@/lib/seedstock/queries";
 import type { OperationMode } from "@/types/auth";
+import { AppPageShell } from "@/components/layout/app-page-shell";
+import { AppPageHeader } from "@/components/layout/app-page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -31,11 +33,8 @@ export default async function SeedstockPage() {
   ]);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-charcoal">Seedstock</h1>
-        <p className="text-charcoal/70">Individual animals, pedigree, and EPDs</p>
-      </div>
+    <AppPageShell>
+      <AppPageHeader title="Seedstock" subtitle="Individual animals, pedigree, and EPDs." />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
@@ -46,10 +45,10 @@ export default async function SeedstockPage() {
         ].map((stat) => (
           <div
             key={stat.label}
-            className="rounded-xl border border-border bg-surface px-3 py-4 text-center"
+            className="rounded-xl border border-border-neutral bg-surface-white px-3 py-4 text-center"
           >
-            <p className="text-2xl font-bold text-olive">{stat.value}</p>
-            <p className="text-xs text-charcoal/60">{stat.label}</p>
+            <p className="text-2xl font-bold text-brown">{stat.value}</p>
+            <p className="text-xs text-text-secondary">{stat.label}</p>
           </div>
         ))}
       </div>
@@ -62,17 +61,17 @@ export default async function SeedstockPage() {
         ].map((stat) => (
           <div
             key={stat.label}
-            className="rounded-xl border border-border bg-surface px-3 py-4 text-center"
+            className="rounded-xl border border-border-neutral bg-surface-white px-3 py-4 text-center"
           >
-            <p className="text-2xl font-bold text-olive">{stat.value}</p>
-            <p className="text-xs text-charcoal/60">{stat.label}</p>
+            <p className="text-2xl font-bold text-brown">{stat.value}</p>
+            <p className="text-xs text-text-secondary">{stat.label}</p>
           </div>
         ))}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Link href="/seedstock/animals">
-          <Card className="h-full transition-colors hover:border-olive hover:bg-olive/5">
+          <Card className="h-full transition-colors hover:border-navy hover:bg-tan/5">
             <CardHeader>
               <CardTitle>Animal registry</CardTitle>
               <CardDescription>
@@ -82,7 +81,7 @@ export default async function SeedstockPage() {
           </Card>
         </Link>
         <Link href="/seedstock/breeding">
-          <Card className="h-full transition-colors hover:border-olive hover:bg-olive/5">
+          <Card className="h-full transition-colors hover:border-navy hover:bg-tan/5">
             <CardHeader>
               <CardTitle>Breeding</CardTitle>
               <CardDescription>
@@ -92,7 +91,7 @@ export default async function SeedstockPage() {
           </Card>
         </Link>
         <Link href="/seedstock/sales">
-          <Card className="h-full transition-colors hover:border-olive hover:bg-olive/5">
+          <Card className="h-full transition-colors hover:border-navy hover:bg-tan/5">
             <CardHeader>
               <CardTitle>Sales</CardTitle>
               <CardDescription>
@@ -102,7 +101,7 @@ export default async function SeedstockPage() {
           </Card>
         </Link>
         <Link href="/seedstock/maternal">
-          <Card className="h-full border-olive/40 transition-colors hover:border-olive hover:bg-olive/5">
+          <Card className="h-full border-navy/40 transition-colors hover:border-navy hover:bg-tan/5">
             <CardHeader>
               <CardTitle>Maternal intelligence</CardTitle>
               <CardDescription>
@@ -112,7 +111,7 @@ export default async function SeedstockPage() {
           </Card>
         </Link>
         <Link href="/seedstock/calving">
-          <Card className="h-full transition-colors hover:border-olive hover:bg-olive/5">
+          <Card className="h-full transition-colors hover:border-navy hover:bg-tan/5">
             <CardHeader>
               <CardTitle>Calving</CardTitle>
               <CardDescription>
@@ -122,7 +121,7 @@ export default async function SeedstockPage() {
           </Card>
         </Link>
         <Link href="/seedstock/exposure">
-          <Card className="h-full transition-colors hover:border-olive hover:bg-olive/5">
+          <Card className="h-full transition-colors hover:border-navy hover:bg-tan/5">
             <CardHeader>
               <CardTitle>Exposure</CardTitle>
               <CardDescription>
@@ -132,7 +131,7 @@ export default async function SeedstockPage() {
           </Card>
         </Link>
         <Link href="/seedstock/weaning">
-          <Card className="h-full transition-colors hover:border-olive hover:bg-olive/5">
+          <Card className="h-full transition-colors hover:border-navy hover:bg-tan/5">
             <CardHeader>
               <CardTitle>Weaning</CardTitle>
               <CardDescription>
@@ -169,6 +168,6 @@ export default async function SeedstockPage() {
           </Button>
         </Link>
       </div>
-    </div>
+    </AppPageShell>
   );
 }

@@ -47,7 +47,7 @@ export function RationDetailClient({
   if (editing) {
     return (
       <div className="space-y-4">
-        <Link href="/feed/rations" className="text-sm font-medium text-olive hover:underline">
+        <Link href="/feed/rations" className="text-sm font-medium text-brown hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2">
           ← Rations
         </Link>
         <RationForm
@@ -66,18 +66,18 @@ export function RationDetailClient({
 
   return (
     <div className="space-y-6">
-      <Link href="/feed/rations" className="text-sm font-medium text-olive hover:underline">
+      <Link href="/feed/rations" className="text-sm font-medium text-brown hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2">
         ← Rations
       </Link>
 
-      <div className="rounded-xl border border-border bg-surface px-4 py-5">
-        <h1 className="text-2xl font-bold text-charcoal">{ration.name}</h1>
-        <p className="mt-1 text-charcoal/70 capitalize">Fed in {ration.unit}</p>
+      <div className="rounded-xl border border-border-neutral bg-surface-white px-4 py-5">
+        <h1 className="text-[1.75rem] font-bold leading-tight text-navy sm:text-[2rem]">{ration.name}</h1>
+        <p className="mt-1 text-text-secondary capitalize">Fed in {ration.unit}</p>
 
         <dl className="mt-6 space-y-3 text-sm">
           <div>
-            <dt className="text-charcoal/50">Bill at</dt>
-            <dd className="font-medium text-charcoal">
+            <dt className="text-text-secondary">Bill at</dt>
+            <dd className="font-medium text-navy">
               {billRate > 0
                 ? `$${billRate.toFixed(2)}/${ration.unit}`
                 : "Not set — add recipe or manual price"}
@@ -86,8 +86,8 @@ export function RationDetailClient({
           </div>
           {ration.effective_from ? (
             <div>
-              <dt className="text-charcoal/50">Current price since</dt>
-              <dd className="font-medium text-charcoal">
+              <dt className="text-text-secondary">Current price since</dt>
+              <dd className="font-medium text-navy">
                 {new Date(ration.effective_from + "T12:00:00").toLocaleDateString(undefined, {
                   month: "short",
                   day: "numeric",
@@ -98,18 +98,18 @@ export function RationDetailClient({
           ) : null}
           {recipeCost > 0 ? (
             <div>
-              <dt className="text-charcoal/50">Recipe cost</dt>
-              <dd className="font-medium text-charcoal">
+              <dt className="text-text-secondary">Recipe cost</dt>
+              <dd className="font-medium text-navy">
                 ${recipeCost.toFixed(2)}/{ration.unit}
               </dd>
             </div>
           ) : null}
           {ingredients.length > 0 ? (
             <div>
-              <dt className="text-charcoal/50">Recipe per 1 {ration.unit}</dt>
+              <dt className="text-text-secondary">Recipe per 1 {ration.unit}</dt>
               <dd className="mt-1 space-y-1">
                 {ingredients.map((i) => (
-                  <p key={i.id} className="font-medium text-charcoal">
+                  <p key={i.id} className="font-medium text-navy">
                     {i.inclusion_percent != null
                       ? `${i.inclusion_percent}%`
                       : `${i.quantity_per_ration_unit}`}{" "}
@@ -119,34 +119,34 @@ export function RationDetailClient({
               </dd>
             </div>
           ) : (
-            <p className="text-charcoal/60">No inventory recipe — edit to pull from feedstuff.</p>
+            <p className="text-text-secondary">No inventory recipe — edit to pull from feedstuff.</p>
           )}
           {ration.notes ? (
             <div>
-              <dt className="text-charcoal/50">Notes</dt>
-              <dd className="font-medium text-charcoal">{ration.notes}</dd>
+              <dt className="text-text-secondary">Notes</dt>
+              <dd className="font-medium text-navy">{ration.notes}</dd>
             </div>
           ) : null}
         </dl>
       </div>
 
       {priceHistory.length > 0 ? (
-        <div className="rounded-xl border border-border bg-surface px-4 py-5">
-          <h2 className="text-lg font-semibold text-charcoal">Price history</h2>
+        <div className="rounded-xl border border-border-neutral bg-surface-white px-4 py-5">
+          <h2 className="text-lg font-semibold text-navy">Price history</h2>
           <ul className="mt-4 space-y-2 text-sm">
             {priceHistory.map((row) => (
               <li
                 key={row.id}
                 className="flex items-center justify-between gap-3 border-b border-border/60 pb-2 last:border-0"
               >
-                <span className="text-charcoal/70">
+                <span className="text-text-secondary">
                   {new Date(row.effective_from + "T12:00:00").toLocaleDateString(undefined, {
                     month: "short",
                     day: "numeric",
                     year: "numeric",
                   })}
                 </span>
-                <span className="font-medium text-charcoal">
+                <span className="font-medium text-navy">
                   ${row.price_per_unit.toFixed(2)}/{ration.unit}
                 </span>
               </li>
@@ -156,7 +156,7 @@ export function RationDetailClient({
       ) : null}
 
       {error ? (
-        <p className="text-sm text-rust" role="alert">
+        <p className="text-sm text-status-critical" role="alert">
           {error}
         </p>
       ) : null}

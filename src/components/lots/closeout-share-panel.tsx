@@ -140,7 +140,7 @@ export function CloseoutSharePanel({
         </div>
 
         {shareUrl ? (
-          <p className="break-all rounded-lg bg-cream/60 px-3 py-2 text-xs text-charcoal/70">
+          <p className="break-all rounded-lg bg-cream/60 px-3 py-2 text-xs text-text-secondary">
             {shareUrl}
           </p>
         ) : null}
@@ -157,7 +157,7 @@ export function CloseoutSharePanel({
         </div>
 
         {!emailConfigured ? (
-          <p className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-charcoal/70">
+          <p className="rounded-lg border border-border-neutral bg-surface-white px-3 py-2 text-sm text-text-secondary">
             To email closeouts, set <code className="text-xs">RESEND_API_KEY</code> and{" "}
             <code className="text-xs">INVOICE_FROM_EMAIL</code> in your environment. Share links
             still work without email.
@@ -175,19 +175,19 @@ export function CloseoutSharePanel({
         </Button>
 
         {lastEmailedAt && lastEmailedTo ? (
-          <p className="text-xs text-charcoal/60">
+          <p className="text-xs text-text-secondary">
             Last emailed to {lastEmailedTo} on{" "}
             {new Date(lastEmailedAt).toLocaleDateString()}
           </p>
         ) : null}
 
         {error ? (
-          <p className="text-sm text-rust" role="alert">
+          <p className="text-sm text-status-critical" role="alert">
             {error}
           </p>
         ) : null}
         {success ? (
-          <p className="text-sm text-olive" role="status">
+          <p className="text-sm text-brown" role="status">
             {success}
           </p>
         ) : null}

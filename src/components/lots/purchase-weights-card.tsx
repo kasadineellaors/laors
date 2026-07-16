@@ -24,9 +24,9 @@ export function PurchaseWeightsCard({ group }: PurchaseWeightsCardProps) {
   const payToReceived = shrinkPct(pay, received);
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-4">
-      <p className="text-sm font-semibold uppercase tracking-wide text-olive">Purchase weights</p>
-      <p className="text-xs text-charcoal/60">Total lot pounds at purchase and arrival</p>
+    <div className="rounded-xl border border-border-neutral bg-surface-white p-4">
+      <p className="text-sm font-semibold uppercase tracking-wide text-brown">Purchase weights</p>
+      <p className="text-xs text-text-secondary">Total lot pounds at purchase and arrival</p>
       <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-3">
         {pay != null ? (
           <WeightRow
@@ -76,10 +76,10 @@ function WeightRow({
 }) {
   return (
     <div className="rounded-lg bg-cream/60 px-3 py-2">
-      <dt className="text-xs text-charcoal/60">{label}</dt>
-      <dd className="text-lg font-bold tabular-nums text-charcoal">{roundLb(total)} lb</dd>
+      <dt className="text-xs text-text-secondary">{label}</dt>
+      <dd className="text-lg font-bold tabular-nums text-text-primary">{roundLb(total)} lb</dd>
       {perHead != null ? (
-        <dd className="text-xs text-charcoal/60">{roundLb(perHead)} lb / hd</dd>
+        <dd className="text-xs text-text-secondary">{roundLb(perHead)} lb / hd</dd>
       ) : null}
     </div>
   );
@@ -87,7 +87,7 @@ function WeightRow({
 
 function ShrinkBadge({ label, value }: { label: string; value: number }) {
   return (
-    <span className="rounded-full bg-tan-light/50 px-2.5 py-1 font-medium text-charcoal/80">
+    <span className="rounded-full bg-tan-light/50 px-2.5 py-1 font-medium text-navy/80">
       {label}: {value.toFixed(1)}%
     </span>
   );

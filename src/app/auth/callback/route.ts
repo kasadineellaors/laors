@@ -1,24 +1,16 @@
-import { createClient } from "@/lib/supabase/server";
-import { getAuthRedirectPath } from "@/lib/auth/redirects";
-import { getUserSession } from "@/lib/auth/session";
-import { NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
+import { completeAuthFromSearchParams } from "@/lib/auth/callback-server";
 
-export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
-  const code = searchParams.get("code");
-  const next = searchParams.get("next");
+/** OAuth / PKCE code exchange; hash fragments fall through to the client page. */
+export async function GET(request: NextRequest) {
+  const result = await completeAuthFromSearchParams(
+    request,
+    request.nextUrl.searchParams,
+  );
 
-  if (code) {
-    const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) {
-      if (next && next.startsWith("/") && !next.startsWith("//")) {
-        return NextResponse.redirect(`${origin}${next}`);
-      }
-      const session = await getUserSession();
-      return NextResponse.redirect(`${origin}${getAuthRedirectPath(session)}`);
-    }
-  }
+  if (result) return result;
 
-  return NextResponse.redirect(`${origin}/login?error=email_link_failed`);
+  const rewriteUrl = request.nextUrl.clone();
+  rewriteUrl.pathname = "/auth/callback/fragment";
+  return NextResponse.rewrite(rewriteUrl);
 }

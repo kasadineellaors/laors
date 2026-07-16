@@ -46,11 +46,11 @@ export default async function EnterpriseReportPage({
   return (
     <div className="space-y-6">
       <div>
-        <Link href="/reports" className="text-sm font-medium text-olive hover:underline">
+        <Link href="/reports" className="text-sm font-medium text-brown hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2">
           ← Reports
         </Link>
-        <h1 className="mt-2 text-2xl font-bold text-charcoal">Enterprise P&amp;L</h1>
-        <p className="text-charcoal/70">
+        <h1 className="mt-2 text-[1.75rem] font-bold leading-tight text-navy sm:text-[2rem]">Enterprise P&amp;L</h1>
+        <p className="text-text-secondary">
           Costs and sales by enterprise type — {periodLabel.toLowerCase()}.
         </p>
       </div>
@@ -60,8 +60,8 @@ export default async function EnterpriseReportPage({
           href="/reports/enterprise"
           className={`rounded-lg border px-3 py-2 text-sm font-semibold ${
             !month
-              ? "border-olive bg-olive/10 text-olive"
-              : "border-border text-olive hover:bg-olive/10"
+              ? "border-navy bg-navy/10 text-brown"
+              : "border-border-neutral text-brown hover:bg-tan/10"
           }`}
         >
           All time
@@ -70,8 +70,8 @@ export default async function EnterpriseReportPage({
           href={`/reports/enterprise?month=${month ?? currentMonthKey()}`}
           className={`rounded-lg border px-3 py-2 text-sm font-semibold ${
             month
-              ? "border-olive bg-olive/10 text-olive"
-              : "border-border text-olive hover:bg-olive/10"
+              ? "border-navy bg-navy/10 text-brown"
+              : "border-border-neutral text-brown hover:bg-tan/10"
           }`}
         >
           By month
@@ -80,13 +80,13 @@ export default async function EnterpriseReportPage({
           <>
             <Link
               href={`/reports/enterprise?month=${prev}`}
-              className="rounded-lg border border-border px-3 py-2 text-sm font-semibold text-olive hover:bg-olive/10"
+              className="rounded-lg border border-border-neutral px-3 py-2 text-sm font-semibold text-brown hover:bg-tan/10"
             >
               ← {formatShortMonth(prev)}
             </Link>
             <Link
               href={`/reports/enterprise?month=${next}`}
-              className="rounded-lg border border-border px-3 py-2 text-sm font-semibold text-olive hover:bg-olive/10"
+              className="rounded-lg border border-border-neutral px-3 py-2 text-sm font-semibold text-brown hover:bg-tan/10"
             >
               {formatShortMonth(next)} →
             </Link>
@@ -164,14 +164,14 @@ function Stat({
 }) {
   return (
     <div>
-      <dt className="text-charcoal/60">{label}</dt>
+      <dt className="text-text-secondary">{label}</dt>
       <dd
         className={`font-semibold tabular-nums ${
           highlight === "positive"
-            ? "text-olive"
+            ? "text-brown"
             : highlight === "negative"
-              ? "text-rust"
-              : "text-charcoal"
+              ? "text-status-critical"
+              : "text-text-primary"
         }`}
       >
         {value}
@@ -190,19 +190,19 @@ function MiniStat({
   highlight?: "positive" | "negative";
 }) {
   return (
-    <div className="rounded-xl border border-border bg-surface px-3 py-4 text-center">
+    <div className="rounded-xl border border-border-neutral bg-surface-white px-3 py-4 text-center">
       <p
         className={`text-xl font-bold tabular-nums ${
           highlight === "positive"
-            ? "text-olive"
+            ? "text-brown"
             : highlight === "negative"
-              ? "text-rust"
-              : "text-olive"
+              ? "text-status-critical"
+              : "text-brown"
         }`}
       >
         {value}
       </p>
-      <p className="text-xs text-charcoal/60">{label}</p>
+      <p className="text-xs text-text-secondary">{label}</p>
     </div>
   );
 }

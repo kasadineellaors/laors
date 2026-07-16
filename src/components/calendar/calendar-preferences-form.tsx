@@ -42,16 +42,16 @@ export function CalendarPreferencesForm({ orgId, calendarEnabled }: CalendarPref
         </CardDescription>
       </CardHeader>
       <div className="space-y-4 px-4 pb-4">
-        <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border p-4">
+        <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border-neutral p-4">
           <input
             type="checkbox"
             checked={enabled}
             onChange={(e) => setEnabled(e.target.checked)}
-            className="mt-1 h-4 w-4 rounded border-border"
+            className="mt-1 h-4 w-4 rounded border-border-neutral"
           />
           <span>
-            <span className="block font-semibold text-charcoal">Show calendar on this ranch</span>
-            <span className="mt-1 block text-sm text-charcoal/70">
+            <span className="block font-semibold text-navy">Show calendar on this ranch</span>
+            <span className="mt-1 block text-sm text-text-secondary">
               When off, the Calendar tab is hidden for everyone. Events are kept — turn it back on
               anytime.
             </span>
@@ -59,7 +59,7 @@ export function CalendarPreferencesForm({ orgId, calendarEnabled }: CalendarPref
         </label>
 
         {error ? <p className="text-sm font-medium text-red-600">{error}</p> : null}
-        {success ? <p className="text-sm font-medium text-olive">{success}</p> : null}
+        {success ? <p className="text-sm font-medium text-brown">{success}</p> : null}
 
         <Button type="button" size="lg" onClick={handleSave} disabled={loading}>
           {loading ? "Saving…" : "Save preferences"}

@@ -961,6 +961,7 @@ export interface Database {
           id: string;
           organization_id: string;
           cattle_group_id: string | null;
+          cow_calf_herd_id: string | null;
           location_id: string | null;
           product_name: string;
           treatment_type: string | null;
@@ -983,6 +984,7 @@ export interface Database {
           id?: string;
           organization_id: string;
           cattle_group_id?: string | null;
+          cow_calf_herd_id?: string | null;
           location_id?: string | null;
           product_name: string;
           treatment_type?: string | null;
@@ -1000,6 +1002,7 @@ export interface Database {
         };
         Update: {
           cattle_group_id?: string | null;
+          cow_calf_herd_id?: string | null;
           location_id?: string | null;
           product_name?: string;
           treatment_type?: string | null;
@@ -1153,6 +1156,7 @@ export interface Database {
           buyer_name: string | null;
           customer_id: string | null;
           cattle_group_id: string | null;
+          cow_calf_herd_id: string | null;
           location_id: string | null;
           head_count: number;
           total_amount: number | null;
@@ -1162,6 +1166,12 @@ export interface Database {
           inventory_deducted: boolean;
           individual_animal_id: string | null;
           seedstock_sale_type: string | null;
+          sale_context: string;
+          cow_calf_sale_type: string | null;
+          fees: number | null;
+          net_amount: number | null;
+          sale_reason: string | null;
+          animal_ids: string[] | null;
           notes: string | null;
           created_by: string | null;
           is_active: boolean;
@@ -1175,6 +1185,7 @@ export interface Database {
           buyer_name?: string | null;
           customer_id?: string | null;
           cattle_group_id?: string | null;
+          cow_calf_herd_id?: string | null;
           location_id?: string | null;
           head_count: number;
           total_amount?: number | null;
@@ -1184,6 +1195,12 @@ export interface Database {
           inventory_deducted?: boolean;
           individual_animal_id?: string | null;
           seedstock_sale_type?: string | null;
+          sale_context?: string;
+          cow_calf_sale_type?: string | null;
+          fees?: number | null;
+          net_amount?: number | null;
+          sale_reason?: string | null;
+          animal_ids?: string[] | null;
           notes?: string | null;
           created_by?: string | null;
         };
@@ -1198,6 +1215,12 @@ export interface Database {
           financial_category_id?: string | null;
           individual_animal_id?: string | null;
           seedstock_sale_type?: string | null;
+          sale_context?: string;
+          cow_calf_sale_type?: string | null;
+          fees?: number | null;
+          net_amount?: number | null;
+          sale_reason?: string | null;
+          animal_ids?: string[] | null;
           notes?: string | null;
           is_active?: boolean;
         };
@@ -1210,6 +1233,7 @@ export interface Database {
           bred_at: string;
           breeding_context: string;
           cattle_group_id: string | null;
+          cow_calf_herd_id: string | null;
           location_id: string | null;
           dam_id: string | null;
           dam_tag: string | null;
@@ -1234,6 +1258,7 @@ export interface Database {
           bred_at?: string;
           breeding_context?: string;
           cattle_group_id?: string | null;
+          cow_calf_herd_id?: string | null;
           location_id?: string | null;
           dam_id?: string | null;
           dam_tag?: string | null;
@@ -1253,6 +1278,7 @@ export interface Database {
           bred_at?: string;
           breeding_context?: string;
           cattle_group_id?: string | null;
+          cow_calf_herd_id?: string | null;
           location_id?: string | null;
           dam_id?: string | null;
           dam_tag?: string | null;
@@ -1344,6 +1370,10 @@ export interface Database {
           add_to_inventory: boolean;
           inventory_added: boolean;
           notes: string | null;
+          cow_calf_herd_id: string | null;
+          calving_event_id: string | null;
+          twin_status: string | null;
+          fostered: boolean;
           created_by: string | null;
           is_active: boolean;
           created_at: string;
@@ -1373,6 +1403,10 @@ export interface Database {
           add_to_inventory?: boolean;
           inventory_added?: boolean;
           notes?: string | null;
+          cow_calf_herd_id?: string | null;
+          calving_event_id?: string | null;
+          twin_status?: string | null;
+          fostered?: boolean;
           created_by?: string | null;
         };
         Update: {
@@ -1396,6 +1430,208 @@ export interface Database {
           classification_id?: string | null;
           add_to_inventory?: boolean;
           inventory_added?: boolean;
+          notes?: string | null;
+          cow_calf_herd_id?: string | null;
+          calving_event_id?: string | null;
+          twin_status?: string | null;
+          fostered?: boolean;
+          is_active?: boolean;
+        };
+        Relationships: [];
+      };
+      cow_calf_processing_events: {
+        Row: {
+          id: string;
+          organization_id: string;
+          cow_calf_herd_id: string | null;
+          event_type: string;
+          processed_at: string;
+          location_id: string | null;
+          product_name: string | null;
+          head_count: number | null;
+          notes: string | null;
+          created_by: string | null;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          cow_calf_herd_id?: string | null;
+          event_type: string;
+          processed_at?: string;
+          location_id?: string | null;
+          product_name?: string | null;
+          head_count?: number | null;
+          notes?: string | null;
+          created_by?: string | null;
+        };
+        Update: {
+          cow_calf_herd_id?: string | null;
+          event_type?: string;
+          processed_at?: string;
+          location_id?: string | null;
+          product_name?: string | null;
+          head_count?: number | null;
+          notes?: string | null;
+          is_active?: boolean;
+        };
+        Relationships: [];
+      };
+      cow_calf_processing_lines: {
+        Row: {
+          id: string;
+          organization_id: string;
+          processing_event_id: string;
+          calf_id: string;
+          weight_lbs: number | null;
+          treatment_record_id: string | null;
+          notes: string | null;
+          is_active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          processing_event_id: string;
+          calf_id: string;
+          weight_lbs?: number | null;
+          treatment_record_id?: string | null;
+          notes?: string | null;
+        };
+        Update: {
+          weight_lbs?: number | null;
+          treatment_record_id?: string | null;
+          notes?: string | null;
+          is_active?: boolean;
+        };
+        Relationships: [];
+      };
+      cow_calf_activity_log: {
+        Row: {
+          id: string;
+          organization_id: string;
+          action: string;
+          herd_id: string | null;
+          animal_id: string | null;
+          source_table: string | null;
+          source_id: string | null;
+          summary: string;
+          details: Json | null;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          action: string;
+          herd_id?: string | null;
+          animal_id?: string | null;
+          source_table?: string | null;
+          source_id?: string | null;
+          summary: string;
+          details?: Json | null;
+          created_by?: string | null;
+        };
+        Update: {
+          action?: string;
+          summary?: string;
+          details?: Json | null;
+        };
+        Relationships: [];
+      };
+      cow_calf_herds: {
+        Row: {
+          id: string;
+          organization_id: string;
+          name: string;
+          owner_id: string | null;
+          current_location_id: string | null;
+          status: string;
+          description: string | null;
+          breeding_season: string | null;
+          calving_season: string | null;
+          recordkeeping_mode: string;
+          group_cows_count: number;
+          group_calves_at_side_count: number;
+          group_bulls_count: number;
+          group_replacements_count: number;
+          created_by: string | null;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          name: string;
+          owner_id?: string | null;
+          current_location_id?: string | null;
+          status?: string;
+          description?: string | null;
+          breeding_season?: string | null;
+          calving_season?: string | null;
+          recordkeeping_mode?: string;
+          group_cows_count?: number;
+          group_calves_at_side_count?: number;
+          group_bulls_count?: number;
+          group_replacements_count?: number;
+          created_by?: string | null;
+        };
+        Update: {
+          name?: string;
+          owner_id?: string | null;
+          current_location_id?: string | null;
+          status?: string;
+          description?: string | null;
+          breeding_season?: string | null;
+          calving_season?: string | null;
+          recordkeeping_mode?: string;
+          group_cows_count?: number;
+          group_calves_at_side_count?: number;
+          group_bulls_count?: number;
+          group_replacements_count?: number;
+          is_active?: boolean;
+        };
+        Relationships: [];
+      };
+      dam_calf_relationships: {
+        Row: {
+          id: string;
+          organization_id: string;
+          dam_id: string;
+          calf_id: string;
+          birth_date: string | null;
+          relationship_status: string;
+          fostered: boolean;
+          nursing_status: string;
+          weaning_date: string | null;
+          calving_record_id: string | null;
+          notes: string | null;
+          created_by: string | null;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          dam_id: string;
+          calf_id: string;
+          birth_date?: string | null;
+          relationship_status?: string;
+          fostered?: boolean;
+          nursing_status?: string;
+          weaning_date?: string | null;
+          calving_record_id?: string | null;
+          notes?: string | null;
+          created_by?: string | null;
+        };
+        Update: {
+          relationship_status?: string;
+          nursing_status?: string;
+          weaning_date?: string | null;
           notes?: string | null;
           is_active?: boolean;
         };
@@ -1426,9 +1662,18 @@ export interface Database {
           dam_id: string | null;
           sire_id: string | null;
           cattle_group_id: string | null;
+          cow_calf_herd_id: string | null;
           location_id: string | null;
           status: string;
           birth_date: string | null;
+          reproductive_status: string | null;
+          calf_lifecycle_status: string | null;
+          eid: string | null;
+          ear_tag: string | null;
+          ranch_id_number: string | null;
+          sex: string | null;
+          color: string | null;
+          brand: string | null;
           notes: string | null;
           created_by: string | null;
           is_active: boolean;
@@ -1459,9 +1704,18 @@ export interface Database {
           dam_id?: string | null;
           sire_id?: string | null;
           cattle_group_id?: string | null;
+          cow_calf_herd_id?: string | null;
           location_id?: string | null;
           status?: string;
           birth_date?: string | null;
+          reproductive_status?: string | null;
+          calf_lifecycle_status?: string | null;
+          eid?: string | null;
+          ear_tag?: string | null;
+          ranch_id_number?: string | null;
+          sex?: string | null;
+          color?: string | null;
+          brand?: string | null;
           notes?: string | null;
           created_by?: string | null;
         };
@@ -1487,9 +1741,18 @@ export interface Database {
           dam_id?: string | null;
           sire_id?: string | null;
           cattle_group_id?: string | null;
+          cow_calf_herd_id?: string | null;
           location_id?: string | null;
           status?: string;
           birth_date?: string | null;
+          reproductive_status?: string | null;
+          calf_lifecycle_status?: string | null;
+          eid?: string | null;
+          ear_tag?: string | null;
+          ranch_id_number?: string | null;
+          sex?: string | null;
+          color?: string | null;
+          brand?: string | null;
           notes?: string | null;
           is_active?: boolean;
         };
@@ -1500,6 +1763,8 @@ export interface Database {
           id: string;
           organization_id: string;
           breeding_context: string;
+          cow_calf_herd_id: string | null;
+          exposed_cow_count: number | null;
           dam_id: string | null;
           dam_tag: string | null;
           bull_id: string | null;
@@ -1517,6 +1782,8 @@ export interface Database {
           id?: string;
           organization_id: string;
           breeding_context?: string;
+          cow_calf_herd_id?: string | null;
+          exposed_cow_count?: number | null;
           dam_id?: string | null;
           dam_tag?: string | null;
           bull_id?: string | null;
@@ -1529,6 +1796,8 @@ export interface Database {
         };
         Update: {
           breeding_context?: string;
+          cow_calf_herd_id?: string | null;
+          exposed_cow_count?: number | null;
           dam_id?: string | null;
           dam_tag?: string | null;
           bull_id?: string | null;
@@ -1552,6 +1821,10 @@ export interface Database {
           weaned_at: string;
           weaning_weight_lbs: number | null;
           retained_as_heifer: boolean;
+          cow_calf_herd_id: string | null;
+          destination_herd_id: string | null;
+          destination_location_id: string | null;
+          weaning_method: string | null;
           notes: string | null;
           created_by: string | null;
           is_active: boolean;
@@ -1568,6 +1841,10 @@ export interface Database {
           weaned_at?: string;
           weaning_weight_lbs?: number | null;
           retained_as_heifer?: boolean;
+          cow_calf_herd_id?: string | null;
+          destination_herd_id?: string | null;
+          destination_location_id?: string | null;
+          weaning_method?: string | null;
           notes?: string | null;
           created_by?: string | null;
         };
@@ -1579,6 +1856,49 @@ export interface Database {
           weaned_at?: string;
           weaning_weight_lbs?: number | null;
           retained_as_heifer?: boolean;
+          cow_calf_herd_id?: string | null;
+          destination_herd_id?: string | null;
+          destination_location_id?: string | null;
+          weaning_method?: string | null;
+          notes?: string | null;
+          is_active?: boolean;
+        };
+        Relationships: [];
+      };
+      cow_calf_loss_records: {
+        Row: {
+          id: string;
+          organization_id: string;
+          individual_animal_id: string;
+          cow_calf_herd_id: string | null;
+          loss_date: string;
+          cause: string;
+          location_id: string | null;
+          disposal_method: string | null;
+          notes: string | null;
+          created_by: string | null;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          individual_animal_id: string;
+          cow_calf_herd_id?: string | null;
+          loss_date?: string;
+          cause?: string;
+          location_id?: string | null;
+          disposal_method?: string | null;
+          notes?: string | null;
+          created_by?: string | null;
+        };
+        Update: {
+          cow_calf_herd_id?: string | null;
+          loss_date?: string;
+          cause?: string;
+          location_id?: string | null;
+          disposal_method?: string | null;
           notes?: string | null;
           is_active?: boolean;
         };
@@ -1953,6 +2273,7 @@ export interface Database {
           feeding_context: string;
           feed_ration_id: string;
           cattle_group_id: string | null;
+          cow_calf_herd_id: string | null;
           location_id: string | null;
           ownership_group_id: string | null;
           owner_id: string | null;
@@ -1976,6 +2297,7 @@ export interface Database {
           feeding_context?: string;
           feed_ration_id: string;
           cattle_group_id?: string | null;
+          cow_calf_herd_id?: string | null;
           location_id?: string | null;
           ownership_group_id?: string | null;
           owner_id?: string | null;
@@ -1994,6 +2316,7 @@ export interface Database {
           feeding_context?: string;
           feed_ration_id?: string;
           cattle_group_id?: string | null;
+          cow_calf_herd_id?: string | null;
           location_id?: string | null;
           ownership_group_id?: string | null;
           quantity?: number;

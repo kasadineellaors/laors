@@ -32,13 +32,13 @@ export default async function CustomerPortalPage({
 
   return (
     <div className="min-h-full bg-cream">
-      <header className="border-b border-border bg-surface px-4 py-6">
+      <header className="border-b border-border-neutral bg-surface-white px-4 py-6">
         <div className="mx-auto max-w-3xl">
-          <p className="text-sm font-semibold uppercase tracking-wide text-olive">
+          <p className="text-sm font-semibold uppercase tracking-wide text-brown">
             {data.org_name}
           </p>
-          <h1 className="text-2xl font-bold text-charcoal">{data.customer_name}</h1>
-          <p className="text-sm text-charcoal/70">Customer portal — lots and billing</p>
+          <h1 className="text-[1.75rem] font-bold leading-tight text-navy sm:text-[2rem]">{data.customer_name}</h1>
+          <p className="text-sm text-text-secondary">Customer portal — lots and billing</p>
         </div>
       </header>
 
@@ -55,26 +55,26 @@ export default async function CustomerPortalPage({
             <CardDescription>Cattle on feed or recently closed</CardDescription>
           </CardHeader>
           {data.lots.length === 0 ? (
-            <p className="px-4 pb-4 text-sm text-charcoal/60">No lots assigned to your account yet.</p>
+            <p className="px-4 pb-4 text-sm text-text-secondary">No lots assigned to your account yet.</p>
           ) : (
             <ul className="divide-y divide-border px-4 pb-4">
               {data.lots.map((lot) => (
                 <li key={lot.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
                   <div>
-                    <p className="font-semibold text-charcoal">{lot.label}</p>
-                    <p className="text-charcoal/60">
+                    <p className="font-semibold text-navy">{lot.label}</p>
+                    <p className="text-text-secondary">
                       {lot.status_label} · {lot.head} hd
                     </p>
                   </div>
                   {lot.closeout_token && lot.status === "closed" ? (
                     <Link
                       href={`/share/closeout/${lot.closeout_token}`}
-                      className="font-semibold text-olive hover:underline"
+                      className="font-semibold text-brown hover:underline"
                     >
                       View closeout
                     </Link>
                   ) : (
-                    <span className="text-xs text-charcoal/50">On feed</span>
+                    <span className="text-xs text-text-secondary">On feed</span>
                   )}
                 </li>
               ))}
@@ -88,7 +88,7 @@ export default async function CustomerPortalPage({
             <CardDescription>Recent billing from {data.org_name}</CardDescription>
           </CardHeader>
           {data.invoices.length === 0 ? (
-            <p className="px-4 pb-4 text-sm text-charcoal/60">No invoices yet.</p>
+            <p className="px-4 pb-4 text-sm text-text-secondary">No invoices yet.</p>
           ) : (
             <ul className="divide-y divide-border px-4 pb-4">
               {data.invoices.map((invoice) => (
@@ -97,13 +97,13 @@ export default async function CustomerPortalPage({
                   className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm"
                 >
                   <div>
-                    <p className="font-semibold text-charcoal">{invoice.invoice_number}</p>
-                    <p className="text-charcoal/60">
+                    <p className="font-semibold text-navy">{invoice.invoice_number}</p>
+                    <p className="text-text-secondary">
                       {invoice.invoice_date} ·{" "}
                       {INVOICE_STATUS_LABELS[invoice.status] ?? invoice.status}
                     </p>
                   </div>
-                  <span className="font-bold tabular-nums text-charcoal">
+                  <span className="font-bold tabular-nums text-text-primary">
                     {formatPortalMoney(invoice.subtotal)}
                   </span>
                 </li>
@@ -112,9 +112,9 @@ export default async function CustomerPortalPage({
           )}
         </Card>
 
-        <p className="text-center text-xs text-charcoal/50">
+        <p className="text-center text-xs text-text-secondary">
           Powered by{" "}
-          <Link href="https://www.laorsranch.com" className="text-olive hover:underline">
+          <Link href="https://www.laorsranch.com" className="text-brown hover:underline">
             LAORS
           </Link>
         </p>
@@ -125,9 +125,9 @@ export default async function CustomerPortalPage({
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-border bg-surface px-3 py-4 text-center">
-      <p className="text-xl font-bold tabular-nums text-olive">{value}</p>
-      <p className="text-xs text-charcoal/60">{label}</p>
+    <div className="rounded-xl border border-border-neutral bg-surface-white px-3 py-4 text-center">
+      <p className="text-xl font-bold tabular-nums text-brown">{value}</p>
+      <p className="text-xs text-text-secondary">{label}</p>
     </div>
   );
 }

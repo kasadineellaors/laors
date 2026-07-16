@@ -7,6 +7,7 @@ import { getRanchTotalHeadCount } from "@/lib/locations/rollups";
 import { CattleGroupsList } from "@/components/inventory/cattle-groups-list";
 import { CattlePageHeader } from "@/components/inventory/cattle-page-header";
 import { CattleSummaryMetrics } from "@/components/inventory/cattle-summary-metrics";
+import { AppPageShell } from "@/components/layout/app-page-shell";
 import type { OperationMode } from "@/types/auth";
 
 export const metadata: Metadata = {
@@ -32,7 +33,7 @@ export default async function CattlePage() {
     .reduce((sum, g) => sum + g.total_head, 0);
 
   return (
-    <div className="flex min-h-[calc(100dvh-8.5rem)] flex-1 flex-col gap-6 pb-4">
+    <AppPageShell>
       <CattlePageHeader
         totalHead={totalHead}
         canManageCattle={canManageCattle}
@@ -51,6 +52,6 @@ export default async function CattlePage() {
         canManageCattle={canManageCattle}
         className="flex-1"
       />
-    </div>
+    </AppPageShell>
   );
 }

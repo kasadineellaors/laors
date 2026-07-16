@@ -117,7 +117,7 @@ function buildForemanSummary(input: {
       id: "over-capacity",
       message: "One or more locations are over capacity.",
       href: "/setup/locations",
-      linkLabel: "Ranch map",
+      linkLabel: "Properties & Locations",
       tone: "warning",
     });
   }
@@ -216,10 +216,7 @@ export default async function DashboardPage() {
     { label: "New Task", href: "/jobs/new", variant: "outline" as const },
     { label: "Rainfall", href: "/weather/rainfall/new", variant: "outline" as const },
     ...(showCowCalf
-      ? [
-          { label: "Log Calving", href: "/cow-calf/calving/new", variant: "outline" as const },
-          { label: "Log Cow-Calf Feed", href: "/cow-calf/feed/new", variant: "outline" as const },
-        ]
+      ? [{ label: "Log Calving", href: "/cow-calf/calving/new", variant: "outline" as const }]
       : []),
     ...(showSeedstock
       ? [{ label: "Seedstock", href: "/seedstock", variant: "outline" as const }]
@@ -227,11 +224,11 @@ export default async function DashboardPage() {
   ];
 
   const businessActions = [
-    { label: "Record Sale", href: "/sales/new", variant: "primary" as const },
+    { label: "Record Sale", href: "/sales/new", variant: "outline" as const },
     ...(showCalendar ? [{ label: "Calendar", href: "/calendar", variant: "outline" as const }] : []),
     ...(showInvoices
       ? [
-          { label: "Generate Invoice", href: "/invoices/generate", variant: "primary" as const },
+          { label: "Generate Invoice", href: "/invoices/generate", variant: "outline" as const },
           { label: "New Invoice", href: "/invoices/new", variant: "outline" as const },
         ]
       : []),
@@ -290,7 +287,7 @@ export default async function DashboardPage() {
         ) : null}
 
         {overCapacity ? (
-          <AlertBanner href="/setup/locations" linkLabel="View ranch map" variant="warning">
+          <AlertBanner href="/setup/locations" linkLabel="View properties" variant="warning">
             One or more locations are over capacity
           </AlertBanner>
         ) : null}

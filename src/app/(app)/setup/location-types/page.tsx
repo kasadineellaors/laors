@@ -1,7 +1,13 @@
-import Link from "next/link";
+import type { Metadata } from "next";
 import { requireOnboardedUser } from "@/lib/auth/session";
 import { getRanchOptions } from "@/lib/locations/options";
 import { LocationTypesList } from "@/components/setup/location-types-list";
+import { ManageSubpageHeader } from "@/components/setup/manage-subpage-header";
+import { ManageSubpageShell } from "@/components/setup/manage-subpage-shell";
+
+export const metadata: Metadata = {
+  title: "Location Types — LAORS",
+};
 
 export default async function LocationTypesSetupPage() {
   const session = await requireOnboardedUser();
@@ -9,16 +15,12 @@ export default async function LocationTypesSetupPage() {
   const types = await getRanchOptions(orgId, "location_types");
 
   return (
-    <div className="space-y-6">
-      <div>
-        <Link href="/setup" className="text-sm font-medium text-olive hover:underline">
-          ← Ranch Setup
-        </Link>
-        <h1 className="mt-1 text-2xl font-bold text-charcoal">Location Types</h1>
-        <p className="text-charcoal/70">Labels for your ranch map tiers — edit anytime</p>
-      </div>
-
+    <ManageSubpageShell>
+      <ManageSubpageHeader
+        title="Location Types"
+        subtitle="Customize names such as pasture, pen, trap, section, and feedyard."
+      />
       <LocationTypesList orgId={orgId} types={types} />
-    </div>
+    </ManageSubpageShell>
   );
 }

@@ -28,21 +28,21 @@ function formatDuration(minutes: number | null) {
 export function TeamTimeClient({ openEntries, recentEntries }: TeamTimeClientProps) {
   return (
     <div className="space-y-6">
-      <Link href="/time" className="text-sm font-medium text-olive hover:underline">
+      <Link href="/time" className="text-sm font-medium text-brown hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2">
         ← My clock
       </Link>
 
       <div>
-        <h1 className="text-2xl font-bold text-charcoal">Team time</h1>
-        <p className="text-charcoal/70">Who is on the clock and recent shifts</p>
+        <h1 className="text-[1.75rem] font-bold leading-tight text-navy sm:text-[2rem]">Team time</h1>
+        <p className="text-text-secondary">Who is on the clock and recent shifts</p>
       </div>
 
       <section>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-charcoal/50">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-text-secondary">
           On the clock now ({openEntries.length})
         </h2>
         {openEntries.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-border px-4 py-6 text-center text-sm text-charcoal/60">
+          <p className="rounded-xl border border-dashed border-border-neutral px-4 py-6 text-center text-sm text-text-secondary">
             No one clocked in right now.
           </p>
         ) : (
@@ -50,13 +50,13 @@ export function TeamTimeClient({ openEntries, recentEntries }: TeamTimeClientPro
             {openEntries.map((entry) => (
               <li
                 key={entry.id}
-                className="flex items-center justify-between rounded-xl border border-olive/30 bg-olive/5 px-4 py-3"
+                className="flex items-center justify-between rounded-xl border border-navy/30 bg-navy/5 px-4 py-3"
               >
                 <div>
-                  <p className="font-semibold text-charcoal">{entry.user_name}</p>
-                  <p className="text-xs text-charcoal/60">Since {formatTime(entry.clock_in_at)}</p>
+                  <p className="font-semibold text-navy">{entry.user_name}</p>
+                  <p className="text-xs text-text-secondary">Since {formatTime(entry.clock_in_at)}</p>
                 </div>
-                <span className="text-sm font-semibold text-olive">Working</span>
+                <span className="text-sm font-semibold text-brown">Working</span>
               </li>
             ))}
           </ul>
@@ -64,23 +64,23 @@ export function TeamTimeClient({ openEntries, recentEntries }: TeamTimeClientPro
       </section>
 
       <section>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-charcoal/50">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-text-secondary">
           Recent team shifts
         </h2>
         {recentEntries.length === 0 ? (
-          <p className="text-sm text-charcoal/60">No time entries yet.</p>
+          <p className="text-sm text-text-secondary">No time entries yet.</p>
         ) : (
           <ul className="space-y-2">
             {recentEntries.map((entry) => (
               <li
                 key={entry.id}
-                className="rounded-lg border border-border bg-surface px-3 py-3 text-sm"
+                className="rounded-lg border border-border-neutral bg-surface-white px-3 py-3 text-sm"
               >
                 <div className="flex justify-between gap-2">
-                  <span className="font-medium text-charcoal">{entry.user_name}</span>
-                  <span className="text-charcoal/60">{formatDuration(entry.duration_minutes)}</span>
+                  <span className="font-medium text-navy">{entry.user_name}</span>
+                  <span className="text-text-secondary">{formatDuration(entry.duration_minutes)}</span>
                 </div>
-                <p className="text-xs text-charcoal/50">
+                <p className="text-xs text-text-secondary">
                   {formatTime(entry.clock_in_at)}
                   {entry.clock_out_at ? ` → ${formatTime(entry.clock_out_at)}` : " · open"}
                 </p>

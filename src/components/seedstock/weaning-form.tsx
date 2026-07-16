@@ -112,7 +112,7 @@ export function WeaningForm({
           <Label htmlFor="calving">From calving</Label>
           <select
             id="calving"
-            className="touch-target mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2"
+            className="touch-target mt-1 w-full rounded-lg border border-border-neutral bg-surface-white px-3 py-2"
             value={calvingId}
             onChange={(e) => handleCalvingChange(e.target.value)}
             required
@@ -159,16 +159,16 @@ export function WeaningForm({
         />
       </div>
 
-      <label className="flex items-start gap-3 rounded-lg border border-border bg-surface px-4 py-3">
+      <label className="flex items-start gap-3 rounded-lg border border-border-neutral bg-surface-white px-4 py-3">
         <input
           type="checkbox"
           checked={retained}
           onChange={(e) => setRetained(e.target.checked)}
           className="mt-1"
         />
-        <span className="text-sm text-charcoal">
+        <span className="text-sm text-text-primary">
           <span className="font-medium">Retain as replacement heifer</span>
-          <span className="mt-0.5 block text-charcoal/60">
+          <span className="mt-0.5 block text-text-secondary">
             Creates a seedstock heifer in the registry with dam and sire linked from the calving
             record.
           </span>
@@ -179,14 +179,14 @@ export function WeaningForm({
         <Label htmlFor="notes">Notes</Label>
         <textarea
           id="notes"
-          className="mt-1 min-h-[80px] w-full rounded-lg border border-border bg-surface px-3 py-2"
+          className="mt-1 min-h-[80px] w-full rounded-lg border border-border-neutral bg-surface-white px-3 py-2"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
         />
       </div>
 
       {error ? (
-        <p className="text-sm text-rust" role="alert">
+        <p className="text-sm text-status-critical" role="alert">
           {error}
         </p>
       ) : null}
@@ -217,18 +217,18 @@ export function WeaningRecordList({
       {records.map((w) => (
         <li
           key={w.id}
-          className="flex items-center justify-between rounded-lg border border-border bg-cream px-3 py-2 text-sm"
+          className="flex items-center justify-between rounded-lg border border-border-neutral bg-cream px-3 py-2 text-sm"
         >
           <div>
-            <p className="font-medium text-charcoal">{w.calf_tag ?? "Calf"}</p>
-            <p className="text-charcoal/60">
+            <p className="font-medium text-navy">{w.calf_tag ?? "Calf"}</p>
+            <p className="text-text-secondary">
               {w.weaned_at}
               {w.weaning_weight_lbs != null ? ` · ${w.weaning_weight_lbs} lbs` : ""}
               {w.retained_as_heifer ? " · Retained" : ""}
             </p>
           </div>
           {w.calf_id ? (
-            <Link href={`/seedstock/animals/${w.calf_id}`} className="text-olive hover:underline">
+            <Link href={`/seedstock/animals/${w.calf_id}`} className="text-brown hover:underline">
               View heifer
             </Link>
           ) : null}

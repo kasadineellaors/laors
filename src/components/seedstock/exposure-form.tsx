@@ -23,7 +23,7 @@ interface ExposureFormProps {
 }
 
 const selectClass =
-  "touch-target w-full rounded-lg border border-border bg-surface px-3 py-2";
+  "touch-target w-full rounded-lg border border-border-neutral bg-surface-white px-3 py-2";
 
 export function ExposureForm({
   orgId,
@@ -116,7 +116,7 @@ export function ExposureForm({
         <Label>Notes</Label>
         <textarea className={`${selectClass} min-h-[80px]`} value={notes} onChange={(e) => setNotes(e.target.value)} />
       </div>
-      {error ? <p className="text-sm text-rust">{error}</p> : null}
+      {error ? <p className="text-sm text-status-critical">{error}</p> : null}
       <Button type="submit" size="lg" disabled={loading}>{loading ? "Saving…" : "Record exposure"}</Button>
     </form>
   );

@@ -14,10 +14,10 @@ export default async function NewFeedItemPage() {
   return (
     <div className="space-y-6">
       <div>
-        <Link href="/feed/inventory" className="text-sm font-medium text-olive hover:underline">
+        <Link href="/feed/inventory" className="text-sm font-medium text-brown hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2">
           ← Feed inventory
         </Link>
-        <h1 className="mt-1 text-2xl font-bold text-charcoal">Add feedstuff</h1>
+        <h1 className="mt-1 text-[1.75rem] font-bold leading-tight text-navy sm:text-[2rem]">Add feedstuff</h1>
       </div>
       <FeedItemForm orgId={orgId} />
     </div>

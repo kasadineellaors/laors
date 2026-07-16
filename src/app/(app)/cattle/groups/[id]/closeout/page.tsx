@@ -103,12 +103,12 @@ export default async function LotCloseoutPage({
         <div>
           <Link
             href={`/cattle/groups/${id}`}
-            className="text-sm font-medium text-olive hover:underline"
+            className="text-sm font-medium text-brown hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2"
           >
             ← Back to lot
           </Link>
-          <h1 className="mt-2 text-2xl font-bold text-charcoal">Lot closeout</h1>
-          <p className="text-charcoal/70">
+          <h1 className="mt-2 text-[1.75rem] font-bold leading-tight text-navy sm:text-[2rem]">Lot closeout</h1>
+          <p className="text-text-secondary">
             {group.lot_number || group.name} · {enterprise} · {status}
           </p>
         </div>
@@ -277,16 +277,16 @@ function Dt({
 }) {
   const valueClass =
     highlight === "positive"
-      ? "text-olive font-bold"
+      ? "text-brown font-bold"
       : highlight === "negative"
-        ? "text-rust font-bold"
+        ? "text-status-critical font-bold"
         : highlight === "warn"
           ? "text-amber-700 font-bold"
-          : "font-semibold text-charcoal";
+          : "font-semibold text-navy";
 
   return (
     <div>
-      <dt className="text-charcoal/60">{label}</dt>
+      <dt className="text-text-secondary">{label}</dt>
       <dd className={valueClass}>{value}</dd>
     </div>
   );

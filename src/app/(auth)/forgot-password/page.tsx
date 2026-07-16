@@ -9,7 +9,7 @@ export default function ForgotPasswordPage() {
   return (
     <>
       <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold text-charcoal">Forgot password</h1>
+        <h1 className="text-3xl font-bold text-navy">Forgot password</h1>
       </div>
       <ForgotPasswordForm />
     </>

@@ -56,12 +56,12 @@ export function SignUpForm() {
           />
         </div>
         {state.error ? (
-          <p className="text-sm text-rust" role="alert">
+          <p className="text-sm text-status-critical" role="alert">
             {state.error}
           </p>
         ) : null}
         {state.success ? (
-          <p className="rounded-lg bg-olive/10 px-4 py-3 text-sm text-olive" role="status">
+          <p className="rounded-lg bg-navy/10 px-4 py-3 text-sm text-brown" role="status">
             {state.success}
           </p>
         ) : null}
@@ -69,9 +69,9 @@ export function SignUpForm() {
           {pending ? "Creating account…" : "Create Account"}
         </Button>
       </form>
-      <p className="mt-6 text-center text-sm text-charcoal/70">
+      <p className="mt-6 text-center text-sm text-text-secondary">
         Already have an account?{" "}
-        <Link href="/login" className="font-semibold text-olive hover:underline">
+        <Link href="/login" className="font-semibold text-brown hover:underline">
           Sign in
         </Link>
       </p>

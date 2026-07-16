@@ -3,6 +3,7 @@ type SendEmailInput = {
   to: string;
   subject: string;
   html: string;
+  text?: string;
   attachments?: Array<{ filename: string; content: string }>;
 };
 
@@ -33,6 +34,7 @@ export async function sendEmail(input: SendEmailInput): Promise<{ ok: true } | {
       to: [input.to],
       subject: input.subject,
       html: input.html,
+      text: input.text,
       attachments: input.attachments,
     }),
   });

@@ -41,10 +41,10 @@ export default async function BullDetailPage({
   return (
     <div className="space-y-6">
       <div>
-        <Link href="/cow-calf/bulls" className="text-sm font-medium text-olive hover:underline">
+        <Link href="/cow-calf/bulls" className="text-sm font-medium text-brown hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2">
           ← Bulls
         </Link>
-        <h1 className="mt-1 text-2xl font-bold text-charcoal">{bull.tag_number}</h1>
+        <h1 className="mt-1 text-[1.75rem] font-bold leading-tight text-navy sm:text-[2rem]">{bull.tag_number}</h1>
       </div>
       <BullDetailClient
         orgId={orgId}

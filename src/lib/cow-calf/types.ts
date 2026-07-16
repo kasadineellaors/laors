@@ -2,6 +2,8 @@ export type CalvingContext = "cow_calf" | "seedstock";
 export type AssistanceType = "unassisted" | "easy_pull" | "hard_pull" | "c_section" | "unknown";
 export type LossCause = "calving_difficulty" | "disease" | "environmental" | "unknown";
 
+import type { TwinStatus } from "./calving-alerts";
+
 export interface CalvingRecord {
   id: string;
   calved_at: string;
@@ -10,6 +12,8 @@ export interface CalvingRecord {
   location_name: string | null;
   cattle_group_id: string | null;
   cattle_group_name: string | null;
+  cow_calf_herd_id: string | null;
+  herd_name: string | null;
   dam_id: string | null;
   dam_tag: string | null;
   bull_id: string | null;
@@ -23,6 +27,9 @@ export interface CalvingRecord {
   assistance_type: AssistanceType | null;
   loss_cause: LossCause | null;
   breeding_record_id: string | null;
+  calving_event_id: string | null;
+  twin_status: TwinStatus | null;
+  fostered: boolean;
   classification_id: string | null;
   classification_name: string | null;
   add_to_inventory: boolean;

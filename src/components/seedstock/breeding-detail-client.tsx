@@ -77,56 +77,56 @@ export function SeedstockBreedingDetailClient({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl border border-border bg-surface px-4 py-4">
-        <p className="text-sm text-charcoal/60">Bred {formatDate(record.bred_at)}</p>
-        <h2 className="mt-1 text-xl font-bold text-charcoal">
+      <div className="rounded-xl border border-border-neutral bg-surface-white px-4 py-4">
+        <p className="text-sm text-text-secondary">Bred {formatDate(record.bred_at)}</p>
+        <h2 className="mt-1 text-xl font-bold text-navy">
           {PREGNANCY_STATUS_LABELS[record.pregnancy_status]}
           {record.dam_tag ? ` · Dam ${record.dam_tag}` : ""}
         </h2>
         <dl className="mt-4 space-y-2 text-sm">
           <div className="flex justify-between gap-4">
-            <dt className="text-charcoal/60">Method</dt>
+            <dt className="text-text-secondary">Method</dt>
             <dd className="font-medium">{BREEDING_METHOD_LABELS[record.breeding_method]}</dd>
           </div>
           {record.sire_tag ? (
             <div className="flex justify-between gap-4">
-              <dt className="text-charcoal/60">Sire</dt>
+              <dt className="text-text-secondary">Sire</dt>
               <dd className="font-medium">{record.sire_tag}</dd>
             </div>
           ) : null}
           {record.embryo_donor_tag ? (
             <div className="flex justify-between gap-4">
-              <dt className="text-charcoal/60">Embryo donor</dt>
+              <dt className="text-text-secondary">Embryo donor</dt>
               <dd className="font-medium">{record.embryo_donor_tag}</dd>
             </div>
           ) : null}
           {record.embryo_recipient_tag ? (
             <div className="flex justify-between gap-4">
-              <dt className="text-charcoal/60">Recipient</dt>
+              <dt className="text-text-secondary">Recipient</dt>
               <dd className="font-medium">{record.embryo_recipient_tag}</dd>
             </div>
           ) : null}
           {record.expected_calving_date ? (
             <div className="flex justify-between gap-4">
-              <dt className="text-charcoal/60">Expected calving</dt>
+              <dt className="text-text-secondary">Expected calving</dt>
               <dd className="font-medium">{formatDate(record.expected_calving_date)}</dd>
             </div>
           ) : null}
           {record.pregnancy_check_date ? (
             <div className="flex justify-between gap-4">
-              <dt className="text-charcoal/60">Pregnancy check</dt>
+              <dt className="text-text-secondary">Pregnancy check</dt>
               <dd className="font-medium">{formatDate(record.pregnancy_check_date)}</dd>
             </div>
           ) : null}
           {record.location_name ? (
             <div className="flex justify-between gap-4">
-              <dt className="text-charcoal/60">Location</dt>
+              <dt className="text-text-secondary">Location</dt>
               <dd className="font-medium">{record.location_name}</dd>
             </div>
           ) : null}
           {record.notes ? (
             <div>
-              <dt className="text-charcoal/60">Notes</dt>
+              <dt className="text-text-secondary">Notes</dt>
               <dd className="mt-1 font-medium">{record.notes}</dd>
             </div>
           ) : null}
@@ -134,7 +134,7 @@ export function SeedstockBreedingDetailClient({
       </div>
 
       {error ? (
-        <p className="text-sm text-rust" role="alert">
+        <p className="text-sm text-status-critical" role="alert">
           {error}
         </p>
       ) : null}

@@ -69,50 +69,67 @@ export function CalvingDetailClient({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl border border-border bg-surface px-4 py-4">
-        <p className="text-sm text-charcoal/60">{formatDate(record.calved_at)}</p>
-        <h2 className="mt-1 text-xl font-bold text-charcoal">
+      <div className="rounded-xl border border-border-neutral bg-surface-white px-4 py-4">
+        <p className="text-sm text-text-secondary">{formatDate(record.calved_at)}</p>
+        <h2 className="mt-1 text-xl font-bold text-navy">
           {CALVING_OUTCOME_LABELS[record.outcome]}
           {record.calf_tag ? ` · ${record.calf_tag}` : ""}
         </h2>
         <dl className="mt-4 space-y-2 text-sm">
           <div className="flex justify-between gap-4">
-            <dt className="text-charcoal/60">Sex</dt>
+            <dt className="text-text-secondary">Sex</dt>
             <dd className="font-medium">{CALF_SEX_LABELS[record.calf_sex]}</dd>
           </div>
           {record.dam_tag ? (
             <div className="flex justify-between gap-4">
-              <dt className="text-charcoal/60">Dam</dt>
+              <dt className="text-text-secondary">Dam</dt>
               <dd className="font-medium">{record.dam_tag}</dd>
             </div>
           ) : null}
           {record.sire_tag ? (
             <div className="flex justify-between gap-4">
-              <dt className="text-charcoal/60">Sire</dt>
+              <dt className="text-text-secondary">Sire</dt>
               <dd className="font-medium">{record.sire_tag}</dd>
             </div>
           ) : null}
-          {record.cattle_group_name ? (
+          {record.herd_name ? (
             <div className="flex justify-between gap-4">
-              <dt className="text-charcoal/60">Herd group</dt>
+              <dt className="text-text-secondary">Breeding herd</dt>
+              <dd className="font-medium">{record.herd_name}</dd>
+            </div>
+          ) : record.cattle_group_name ? (
+            <div className="flex justify-between gap-4">
+              <dt className="text-text-secondary">Herd group</dt>
               <dd className="font-medium">{record.cattle_group_name}</dd>
+            </div>
+          ) : null}
+          {record.twin_status && record.twin_status !== "single" ? (
+            <div className="flex justify-between gap-4">
+              <dt className="text-text-secondary">Birth type</dt>
+              <dd className="font-medium capitalize">{record.twin_status}</dd>
+            </div>
+          ) : null}
+          {record.calf_id ? (
+            <div className="flex justify-between gap-4">
+              <dt className="text-text-secondary">Calf registry</dt>
+              <dd className="font-medium">Linked</dd>
             </div>
           ) : null}
           {record.location_name ? (
             <div className="flex justify-between gap-4">
-              <dt className="text-charcoal/60">Location</dt>
+              <dt className="text-text-secondary">Location</dt>
               <dd className="font-medium">{record.location_name}</dd>
             </div>
           ) : null}
           {record.birth_weight_lbs != null ? (
             <div className="flex justify-between gap-4">
-              <dt className="text-charcoal/60">Birth weight</dt>
+              <dt className="text-text-secondary">Birth weight</dt>
               <dd className="font-medium">{record.birth_weight_lbs} lb</dd>
             </div>
           ) : null}
           {record.inventory_added ? (
             <div className="flex justify-between gap-4">
-              <dt className="text-charcoal/60">Inventory</dt>
+              <dt className="text-text-secondary">Inventory</dt>
               <dd className="font-medium text-sage">
                 +1 {record.classification_name ?? "calf"} in herd
               </dd>
@@ -120,7 +137,7 @@ export function CalvingDetailClient({
           ) : null}
           {record.notes ? (
             <div>
-              <dt className="text-charcoal/60">Notes</dt>
+              <dt className="text-text-secondary">Notes</dt>
               <dd className="mt-1 font-medium">{record.notes}</dd>
             </div>
           ) : null}
@@ -128,7 +145,7 @@ export function CalvingDetailClient({
       </div>
 
       {error ? (
-        <p className="text-sm text-rust" role="alert">
+        <p className="text-sm text-status-critical" role="alert">
           {error}
         </p>
       ) : null}

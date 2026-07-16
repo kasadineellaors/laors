@@ -32,7 +32,7 @@ export default async function AppLayout({
           </div>
         </div>
       </header>
-      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-6 sm:py-8">
+      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-6 pb-24 sm:py-8">
         {children}
       </main>
       <nav className="sticky bottom-0 z-10">

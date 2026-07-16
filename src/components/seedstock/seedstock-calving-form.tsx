@@ -39,7 +39,7 @@ interface SeedstockCalvingFormProps {
 }
 
 const selectClass =
-  "touch-target w-full rounded-lg border border-border bg-surface px-3 py-2";
+  "touch-target w-full rounded-lg border border-border-neutral bg-surface-white px-3 py-2";
 
 export function SeedstockCalvingForm({
   orgId,
@@ -251,7 +251,7 @@ export function SeedstockCalvingForm({
         />
       </div>
 
-      {error ? <p className="text-sm text-rust" role="alert">{error}</p> : null}
+      {error ? <p className="text-sm text-status-critical" role="alert">{error}</p> : null}
 
       <Button type="submit" size="lg" disabled={loading}>
         {loading ? "Saving…" : isEdit ? "Save calving" : "Record calving"}

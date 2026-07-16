@@ -116,7 +116,7 @@ export function InvoiceForm({ orgId, invoice, customerOptions = [], onSuccess }:
   }
 
   const selectClass =
-    "flex h-12 w-full rounded-lg border-2 border-border bg-surface px-4 text-base";
+    "flex h-12 w-full rounded-lg border-2 border-border-neutral bg-surface-white px-4 text-base";
 
   const previewTotal = lines.reduce((sum, l) => {
     const qty = parseFloat(l.quantity) || 0;
@@ -150,7 +150,7 @@ export function InvoiceForm({ orgId, invoice, customerOptions = [], onSuccess }:
               ))}
             </select>
             {selectedCustomer ? (
-              <p className="mt-1 text-xs text-charcoal/60">
+              <p className="mt-1 text-xs text-text-secondary">
                 {selectedCustomer.email
                   ? selectedCustomer.email
                   : "No email — add one in Customers to send invoices"}
@@ -229,7 +229,7 @@ export function InvoiceForm({ orgId, invoice, customerOptions = [], onSuccess }:
             </Button>
           </div>
           {lines.map((line, index) => (
-            <div key={index} className="space-y-2 rounded-lg border border-border p-3">
+            <div key={index} className="space-y-2 rounded-lg border border-border-neutral p-3">
               <Input
                 value={line.description}
                 onChange={(e) => updateLine(index, { description: e.target.value })}
@@ -266,7 +266,7 @@ export function InvoiceForm({ orgId, invoice, customerOptions = [], onSuccess }:
               ) : null}
             </div>
           ))}
-          <p className="text-right text-lg font-bold text-olive">
+          <p className="text-right text-lg font-bold text-brown">
             Total: {previewTotal.toLocaleString(undefined, { style: "currency", currency: "USD" })}
           </p>
         </div>
@@ -277,7 +277,7 @@ export function InvoiceForm({ orgId, invoice, customerOptions = [], onSuccess }:
         </div>
 
         {error ? (
-          <p className="text-sm text-rust" role="alert">
+          <p className="text-sm text-status-critical" role="alert">
             {error}
           </p>
         ) : null}

@@ -9,8 +9,8 @@ export default function SignUpPage() {
   return (
     <>
       <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold text-charcoal">Get started</h1>
-        <p className="mt-2 text-charcoal/70">The Foreman for your cattle operation</p>
+        <h1 className="text-3xl font-bold text-navy">Get started</h1>
+        <p className="mt-2 text-text-secondary">The Foreman for your cattle operation</p>
       </div>
       <SignUpForm />
     </>

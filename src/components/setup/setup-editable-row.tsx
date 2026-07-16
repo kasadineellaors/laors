@@ -70,21 +70,21 @@ export function SetupEditableRow({
 
   if (!editing) {
     return (
-      <li className="flex items-start justify-between gap-3 rounded-lg bg-surface-muted px-4 py-3">
+      <li className="flex items-start justify-between gap-3 rounded-lg border border-border-neutral bg-tan/15 px-4 py-3">
         <div className="min-w-0 flex-1">
-          <p className="font-semibold text-charcoal">{primaryField?.value}</p>
+          <p className="font-semibold text-navy">{primaryField?.value}</p>
           {fields.slice(1).map((f) =>
             f.value ? (
-              <p key={f.key} className="text-xs text-charcoal/60">
+              <p key={f.key} className="text-xs text-text-secondary">
                 {f.label}: {f.value}
               </p>
             ) : null,
           )}
-          {error ? <p className="mt-1 text-xs text-rust">{error}</p> : null}
+          {error ? <p className="mt-1 text-xs text-status-critical">{error}</p> : null}
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {badge ? (
-            <span className="text-xs uppercase tracking-wide text-charcoal/50">{badge}</span>
+            <span className="text-xs uppercase tracking-wide text-text-secondary">{badge}</span>
           ) : null}
           <Button type="button" variant="outline" size="sm" onClick={() => setEditing(true)}>
             Edit
@@ -95,7 +95,7 @@ export function SetupEditableRow({
   }
 
   return (
-    <li className="rounded-lg border-2 border-olive/30 bg-surface px-4 py-3">
+    <li className="rounded-lg border-2 border-navy/20 bg-surface-white px-4 py-3">
       <form onSubmit={handleSave} className="space-y-3">
         {fields.map((f) => (
           <div key={f.key}>
@@ -110,7 +110,7 @@ export function SetupEditableRow({
             />
           </div>
         ))}
-        {error ? <p className="text-sm text-rust">{error}</p> : null}
+        {error ? <p className="text-sm text-status-critical">{error}</p> : null}
         <div className="flex flex-wrap gap-2">
           <Button type="submit" size="sm" disabled={loading}>
             {loading ? "Saving…" : "Save"}

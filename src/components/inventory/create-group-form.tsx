@@ -45,7 +45,7 @@ export function CreateGroupForm({
   const [loading, setLoading] = useState(false);
 
   const selectClass =
-    "flex h-12 w-full rounded-lg border-2 border-border bg-surface px-4 text-base";
+    "flex h-12 w-full rounded-lg border-2 border-border-neutral bg-surface-white px-4 text-base";
 
   const head = parseInt(headCount, 10);
   const hasHead = !Number.isNaN(head) && head > 0;
@@ -238,10 +238,10 @@ export function CreateGroupForm({
           />
         </div>
 
-        <div className="rounded-xl border border-border bg-cream/30 p-4 space-y-3">
+        <div className="rounded-xl border border-border-neutral bg-cream/30 p-4 space-y-3">
           <div>
-            <p className="text-sm font-semibold text-charcoal">Purchase weights</p>
-            <p className="text-xs text-charcoal/60">
+            <p className="text-sm font-semibold text-navy">Purchase weights</p>
+            <p className="text-xs text-text-secondary">
               Total lot pounds — pay at sale barn, shrunk after pencil shrink, received on ranch scale.
             </p>
           </div>
@@ -269,19 +269,19 @@ export function CreateGroupForm({
             />
           </div>
           {avgIn != null || payToShrunk != null || payToReceived != null ? (
-            <div className="flex flex-wrap gap-2 text-xs text-charcoal/70">
+            <div className="flex flex-wrap gap-2 text-xs text-text-secondary">
               {avgIn != null ? (
-                <span className="rounded-full bg-surface px-2.5 py-1 font-medium">
+                <span className="rounded-full bg-surface-white px-2.5 py-1 font-medium">
                   Avg weight in: {Math.round(avgIn)} lb / hd
                 </span>
               ) : null}
               {payToShrunk != null ? (
-                <span className="rounded-full bg-surface px-2.5 py-1 font-medium">
+                <span className="rounded-full bg-surface-white px-2.5 py-1 font-medium">
                   Pay → shrunk: {payToShrunk.toFixed(1)}%
                 </span>
               ) : null}
               {payToReceived != null ? (
-                <span className="rounded-full bg-surface px-2.5 py-1 font-medium">
+                <span className="rounded-full bg-surface-white px-2.5 py-1 font-medium">
                   Pay → received: {payToReceived.toFixed(1)}%
                 </span>
               ) : null}
@@ -319,7 +319,7 @@ export function CreateGroupForm({
           <Input id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
         </div>
         {error ? (
-          <p className="text-sm text-rust" role="alert">
+          <p className="text-sm text-status-critical" role="alert">
             {error}
           </p>
         ) : null}
@@ -356,7 +356,7 @@ function WeightField({
         onChange={(e) => onChange(e.target.value)}
       />
       {perHead != null ? (
-        <p className="mt-1 text-xs text-charcoal/60">{Math.round(perHead)} lb / hd</p>
+        <p className="mt-1 text-xs text-text-secondary">{Math.round(perHead)} lb / hd</p>
       ) : null}
     </div>
   );

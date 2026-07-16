@@ -14,7 +14,7 @@ function formatPrice(value: number | null, unit: string) {
 export function RationList({ rations, emptyMessage }: RationListProps) {
   if (rations.length === 0) {
     return (
-      <p className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-charcoal/60">
+      <p className="rounded-xl border border-dashed border-border-neutral px-4 py-8 text-center text-sm text-text-secondary">
         {emptyMessage ?? "No feed rations yet."}
       </p>
     );
@@ -26,14 +26,14 @@ export function RationList({ rations, emptyMessage }: RationListProps) {
         <li key={r.id}>
           <Link
             href={`/feed/rations/${r.id}`}
-            className="block rounded-xl border border-border bg-surface px-4 py-3 hover:border-olive/40"
+            className="block rounded-xl border border-border-neutral bg-surface-white px-4 py-3 hover:border-navy/40"
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="font-semibold text-charcoal">{r.name}</p>
-                <p className="text-sm text-charcoal/70">{formatPrice(r.price_per_unit, r.unit)}</p>
+                <p className="font-semibold text-navy">{r.name}</p>
+                <p className="text-sm text-text-secondary">{formatPrice(r.price_per_unit, r.unit)}</p>
               </div>
-              <span className="shrink-0 text-xs capitalize text-charcoal/50">{r.unit}</span>
+              <span className="shrink-0 text-xs capitalize text-text-secondary">{r.unit}</span>
             </div>
           </Link>
         </li>

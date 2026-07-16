@@ -5,6 +5,8 @@ import { getSalesSummary, listSales } from "@/lib/sales/queries";
 import { SalesList } from "@/components/sales/sales-list";
 import { ExportButtons } from "@/components/export/export-buttons";
 import { Button } from "@/components/ui/button";
+import { AppPageHeader } from "@/components/layout/app-page-header";
+import { AppPageShell } from "@/components/layout/app-page-shell";
 
 export const metadata: Metadata = {
   title: "Sales — LAORS",
@@ -20,31 +22,25 @@ export default async function SalesPage() {
   ]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-charcoal">Sales</h1>
-          <p className="text-charcoal/70">
-            {summary.totalHeadSoldLast30Days} head sold ·{" "}
-            {summary.totalRevenueLast30Days.toLocaleString(undefined, {
-              style: "currency",
-              currency: "USD",
-            })}{" "}
-            last 30 days
-          </p>
-        </div>
-        <div className="flex shrink-0 flex-wrap justify-end gap-2">
-          <ExportButtons orgId={orgId} recordType="sales" size="sm" />
-          <Link href="/sales/new">
-            <Button size="lg">+ Sale</Button>
-          </Link>
-        </div>
-      </div>
-
-      <SalesList
-        sales={sales}
-        emptyMessage="No sales yet — tap + Sale to record one."
+    <AppPageShell>
+      <AppPageHeader
+        title="Sales"
+        subtitle={`${summary.totalHeadSoldLast30Days} head sold · ${summary.totalRevenueLast30Days.toLocaleString(undefined, {
+          style: "currency",
+          currency: "USD",
+        })} last 30 days`}
+        actions={
+          <div className="flex shrink-0 flex-wrap justify-end gap-2">
+            <ExportButtons orgId={orgId} recordType="sales" size="sm" />
+            <Link href="/sales/new">
+              <Button size="md" fullWidth className="sm:w-auto">
+                + Sale
+              </Button>
+            </Link>
+          </div>
+        }
       />
-    </div>
+      <SalesList sales={sales} emptyMessage="No sales yet — tap + Sale to record one." />
+    </AppPageShell>
   );
 }

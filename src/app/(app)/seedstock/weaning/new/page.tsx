@@ -29,11 +29,11 @@ export default async function NewWeaningPage({
   return (
     <div className="space-y-6">
       <div>
-        <Link href="/seedstock/weaning" className="text-sm font-medium text-olive hover:underline">
+        <Link href="/seedstock/weaning" className="text-sm font-medium text-brown hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2">
           ← Weaning
         </Link>
-        <h1 className="mt-1 text-2xl font-bold text-charcoal">Record weaning</h1>
-        <p className="text-sm text-charcoal/60">
+        <h1 className="mt-1 text-[1.75rem] font-bold leading-tight text-navy sm:text-[2rem]">Record weaning</h1>
+        <p className="text-sm text-text-secondary">
           Link to a calving record. Check &quot;Retain as heifer&quot; to auto-register in seedstock.
         </p>
       </div>

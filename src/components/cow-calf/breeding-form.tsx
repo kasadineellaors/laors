@@ -22,20 +22,31 @@ interface BullOption {
   tag: string;
 }
 
+interface DamOption {
+  value: string;
+  label: string;
+  tag: string;
+}
+
 interface BreedingFormProps {
   orgId: string;
   locationOptions: SelectOption[];
-  groupOptions: SelectOption[];
+  herdOptions: SelectOption[];
   bullOptions: BullOption[];
+  damOptions: DamOption[];
   record?: BreedingRecord;
   onSuccess?: () => void;
 }
 
+const selectClass =
+  "touch-target w-full rounded-lg border border-border-neutral bg-surface-white px-3 py-2";
+
 export function BreedingForm({
   orgId,
   locationOptions,
-  groupOptions,
+  herdOptions,
   bullOptions,
+  damOptions,
   record,
   onSuccess,
 }: BreedingFormProps) {
@@ -44,7 +55,8 @@ export function BreedingForm({
 
   const [bredAt, setBredAt] = useState(record?.bred_at ?? new Date().toISOString().slice(0, 10));
   const [locationId, setLocationId] = useState(record?.location_id ?? "");
-  const [groupId, setGroupId] = useState(record?.cattle_group_id ?? "");
+  const [herdId, setHerdId] = useState(record?.cow_calf_herd_id ?? "");
+  const [damId, setDamId] = useState(record?.dam_id ?? "");
   const [damTag, setDamTag] = useState(record?.dam_tag ?? "");
   const [bullId, setBullId] = useState(record?.bull_id ?? "");
   const [sireTag, setSireTag] = useState(record?.sire_tag ?? "");
@@ -69,6 +81,12 @@ export function BreedingForm({
     if (bull) setSireTag(bull.tag);
   }
 
+  function handleDamChange(id: string) {
+    setDamId(id);
+    const dam = damOptions.find((d) => d.value === id);
+    if (dam) setDamTag(dam.tag);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -77,7 +95,9 @@ export function BreedingForm({
     if (isEdit) {
       const result = await updateBreeding(orgId, record!.id, {
         bredAt,
+        cowCalfHerdId: herdId || null,
         locationId: locationId || null,
+        damId: damId || null,
         damTag: damTag || null,
         bullId: bullId || null,
         sireTag: sireTag || null,
@@ -96,8 +116,9 @@ export function BreedingForm({
 
     const result = await createBreeding(orgId, {
       bredAt,
-      cattleGroupId: groupId || undefined,
+      cowCalfHerdId: herdId || undefined,
       locationId: locationId || undefined,
+      damId: damId || undefined,
       damTag,
       bullId: bullId || undefined,
       sireTag,
@@ -135,24 +156,22 @@ export function BreedingForm({
           />
         </div>
 
-        {!isEdit ? (
-          <div>
-            <Label htmlFor="group">Herd group</Label>
-            <select
-              id="group"
-              value={groupId}
-              onChange={(e) => setGroupId(e.target.value)}
-              className="touch-target w-full rounded-lg border border-border bg-surface px-3 py-2"
-            >
-              <option value="">— Optional —</option>
-              {groupOptions.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        ) : null}
+        <div>
+          <Label htmlFor="herd">Breeding herd</Label>
+          <select
+            id="herd"
+            value={herdId}
+            onChange={(e) => setHerdId(e.target.value)}
+            className={selectClass}
+          >
+            <option value="">— Optional —</option>
+            {herdOptions.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </div>
 
         <div>
           <Label htmlFor="location">Location</Label>
@@ -160,7 +179,7 @@ export function BreedingForm({
             id="location"
             value={locationId}
             onChange={(e) => setLocationId(e.target.value)}
-            className="touch-target w-full rounded-lg border border-border bg-surface px-3 py-2"
+            className={selectClass}
           >
             <option value="">— Optional —</option>
             {locationOptions.map((o) => (
@@ -171,9 +190,27 @@ export function BreedingForm({
           </select>
         </div>
 
-        <div>
-          <Label htmlFor="damTag">Dam tag / ID</Label>
-          <Input id="damTag" value={damTag} onChange={(e) => setDamTag(e.target.value)} />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <Label htmlFor="dam">Dam (registry)</Label>
+            <select
+              id="dam"
+              value={damId}
+              onChange={(e) => handleDamChange(e.target.value)}
+              className={selectClass}
+            >
+              <option value="">— Optional —</option>
+              {damOptions.map((d) => (
+                <option key={d.value} value={d.value}>
+                  {d.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <Label htmlFor="damTag">Dam tag / ID</Label>
+            <Input id="damTag" value={damTag} onChange={(e) => setDamTag(e.target.value)} />
+          </div>
         </div>
 
         <div>
@@ -182,7 +219,7 @@ export function BreedingForm({
             id="bull"
             value={bullId}
             onChange={(e) => handleBullChange(e.target.value)}
-            className="touch-target w-full rounded-lg border border-border bg-surface px-3 py-2"
+            className={selectClass}
           >
             <option value="">— Optional —</option>
             {bullOptions.map((b) => (
@@ -204,7 +241,7 @@ export function BreedingForm({
             id="method"
             value={method}
             onChange={(e) => setMethod(e.target.value as BreedingMethod)}
-            className="touch-target w-full rounded-lg border border-border bg-surface px-3 py-2"
+            className={selectClass}
           >
             {(Object.keys(BREEDING_METHOD_LABELS) as BreedingMethod[]).map((key) => (
               <option key={key} value={key}>
@@ -230,7 +267,7 @@ export function BreedingForm({
             id="status"
             value={status}
             onChange={(e) => setStatus(e.target.value as PregnancyStatus)}
-            className="touch-target w-full rounded-lg border border-border bg-surface px-3 py-2"
+            className={selectClass}
           >
             {(Object.keys(PREGNANCY_STATUS_LABELS) as PregnancyStatus[]).map((key) => (
               <option key={key} value={key}>
@@ -256,7 +293,7 @@ export function BreedingForm({
         </div>
 
         {error ? (
-          <p className="text-sm text-rust" role="alert">
+          <p className="text-sm text-status-critical" role="alert">
             {error}
           </p>
         ) : null}

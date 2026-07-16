@@ -35,16 +35,16 @@ export function AuditLogList({ entries }: AuditLogListProps) {
         {entries.map((entry) => (
           <li key={entry.id} className="flex flex-wrap items-start justify-between gap-2 py-3 text-sm">
             <div>
-              <p className="font-semibold text-charcoal">{formatAuditAction(entry.action)}</p>
-              <p className="text-charcoal/70">{summarizeAuditEntry(entry)}</p>
-              <p className="mt-1 text-xs text-charcoal/50">
+              <p className="font-semibold text-navy">{formatAuditAction(entry.action)}</p>
+              <p className="text-text-secondary">{summarizeAuditEntry(entry)}</p>
+              <p className="mt-1 text-xs text-text-secondary">
                 {entry.user_name ?? "System"}
                 {" · "}
                 {formatWhen(entry.created_at)}
               </p>
             </div>
             {recordHref(entry) ? (
-              <Link href={recordHref(entry)!} className="shrink-0 text-xs font-semibold text-olive hover:underline">
+              <Link href={recordHref(entry)!} className="shrink-0 text-xs font-semibold text-brown hover:underline">
                 View
               </Link>
             ) : null}

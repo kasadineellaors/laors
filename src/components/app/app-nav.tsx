@@ -20,7 +20,7 @@ const CALENDAR_NAV = {
 
 const MORE_NAV = {
   href: "/setup",
-  label: "More",
+  label: "Manage",
   match: (p: string) =>
     p.startsWith("/setup") ||
     p.startsWith("/sales") ||

@@ -1,7 +1,13 @@
-import Link from "next/link";
+import type { Metadata } from "next";
 import { requireOnboardedUser } from "@/lib/auth/session";
 import { getRanchOptions } from "@/lib/locations/options";
 import { DictionaryClient } from "@/components/setup/dictionary-client";
+import { ManageSubpageHeader } from "@/components/setup/manage-subpage-header";
+import { ManageSubpageShell } from "@/components/setup/manage-subpage-shell";
+
+export const metadata: Metadata = {
+  title: "Categories & Labels — LAORS",
+};
 
 export default async function DictionarySetupPage() {
   const session = await requireOnboardedUser();
@@ -27,16 +33,12 @@ export default async function DictionarySetupPage() {
   ];
 
   return (
-    <div className="space-y-6">
-      <div>
-        <Link href="/setup" className="text-sm font-medium text-olive hover:underline">
-          ← Ranch Setup
-        </Link>
-        <h1 className="mt-1 text-2xl font-bold text-charcoal">Ranch Dictionary</h1>
-        <p className="text-charcoal/70">Reasons and categories — rename, add, or archive</p>
-      </div>
-
+    <ManageSubpageShell>
+      <ManageSubpageHeader
+        title="Categories & Labels"
+        subtitle="Manage task categories, treatment reasons, and financial labels."
+      />
       <DictionaryClient orgId={orgId} sections={sections} />
-    </div>
+    </ManageSubpageShell>
   );
 }

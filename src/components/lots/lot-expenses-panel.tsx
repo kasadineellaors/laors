@@ -47,7 +47,7 @@ export function LotExpensesPanel({
 
   const total = expenses.reduce((s, e) => s + e.amount, 0);
   const selectClass =
-    "flex h-12 w-full rounded-lg border-2 border-border bg-surface px-4 text-base";
+    "flex h-12 w-full rounded-lg border-2 border-border-neutral bg-surface-white px-4 text-base";
 
   function resetForm() {
     setExpenseDate(new Date().toISOString().slice(0, 10));
@@ -130,7 +130,7 @@ export function LotExpensesPanel({
               Freight, labor, commission, and misc costs tied to this lot.
             </CardDescription>
           </div>
-          <p className="text-lg font-bold tabular-nums text-charcoal">{money(total)}</p>
+          <p className="text-lg font-bold tabular-nums text-text-primary">{money(total)}</p>
         </div>
       </CardHeader>
       <div className="space-y-3 px-4 pb-4">
@@ -152,8 +152,8 @@ export function LotExpensesPanel({
         ) : null}
 
         {showExpenseForm ? (
-          <form onSubmit={handleSubmit} className="space-y-3 rounded-lg border border-border p-3">
-            <p className="text-sm font-semibold text-charcoal">
+          <form onSubmit={handleSubmit} className="space-y-3 rounded-lg border border-border-neutral p-3">
+            <p className="text-sm font-semibold text-navy">
               {editingId ? "Edit expense" : "New expense"}
             </p>
             <div className="grid grid-cols-2 gap-3">
@@ -238,11 +238,11 @@ export function LotExpensesPanel({
             {expenses.map((e) => (
               <li key={e.id} className="flex items-start justify-between gap-3 py-2">
                 <div>
-                  <p className="font-medium text-charcoal">
+                  <p className="font-medium text-navy">
                     {e.expense_date}
                     {e.category_name ? ` · ${e.category_name}` : ""}
                   </p>
-                  <p className="text-charcoal/70">
+                  <p className="text-text-secondary">
                     {[e.description, e.vendor_name].filter(Boolean).join(" · ") || "—"}
                   </p>
                 </div>
@@ -252,7 +252,7 @@ export function LotExpensesPanel({
                     <div className="flex gap-2">
                       <button
                         type="button"
-                        className="text-xs font-medium text-olive hover:underline"
+                        className="text-xs font-medium text-brown hover:underline"
                         onClick={() => startEdit(e)}
                         disabled={loading}
                       >
@@ -260,7 +260,7 @@ export function LotExpensesPanel({
                       </button>
                       <button
                         type="button"
-                        className="text-xs font-medium text-rust hover:underline"
+                        className="text-xs font-medium text-status-critical hover:underline"
                         onClick={() => handleArchive(e.id)}
                         disabled={loading}
                       >
@@ -273,11 +273,11 @@ export function LotExpensesPanel({
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-charcoal/60">No misc expenses logged yet.</p>
+          <p className="text-sm text-text-secondary">No misc expenses logged yet.</p>
         )}
 
         {error ? (
-          <p className="text-sm text-rust" role="alert">
+          <p className="text-sm text-status-critical" role="alert">
             {error}
           </p>
         ) : null}

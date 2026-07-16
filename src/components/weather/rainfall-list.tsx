@@ -17,7 +17,7 @@ function formatDate(iso: string) {
 export function RainfallList({ records, emptyMessage }: RainfallListProps) {
   if (records.length === 0) {
     return (
-      <p className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-charcoal/60">
+      <p className="rounded-xl border border-dashed border-border-neutral px-4 py-8 text-center text-sm text-text-secondary">
         {emptyMessage ?? "No rainfall logged yet."}
       </p>
     );
@@ -29,18 +29,18 @@ export function RainfallList({ records, emptyMessage }: RainfallListProps) {
         <li key={r.id}>
           <Link
             href={`/weather/rainfall/${r.id}`}
-            className="block rounded-xl border border-border bg-surface px-4 py-3 hover:border-olive/40"
+            className="block rounded-xl border border-border-neutral bg-surface-white px-4 py-3 hover:border-navy/40"
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-2xl font-bold text-olive">{r.amount_inches}&quot;</p>
+                <p className="text-2xl font-bold text-brown">{r.amount_inches}&quot;</p>
                 {r.location_label ? (
-                  <p className="text-sm text-charcoal/70">{r.location_label}</p>
+                  <p className="text-sm text-text-secondary">{r.location_label}</p>
                 ) : (
-                  <p className="text-sm text-charcoal/70">Ranch-wide</p>
+                  <p className="text-sm text-text-secondary">Ranch-wide</p>
                 )}
               </div>
-              <span className="shrink-0 text-xs text-charcoal/50">
+              <span className="shrink-0 text-xs text-text-secondary">
                 {formatDate(r.recorded_date)}
               </span>
             </div>

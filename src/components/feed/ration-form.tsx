@@ -113,7 +113,7 @@ export function RationForm({
   }
 
   const selectClass =
-    "flex h-12 w-full rounded-lg border-2 border-border bg-surface px-4 text-base";
+    "flex h-12 w-full rounded-lg border-2 border-border-neutral bg-surface-white px-4 text-base";
 
   return (
     <Card>
@@ -171,7 +171,7 @@ export function RationForm({
             value={priceEffectiveFrom}
             onChange={(e) => setPriceEffectiveFrom(e.target.value)}
           />
-          <p className="mt-1 text-xs text-charcoal/60">
+          <p className="mt-1 text-xs text-text-secondary">
             When the bill rate changes, past feedings keep their locked-in cost.
           </p>
         </div>
@@ -190,7 +190,7 @@ export function RationForm({
           <Input id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
         </div>
         {error ? (
-          <p className="text-sm text-rust" role="alert">
+          <p className="text-sm text-status-critical" role="alert">
             {error}
           </p>
         ) : null}

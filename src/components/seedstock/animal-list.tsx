@@ -9,7 +9,7 @@ interface AnimalListProps {
 export function SeedstockAnimalList({ animals }: AnimalListProps) {
   if (animals.length === 0) {
     return (
-      <p className="rounded-xl border border-border bg-surface px-4 py-8 text-center text-sm text-charcoal/60">
+      <p className="rounded-xl border border-border-neutral bg-surface-white px-4 py-8 text-center text-sm text-text-secondary">
         No seedstock animals yet — tap + Register to add your first.
       </p>
     );
@@ -21,20 +21,20 @@ export function SeedstockAnimalList({ animals }: AnimalListProps) {
         <li key={animal.id}>
           <Link
             href={`/seedstock/animals/${animal.id}`}
-            className="flex items-center justify-between rounded-xl border border-border bg-surface px-4 py-4 transition-colors hover:border-olive hover:bg-olive/5"
+            className="flex items-center justify-between rounded-xl border border-border-neutral bg-surface-white px-4 py-4 transition-colors hover:border-navy hover:bg-tan/5"
           >
             <div>
-              <p className="font-semibold text-charcoal">
+              <p className="font-semibold text-navy">
                 {animal.tag_number}
                 {animal.name ? ` — ${animal.name}` : ""}
               </p>
-              <p className="text-sm text-charcoal/60">
+              <p className="text-sm text-text-secondary">
                 {SEEDSTOCK_TYPE_LABELS[animal.animal_type]}
                 {animal.breed ? ` · ${animal.breed}` : ""}
                 {animal.registration_number ? ` · ${animal.registration_number}` : ""}
               </p>
             </div>
-            <span className="text-sm capitalize text-charcoal/50">{animal.status}</span>
+            <span className="text-sm capitalize text-text-secondary">{animal.status}</span>
           </Link>
         </li>
       ))}

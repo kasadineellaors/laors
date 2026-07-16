@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { requireOnboardedUser } from "@/lib/auth/session";
 import { canExportReports } from "@/lib/auth/roles";
 import { hasCowCalfMode } from "@/lib/cow-calf/constants";
 import { hasSeedstockMode } from "@/lib/seedstock/constants";
 import { ExportHub } from "@/components/export/export-hub";
+import { ManageSubpageHeader } from "@/components/setup/manage-subpage-header";
+import { ManageSubpageShell } from "@/components/setup/manage-subpage-shell";
 import type { OperationMode } from "@/types/auth";
 
 export const metadata: Metadata = {
@@ -20,22 +21,19 @@ export default async function SetupExportsPage() {
   const canExport = canExportReports(session.membership?.system_role);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <Link href="/setup" className="text-sm font-medium text-olive hover:underline">
-          ← More
-        </Link>
-        <h1 className="mt-1 text-2xl font-bold text-charcoal">Export records</h1>
-        <p className="text-charcoal/70">Download treatments, feed, sales, invoices, and more</p>
-      </div>
+    <ManageSubpageShell>
+      <ManageSubpageHeader
+        title="Export Records"
+        subtitle="Download cattle, treatment, feed, sales, and financial records."
+      />
       {!canExport ? (
-        <p className="rounded-xl border border-border bg-surface px-4 py-4 text-sm text-charcoal/70">
-          Exports are limited to owners, managers, and accountants. You can still view records in the
-          app.
+        <p className="rounded-[var(--radius-card)] border border-border-neutral bg-surface-white px-4 py-4 text-sm text-text-secondary shadow-[var(--shadow-card)]">
+          Exports are limited to owners, managers, and accountants. You can still view records in
+          the app.
         </p>
       ) : (
         <ExportHub orgId={orgId} showCowCalf={showCowCalf} showSeedstock={showSeedstock} />
       )}
-    </div>
+    </ManageSubpageShell>
   );
 }

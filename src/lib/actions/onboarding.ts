@@ -276,7 +276,7 @@ export async function inviteTeamMember(
 
     const admin = createAdminClient();
     const appUrl = await getAppUrl();
-    const redirectTo = `${appUrl}/auth/callback`;
+    const redirectTo = `${appUrl}/signup/verify`;
 
     const { data: orgRow } = await (admin ?? (await createClient()))
       .from("organizations")

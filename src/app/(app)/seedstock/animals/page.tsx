@@ -26,11 +26,11 @@ export default async function SeedstockAnimalsPage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <Link href="/seedstock" className="text-sm font-medium text-olive hover:underline">
+          <Link href="/seedstock" className="text-sm font-medium text-brown hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2">
             ← Seedstock
           </Link>
-          <h1 className="mt-1 text-2xl font-bold text-charcoal">Animals</h1>
-          <p className="text-charcoal/70">
+          <h1 className="mt-1 text-[1.75rem] font-bold leading-tight text-navy sm:text-[2rem]">Animals</h1>
+          <p className="text-text-secondary">
             {animals.filter((a) => a.status === "active").length} active in registry
           </p>
         </div>

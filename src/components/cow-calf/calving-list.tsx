@@ -20,7 +20,7 @@ function formatDate(iso: string) {
 export function CalvingList({ records, emptyMessage }: CalvingListProps) {
   if (records.length === 0) {
     return (
-      <p className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-charcoal/60">
+      <p className="rounded-xl border border-dashed border-border-neutral px-4 py-8 text-center text-sm text-text-secondary">
         {emptyMessage ?? "No calving records yet."}
       </p>
     );
@@ -32,18 +32,19 @@ export function CalvingList({ records, emptyMessage }: CalvingListProps) {
         <li key={r.id}>
           <Link
             href={`/cow-calf/calving/${r.id}`}
-            className="block rounded-xl border border-border bg-surface px-4 py-3 hover:border-olive/40"
+            className="block rounded-xl border border-border-neutral bg-surface-white px-4 py-3 hover:border-navy/40"
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="font-semibold text-charcoal">
+                <p className="font-semibold text-navy">
                   {CALVING_OUTCOME_LABELS[r.outcome]}
                   {r.calf_tag ? ` · ${r.calf_tag}` : ""}
                   {r.dam_tag ? ` · Dam ${r.dam_tag}` : ""}
                 </p>
-                <p className="text-sm text-charcoal/70">
+                <p className="text-sm text-text-secondary">
                   {CALF_SEX_LABELS[r.calf_sex]}
-                  {r.cattle_group_name ? ` · ${r.cattle_group_name}` : ""}
+                  {r.cattle_group_name ? ` · ${r.cattle_group_name}` : r.herd_name ? ` · ${r.herd_name}` : ""}
+                  {r.twin_status && r.twin_status !== "single" ? ` · ${r.twin_status}` : ""}
                   {r.location_name ? ` · ${r.location_name}` : ""}
                 </p>
                 {r.inventory_added ? (
@@ -52,9 +53,9 @@ export function CalvingList({ records, emptyMessage }: CalvingListProps) {
               </div>
               <div className="shrink-0 text-right">
                 {r.birth_weight_lbs != null ? (
-                  <p className="text-lg font-bold text-olive">{r.birth_weight_lbs} lb</p>
+                  <p className="text-lg font-bold text-brown">{r.birth_weight_lbs} lb</p>
                 ) : null}
-                <p className="text-xs text-charcoal/50">{formatDate(r.calved_at)}</p>
+                <p className="text-xs text-text-secondary">{formatDate(r.calved_at)}</p>
               </div>
             </div>
           </Link>

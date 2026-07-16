@@ -25,7 +25,7 @@ function SnapshotRow({
   tone?: "default" | "warning";
 }) {
   return (
-    <div className="flex items-center justify-between rounded-lg bg-surface-muted/60 px-3 py-2.5">
+    <div className="flex items-center justify-between rounded-lg bg-tan/20/60 px-3 py-2.5">
       <span className="text-sm text-text-secondary">{label}</span>
       <span
         className={cn(

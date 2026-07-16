@@ -144,10 +144,10 @@ export function GroupDetailClient({
   return (
     <div className="space-y-6">
       <div>
-        <Link href="/cattle" className="text-sm font-medium text-olive hover:underline">
+        <Link href="/cattle" className="text-sm font-medium text-brown hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2">
           ← Lots & cattle
         </Link>
-        <p className="mt-1 text-sm text-charcoal/60">{group.location_breadcrumb ?? "No location"}</p>
+        <p className="mt-1 text-sm text-text-secondary">{group.location_breadcrumb ?? "No location"}</p>
       </div>
 
       <LotSummaryPanel
@@ -210,7 +210,7 @@ export function GroupDetailClient({
                   {d.cause ? ` · ${d.cause}` : ""}
                 </span>
                 {d.value_lost != null ? (
-                  <span className="font-semibold tabular-nums text-rust">
+                  <span className="font-semibold tabular-nums text-status-critical">
                     {money(d.value_lost)}
                   </span>
                 ) : null}
@@ -247,7 +247,7 @@ export function GroupDetailClient({
                   id="editOwnership"
                   value={ownershipGroupId}
                   onChange={(e) => setOwnershipGroupId(e.target.value)}
-                  className="flex h-12 w-full rounded-lg border-2 border-border bg-surface px-4 text-base"
+                  className="flex h-12 w-full rounded-lg border-2 border-border-neutral bg-surface-white px-4 text-base"
                 >
                   <option value="">Ranch-owned / none</option>
                   {ownershipOptions.map((o) => (
@@ -265,7 +265,7 @@ export function GroupDetailClient({
                   id="editCustomer"
                   value={customerId}
                   onChange={(e) => setCustomerId(e.target.value)}
-                  className="flex h-12 w-full rounded-lg border-2 border-border bg-surface px-4 text-base"
+                  className="flex h-12 w-full rounded-lg border-2 border-border-neutral bg-surface-white px-4 text-base"
                 >
                   <option value="">None</option>
                   {customerOptions.map((c) => (
@@ -343,7 +343,7 @@ export function GroupDetailClient({
               <select
                 value={adjustReasonId}
                 onChange={(e) => setAdjustReasonId(e.target.value)}
-                className="flex h-10 w-full rounded-lg border border-border bg-surface px-3 text-sm"
+                className="flex h-10 w-full rounded-lg border border-border-neutral bg-surface-white px-3 text-sm"
               >
                 <option value="">Reason for change (optional)</option>
                 {adjustmentReasonOptions.map((r) => (
@@ -370,7 +370,7 @@ export function GroupDetailClient({
           </div>
         ) : (
           <div className="flex items-center justify-between">
-            <p className="text-4xl font-bold text-olive">{group.total_head}</p>
+            <p className="text-4xl font-bold text-brown">{group.total_head}</p>
             {canManageCattle ? (
               <Button variant="outline" onClick={() => setEditingCount(true)}>
                 Edit count
@@ -381,7 +381,7 @@ export function GroupDetailClient({
       </Card>
 
       {error ? (
-        <p className="text-sm text-rust" role="alert">
+        <p className="text-sm text-status-critical" role="alert">
           {error}
         </p>
       ) : null}
@@ -397,9 +397,9 @@ export function GroupDetailClient({
 
 function MiniStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-border bg-surface px-3 py-2">
-      <p className="text-xs text-charcoal/60">{label}</p>
-      <p className="text-base font-bold tabular-nums text-charcoal">{value}</p>
+    <div className="rounded-lg border border-border-neutral bg-surface-white px-3 py-2">
+      <p className="text-xs text-text-secondary">{label}</p>
+      <p className="text-base font-bold tabular-nums text-text-primary">{value}</p>
     </div>
   );
 }

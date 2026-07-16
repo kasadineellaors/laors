@@ -33,29 +33,29 @@ export default async function MonthlyReportPage({
   return (
     <div className="space-y-6">
       <div>
-        <Link href="/reports" className="text-sm font-medium text-olive hover:underline">
+        <Link href="/reports" className="text-sm font-medium text-brown hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2">
           ← Reports
         </Link>
-        <h1 className="mt-2 text-2xl font-bold text-charcoal">Monthly operations</h1>
-        <p className="text-charcoal/70">{summary.monthLabel}</p>
+        <h1 className="mt-2 text-[1.75rem] font-bold leading-tight text-navy sm:text-[2rem]">Monthly operations</h1>
+        <p className="text-text-secondary">{summary.monthLabel}</p>
       </div>
 
       <div className="flex flex-wrap gap-2">
         <Link
           href={`/reports/monthly?month=${prev}`}
-          className="rounded-lg border border-border px-3 py-2 text-sm font-semibold text-olive hover:bg-olive/10"
+          className="rounded-lg border border-border-neutral px-3 py-2 text-sm font-semibold text-brown hover:bg-tan/10"
         >
           ← {formatShortMonth(prev)}
         </Link>
         <Link
           href={`/reports/monthly?month=${next}`}
-          className="rounded-lg border border-border px-3 py-2 text-sm font-semibold text-olive hover:bg-olive/10"
+          className="rounded-lg border border-border-neutral px-3 py-2 text-sm font-semibold text-brown hover:bg-tan/10"
         >
           {formatShortMonth(next)} →
         </Link>
         <Link
           href={`/reports/pl?month=${month}`}
-          className="rounded-lg border border-olive/40 bg-olive/10 px-3 py-2 text-sm font-semibold text-olive hover:bg-olive/20"
+          className="rounded-lg border border-navy/40 bg-navy/10 px-3 py-2 text-sm font-semibold text-brown hover:bg-tan/20"
         >
           Full P&amp;L →
         </Link>
@@ -118,14 +118,14 @@ function Stat({
 }) {
   return (
     <div>
-      <dt className="text-charcoal/60">{label}</dt>
+      <dt className="text-text-secondary">{label}</dt>
       <dd
         className={`font-semibold tabular-nums ${
           highlight === "positive"
-            ? "text-olive"
+            ? "text-brown"
             : highlight === "negative"
-              ? "text-rust"
-              : "text-charcoal"
+              ? "text-status-critical"
+              : "text-text-primary"
         }`}
       >
         {value}

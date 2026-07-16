@@ -18,7 +18,7 @@ function StatusBadge({ group }: { group: CattleGroupSummary }) {
 
   if (status === "closed") {
     return (
-      <span className="inline-flex items-center rounded-md bg-surface-muted px-2 py-0.5 text-xs font-medium text-text-secondary">
+      <span className="inline-flex items-center rounded-md bg-tan/20 px-2 py-0.5 text-xs font-medium text-text-secondary">
         Closed
       </span>
     );

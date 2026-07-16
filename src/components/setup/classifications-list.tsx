@@ -23,12 +23,12 @@ export function ClassificationsList({ orgId, classifications }: ClassificationsL
     <>
       <Card>
         <CardHeader>
-          <CardTitle>Current classifications</CardTitle>
+          <CardTitle>Current cattle types</CardTitle>
           <CardDescription>Tap Edit to rename or update short codes</CardDescription>
         </CardHeader>
         <ul className="space-y-2">
           {classifications.length === 0 ? (
-            <li className="text-sm text-charcoal/60">None yet — add below</li>
+            <li className="text-sm text-text-secondary">None yet — add below</li>
           ) : (
             classifications.map((c) => (
               <SetupEditableRow

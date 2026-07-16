@@ -50,7 +50,7 @@ export default async function SeedstockCalvingDetailPage({
 
   return (
     <div className="space-y-6">
-      <Link href="/seedstock/calving" className="text-sm font-medium text-olive hover:underline">
+      <Link href="/seedstock/calving" className="text-sm font-medium text-brown hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2">
         ← Calving
       </Link>
 

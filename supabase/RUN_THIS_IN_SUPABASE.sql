@@ -15,6 +15,10 @@
 --   • Phase 19 — Feed purchases + % ration inclusion
 --   • Phase 20 — Lot expense ledger + auto lot status on sales
 --   • Phase 21 — Feed cost snapshots + monthly/enterprise reports
+--   • Phase 35 — Cow-Calf enterprise (herds, pairs, activity log)
+--   • Phase 36 — Cow-Calf reproduction (herd links, recheck status)
+--   • Phase 37 — Cow-Calf calving + processing
+--   • Phase 38 — Cow-Calf weaning, sales, death/loss
 -- =============================================================================
 
 -- =============================================================================
@@ -570,6 +574,337 @@ CREATE POLICY "Members manage customer portal access"
       WHERE user_id = auth.uid() AND is_active = true
     )
   );
+
+-- =============================================================================
+-- PHASE 35 — Cow-Calf enterprise foundation (additive only — Stocker unchanged)
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS public.cow_calf_herds (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  organization_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  owner_id UUID REFERENCES public.owners(id) ON DELETE SET NULL,
+  current_location_id UUID REFERENCES public.locations(id) ON DELETE SET NULL,
+  status TEXT NOT NULL DEFAULT 'active'
+    CHECK (status IN ('active', 'archived', 'closed')),
+  description TEXT,
+  breeding_season TEXT,
+  calving_season TEXT,
+  recordkeeping_mode TEXT NOT NULL DEFAULT 'individual'
+    CHECK (recordkeeping_mode IN ('individual', 'group', 'mixed')),
+  group_cows_count INTEGER NOT NULL DEFAULT 0 CHECK (group_cows_count >= 0),
+  group_calves_at_side_count INTEGER NOT NULL DEFAULT 0 CHECK (group_calves_at_side_count >= 0),
+  group_bulls_count INTEGER NOT NULL DEFAULT 0 CHECK (group_bulls_count >= 0),
+  group_replacements_count INTEGER NOT NULL DEFAULT 0 CHECK (group_replacements_count >= 0),
+  created_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (organization_id, name)
+);
+
+CREATE INDEX IF NOT EXISTS cow_calf_herds_org_idx
+  ON public.cow_calf_herds(organization_id)
+  WHERE is_active = TRUE;
+
+CREATE INDEX IF NOT EXISTS cow_calf_herds_location_idx
+  ON public.cow_calf_herds(organization_id, current_location_id)
+  WHERE is_active = TRUE;
+
+DROP TRIGGER IF EXISTS cow_calf_herds_updated_at ON public.cow_calf_herds;
+CREATE TRIGGER cow_calf_herds_updated_at
+  BEFORE UPDATE ON public.cow_calf_herds
+  FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+CREATE TABLE IF NOT EXISTS public.dam_calf_relationships (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  organization_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
+  dam_id UUID NOT NULL REFERENCES public.individual_animals(id) ON DELETE CASCADE,
+  calf_id UUID NOT NULL REFERENCES public.individual_animals(id) ON DELETE CASCADE,
+  birth_date DATE,
+  relationship_status TEXT NOT NULL DEFAULT 'nursing'
+    CHECK (relationship_status IN ('nursing', 'weaned', 'ended', 'fostered')),
+  fostered BOOLEAN NOT NULL DEFAULT FALSE,
+  nursing_status TEXT NOT NULL DEFAULT 'at_side'
+    CHECK (nursing_status IN ('at_side', 'weaned', 'ended')),
+  weaning_date DATE,
+  calving_record_id UUID REFERENCES public.calving_records(id) ON DELETE SET NULL,
+  notes TEXT,
+  created_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CHECK (dam_id <> calf_id)
+);
+
+CREATE INDEX IF NOT EXISTS dam_calf_rel_org_idx
+  ON public.dam_calf_relationships(organization_id)
+  WHERE is_active = TRUE;
+
+CREATE INDEX IF NOT EXISTS dam_calf_rel_dam_idx
+  ON public.dam_calf_relationships(organization_id, dam_id)
+  WHERE is_active = TRUE AND nursing_status = 'at_side';
+
+CREATE INDEX IF NOT EXISTS dam_calf_rel_calf_idx
+  ON public.dam_calf_relationships(organization_id, calf_id)
+  WHERE is_active = TRUE;
+
+DROP TRIGGER IF EXISTS dam_calf_relationships_updated_at ON public.dam_calf_relationships;
+CREATE TRIGGER dam_calf_relationships_updated_at
+  BEFORE UPDATE ON public.dam_calf_relationships
+  FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+CREATE TABLE IF NOT EXISTS public.cow_calf_activity_log (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  organization_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
+  action TEXT NOT NULL,
+  herd_id UUID REFERENCES public.cow_calf_herds(id) ON DELETE SET NULL,
+  animal_id UUID REFERENCES public.individual_animals(id) ON DELETE SET NULL,
+  source_table TEXT,
+  source_id UUID,
+  summary TEXT NOT NULL,
+  details JSONB,
+  created_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS cow_calf_activity_org_idx
+  ON public.cow_calf_activity_log(organization_id, created_at DESC);
+
+ALTER TABLE public.individual_animals
+  ADD COLUMN IF NOT EXISTS cow_calf_herd_id UUID REFERENCES public.cow_calf_herds(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS reproductive_status TEXT,
+  ADD COLUMN IF NOT EXISTS calf_lifecycle_status TEXT,
+  ADD COLUMN IF NOT EXISTS eid TEXT,
+  ADD COLUMN IF NOT EXISTS ear_tag TEXT,
+  ADD COLUMN IF NOT EXISTS ranch_id_number TEXT,
+  ADD COLUMN IF NOT EXISTS sex TEXT,
+  ADD COLUMN IF NOT EXISTS color TEXT,
+  ADD COLUMN IF NOT EXISTS brand TEXT;
+
+CREATE INDEX IF NOT EXISTS individual_animals_cow_calf_herd_idx
+  ON public.individual_animals(organization_id, cow_calf_herd_id)
+  WHERE is_active = TRUE AND registry_context = 'cow_calf';
+
+ALTER TABLE public.calving_records
+  ADD COLUMN IF NOT EXISTS cow_calf_herd_id UUID REFERENCES public.cow_calf_herds(id) ON DELETE SET NULL;
+
+ALTER TABLE public.cow_calf_herds ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.dam_calf_relationships ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.cow_calf_activity_log ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Members read cow_calf_herds" ON public.cow_calf_herds;
+CREATE POLICY "Members read cow_calf_herds"
+  ON public.cow_calf_herds FOR SELECT
+  USING (public.is_org_member(organization_id));
+
+DROP POLICY IF EXISTS "Managers write cow_calf_herds" ON public.cow_calf_herds;
+CREATE POLICY "Managers write cow_calf_herds"
+  ON public.cow_calf_herds FOR ALL
+  USING (public.has_org_role(organization_id, ARRAY['owner', 'manager']));
+
+DROP POLICY IF EXISTS "Members read dam_calf_relationships" ON public.dam_calf_relationships;
+CREATE POLICY "Members read dam_calf_relationships"
+  ON public.dam_calf_relationships FOR SELECT
+  USING (public.is_org_member(organization_id));
+
+DROP POLICY IF EXISTS "Managers write dam_calf_relationships" ON public.dam_calf_relationships;
+CREATE POLICY "Managers write dam_calf_relationships"
+  ON public.dam_calf_relationships FOR ALL
+  USING (public.has_org_role(organization_id, ARRAY['owner', 'manager']));
+
+DROP POLICY IF EXISTS "Members read cow_calf_activity_log" ON public.cow_calf_activity_log;
+CREATE POLICY "Members read cow_calf_activity_log"
+  ON public.cow_calf_activity_log FOR SELECT
+  USING (public.is_org_member(organization_id));
+
+DROP POLICY IF EXISTS "Members create cow_calf_activity_log" ON public.cow_calf_activity_log;
+CREATE POLICY "Members create cow_calf_activity_log"
+  ON public.cow_calf_activity_log FOR INSERT
+  WITH CHECK (
+    public.is_org_member(organization_id)
+    AND created_by = auth.uid()
+  );
+
+-- =============================================================================
+-- PHASE 36 — Cow-Calf reproduction
+-- =============================================================================
+
+ALTER TABLE public.breeding_records
+  ADD COLUMN IF NOT EXISTS cow_calf_herd_id UUID
+    REFERENCES public.cow_calf_herds(id) ON DELETE SET NULL;
+
+ALTER TABLE public.exposure_records
+  ADD COLUMN IF NOT EXISTS cow_calf_herd_id UUID
+    REFERENCES public.cow_calf_herds(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS exposed_cow_count INTEGER
+    CHECK (exposed_cow_count IS NULL OR exposed_cow_count >= 0);
+
+CREATE INDEX IF NOT EXISTS breeding_records_cow_calf_herd_idx
+  ON public.breeding_records(organization_id, cow_calf_herd_id)
+  WHERE is_active = TRUE AND breeding_context = 'cow_calf';
+
+CREATE INDEX IF NOT EXISTS exposure_records_cow_calf_herd_idx
+  ON public.exposure_records(organization_id, cow_calf_herd_id)
+  WHERE is_active = TRUE AND breeding_context = 'cow_calf';
+
+ALTER TABLE public.breeding_records
+  DROP CONSTRAINT IF EXISTS breeding_records_pregnancy_status_check;
+
+ALTER TABLE public.breeding_records
+  ADD CONSTRAINT breeding_records_pregnancy_status_check
+  CHECK (pregnancy_status IN ('bred', 'confirmed', 'open', 'unknown', 'recheck'));
+
+-- =============================================================================
+-- PHASE 37 — Cow-Calf calving + processing
+-- =============================================================================
+
+ALTER TABLE public.calving_records
+  ADD COLUMN IF NOT EXISTS calving_event_id UUID,
+  ADD COLUMN IF NOT EXISTS twin_status TEXT
+    CHECK (twin_status IS NULL OR twin_status IN ('single', 'twin', 'triplet', 'unknown')),
+  ADD COLUMN IF NOT EXISTS fostered BOOLEAN NOT NULL DEFAULT FALSE;
+
+CREATE INDEX IF NOT EXISTS calving_records_event_idx
+  ON public.calving_records(organization_id, calving_event_id)
+  WHERE is_active = TRUE AND calving_context = 'cow_calf';
+
+CREATE TABLE IF NOT EXISTS public.cow_calf_processing_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  organization_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
+  cow_calf_herd_id UUID REFERENCES public.cow_calf_herds(id) ON DELETE SET NULL,
+  event_type TEXT NOT NULL
+    CHECK (event_type IN (
+      'birth_processing', 'branding', 'vaccination', 'castration', 'deworming', 'other'
+    )),
+  processed_at DATE NOT NULL DEFAULT CURRENT_DATE,
+  location_id UUID REFERENCES public.locations(id) ON DELETE SET NULL,
+  product_name TEXT,
+  head_count INTEGER CHECK (head_count IS NULL OR head_count >= 0),
+  notes TEXT,
+  created_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+ 
+CREATE TABLE IF NOT EXISTS public.cow_calf_processing_lines (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  organization_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
+  processing_event_id UUID NOT NULL
+    REFERENCES public.cow_calf_processing_events(id) ON DELETE CASCADE,
+  calf_id UUID NOT NULL REFERENCES public.individual_animals(id) ON DELETE CASCADE,
+  weight_lbs NUMERIC,
+  treatment_record_id UUID REFERENCES public.treatment_records(id) ON DELETE SET NULL,
+  notes TEXT,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (processing_event_id, calf_id)
+);
+
+CREATE INDEX IF NOT EXISTS cow_calf_processing_events_org_idx
+  ON public.cow_calf_processing_events(organization_id, processed_at DESC)
+  WHERE is_active = TRUE;
+
+CREATE INDEX IF NOT EXISTS cow_calf_processing_lines_calf_idx
+  ON public.cow_calf_processing_lines(organization_id, calf_id)
+  WHERE is_active = TRUE;
+
+DROP TRIGGER IF EXISTS cow_calf_processing_events_updated_at ON public.cow_calf_processing_events;
+CREATE TRIGGER cow_calf_processing_events_updated_at
+  BEFORE UPDATE ON public.cow_calf_processing_events
+  FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+ALTER TABLE public.cow_calf_processing_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.cow_calf_processing_lines ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Members read cow_calf_processing_events" ON public.cow_calf_processing_events;
+CREATE POLICY "Members read cow_calf_processing_events"
+  ON public.cow_calf_processing_events FOR SELECT
+  USING (public.is_org_member(organization_id));
+
+DROP POLICY IF EXISTS "Managers write cow_calf_processing_events" ON public.cow_calf_processing_events;
+CREATE POLICY "Managers write cow_calf_processing_events"
+  ON public.cow_calf_processing_events FOR ALL
+  USING (public.has_org_role(organization_id, ARRAY['owner', 'manager']));
+
+DROP POLICY IF EXISTS "Members read cow_calf_processing_lines" ON public.cow_calf_processing_lines;
+CREATE POLICY "Members read cow_calf_processing_lines"
+  ON public.cow_calf_processing_lines FOR SELECT
+  USING (public.is_org_member(organization_id));
+
+DROP POLICY IF EXISTS "Managers write cow_calf_processing_lines" ON public.cow_calf_processing_lines;
+CREATE POLICY "Managers write cow_calf_processing_lines"
+  ON public.cow_calf_processing_lines FOR ALL
+  USING (public.has_org_role(organization_id, ARRAY['owner', 'manager']));
+
+-- =============================================================================
+-- PHASE 38 — Cow-Calf weaning, sales, death/loss
+-- =============================================================================
+
+ALTER TABLE public.weaning_records
+  ADD COLUMN IF NOT EXISTS cow_calf_herd_id UUID
+    REFERENCES public.cow_calf_herds(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS destination_herd_id UUID
+    REFERENCES public.cow_calf_herds(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS destination_location_id UUID
+    REFERENCES public.locations(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS weaning_method TEXT
+    CHECK (weaning_method IS NULL OR weaning_method IN ('traditional', 'fence_line', 'nose_tab', 'early', 'other'));
+
+ALTER TABLE public.sales_records
+  ADD COLUMN IF NOT EXISTS sale_context TEXT NOT NULL DEFAULT 'stocker'
+    CHECK (sale_context IN ('stocker', 'cow_calf', 'seedstock')),
+  ADD COLUMN IF NOT EXISTS cow_calf_sale_type TEXT
+    CHECK (cow_calf_sale_type IS NULL OR cow_calf_sale_type IN (
+      'calf', 'cull_cow', 'bull', 'replacement', 'pair', 'group', 'other'
+    )),
+  ADD COLUMN IF NOT EXISTS fees NUMERIC,
+  ADD COLUMN IF NOT EXISTS net_amount NUMERIC,
+  ADD COLUMN IF NOT EXISTS sale_reason TEXT,
+  ADD COLUMN IF NOT EXISTS animal_ids UUID[];
+
+CREATE INDEX IF NOT EXISTS sales_records_cow_calf_context_idx
+  ON public.sales_records(organization_id, sale_date DESC)
+  WHERE is_active = TRUE AND sale_context = 'cow_calf';
+
+CREATE TABLE IF NOT EXISTS public.cow_calf_loss_records (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  organization_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
+  individual_animal_id UUID NOT NULL REFERENCES public.individual_animals(id) ON DELETE CASCADE,
+  cow_calf_herd_id UUID REFERENCES public.cow_calf_herds(id) ON DELETE SET NULL,
+  loss_date DATE NOT NULL DEFAULT CURRENT_DATE,
+  cause TEXT NOT NULL DEFAULT 'unknown'
+    CHECK (cause IN ('unknown', 'disease', 'predator', 'accident', 'calving', 'old_age', 'other')),
+  location_id UUID REFERENCES public.locations(id) ON DELETE SET NULL,
+  disposal_method TEXT,
+  notes TEXT,
+  created_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS cow_calf_loss_org_idx
+  ON public.cow_calf_loss_records(organization_id, loss_date DESC)
+  WHERE is_active = TRUE;
+
+DROP TRIGGER IF EXISTS cow_calf_loss_records_updated_at ON public.cow_calf_loss_records;
+CREATE TRIGGER cow_calf_loss_records_updated_at
+  BEFORE UPDATE ON public.cow_calf_loss_records
+  FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+ALTER TABLE public.cow_calf_loss_records ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Members read cow_calf_loss_records" ON public.cow_calf_loss_records;
+CREATE POLICY "Members read cow_calf_loss_records"
+  ON public.cow_calf_loss_records FOR SELECT
+  USING (public.is_org_member(organization_id));
+
+DROP POLICY IF EXISTS "Managers write cow_calf_loss_records" ON public.cow_calf_loss_records;
+CREATE POLICY "Managers write cow_calf_loss_records"
+  ON public.cow_calf_loss_records FOR ALL
+  USING (public.has_org_role(organization_id, ARRAY['owner', 'manager']));
 
 -- =============================================================================
 -- DONE — reload API schema

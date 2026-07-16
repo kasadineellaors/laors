@@ -132,7 +132,7 @@ export function MoveCattleForm({
               id="sourcePen"
               value={sourceLocationId}
               onChange={(e) => setSourceLocationId(e.target.value)}
-              className="flex h-12 w-full rounded-lg border-2 border-border bg-surface px-4 text-base"
+              className="flex h-12 w-full rounded-lg border-2 border-border-neutral bg-surface-white px-4 text-base"
             >
               <option value="">All locations</option>
               {locationOptions.map((loc) => (
@@ -149,7 +149,7 @@ export function MoveCattleForm({
               value={sourceGroupId}
               onChange={(e) => setSourceGroupId(e.target.value)}
               required
-              className="flex h-12 w-full rounded-lg border-2 border-border bg-surface px-4 text-base"
+              className="flex h-12 w-full rounded-lg border-2 border-border-neutral bg-surface-white px-4 text-base"
             >
               {filteredGroups.length === 0 ? (
                 <option value="">No groups at this pen</option>
@@ -188,7 +188,7 @@ export function MoveCattleForm({
                   required
                   className="text-center text-xl font-bold tabular-nums"
                 />
-                <p className="mt-1 text-sm text-charcoal/60">
+                <p className="mt-1 text-sm text-text-secondary">
                   {sourceGroup.total_head} available
                   {parsedHead > 0 && parsedHead < sourceGroup.total_head
                     ? " · partial move"
@@ -199,7 +199,7 @@ export function MoveCattleForm({
               </div>
             </>
           ) : (
-            <p className="text-sm text-rust">Source group has no head to move.</p>
+            <p className="text-sm text-status-critical">Source group has no head to move.</p>
           )}
         </div>
       </Card>
@@ -219,7 +219,7 @@ export function MoveCattleForm({
               value={destinationLocationId}
               onChange={(e) => setDestinationLocationId(e.target.value)}
               required
-              className="flex h-12 w-full rounded-lg border-2 border-border bg-surface px-4 text-base"
+              className="flex h-12 w-full rounded-lg border-2 border-border-neutral bg-surface-white px-4 text-base"
             >
               <option value="">Select location</option>
               {locationOptions.map((loc) => (
@@ -236,7 +236,7 @@ export function MoveCattleForm({
                 id="destGroup"
                 value={destinationGroupId}
                 onChange={(e) => setDestinationGroupId(e.target.value)}
-                className="flex h-12 w-full rounded-lg border-2 border-border bg-surface px-4 text-base"
+                className="flex h-12 w-full rounded-lg border-2 border-border-neutral bg-surface-white px-4 text-base"
               >
                 <option value="">Auto (same name as source)</option>
                 {destGroups.map((g) => (
@@ -254,7 +254,7 @@ export function MoveCattleForm({
                 id="reason"
                 value={reasonId}
                 onChange={(e) => setReasonId(e.target.value)}
-                className="flex h-12 w-full rounded-lg border-2 border-border bg-surface px-4 text-base"
+                className="flex h-12 w-full rounded-lg border-2 border-border-neutral bg-surface-white px-4 text-base"
               >
                 <option value="">Select reason (optional)</option>
                 {movementReasonOptions.map((r) => (
@@ -277,7 +277,7 @@ export function MoveCattleForm({
       </Card>
 
       {error ? (
-        <p className="text-sm text-rust" role="alert">
+        <p className="text-sm text-status-critical" role="alert">
           {error}
         </p>
       ) : null}
@@ -296,7 +296,7 @@ export function MoveCattleForm({
         {loading ? "Moving…" : `Move ${parsedHead || 0} Head`}
       </Button>
 
-      <Link href="/cattle" className="block text-center text-sm text-olive hover:underline">
+      <Link href="/cattle" className="block text-center text-sm text-brown hover:underline">
         Cancel
       </Link>
     </form>

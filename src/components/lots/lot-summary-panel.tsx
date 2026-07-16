@@ -34,12 +34,12 @@ export function LotSummaryPanel({
   const projectedMargin = summary.sale_revenue - summary.total_invested;
 
   return (
-    <div className="space-y-4 rounded-xl border border-border bg-surface p-4">
+    <div className="space-y-4 rounded-xl border border-border-neutral bg-surface-white p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-olive">Lot</p>
-          <h2 className="text-2xl font-bold text-charcoal">{lotLabel}</h2>
-          <p className="text-sm text-charcoal/70">
+          <p className="text-sm font-semibold uppercase tracking-wide text-brown">Lot</p>
+          <h2 className="text-[1.75rem] font-bold leading-tight text-navy sm:text-[2rem]">{lotLabel}</h2>
+          <p className="text-sm text-text-secondary">
             {enterprise} · {status}
             {group.seller_name ? ` · ${group.seller_name}` : ""}
           </p>
@@ -103,14 +103,14 @@ function Stat({
 }) {
   return (
     <div className="rounded-lg bg-tan-light/30 px-3 py-2">
-      <p className="text-xs text-charcoal/60">{label}</p>
+      <p className="text-xs text-text-secondary">{label}</p>
       <p
         className={`text-lg font-bold tabular-nums ${
           highlight === "positive"
-            ? "text-olive"
+            ? "text-brown"
             : highlight === "negative"
-              ? "text-rust"
-              : "text-charcoal"
+              ? "text-status-critical"
+              : "text-text-primary"
         }`}
       >
         {value}
@@ -123,7 +123,7 @@ function TabLink({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className="rounded-lg border border-border bg-cream/40 px-3 py-2 text-center text-sm font-semibold text-olive hover:bg-olive/10"
+      className="rounded-lg border border-border-neutral bg-cream/40 px-3 py-2 text-center text-sm font-semibold text-brown hover:bg-tan/10"
     >
       {label}
     </Link>

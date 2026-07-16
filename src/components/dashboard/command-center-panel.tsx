@@ -80,18 +80,18 @@ export function CommandCenterPanel({ data }: CommandCenterPanelProps) {
             <CardDescription>Open lots only</CardDescription>
           </CardHeader>
           {data.head_by_enterprise.length === 0 ? (
-            <p className="px-4 pb-4 text-sm text-charcoal/60">No open lots with head.</p>
+            <p className="px-4 pb-4 text-sm text-text-secondary">No open lots with head.</p>
           ) : (
             <ul className="divide-y divide-border px-4 pb-4 text-sm">
               {data.head_by_enterprise.map((row) => (
                 <li key={row.enterprise_type} className="flex items-center justify-between py-2">
                   <div>
-                    <p className="font-medium text-charcoal">{row.label}</p>
-                    <p className="text-xs text-charcoal/50">
+                    <p className="font-medium text-navy">{row.label}</p>
+                    <p className="text-xs text-text-secondary">
                       {row.lot_count} lot{row.lot_count === 1 ? "" : "s"}
                     </p>
                   </div>
-                  <span className="text-lg font-bold text-olive">{row.head}</span>
+                  <span className="text-lg font-bold text-brown">{row.head}</span>
                 </li>
               ))}
             </ul>
@@ -117,16 +117,16 @@ export function CommandCenterPanel({ data }: CommandCenterPanelProps) {
               <li key={lot.id}>
                 <Link
                   href={`/cattle/groups/${lot.id}`}
-                  className="flex items-center justify-between gap-3 py-3 hover:text-olive"
+                  className="flex items-center justify-between gap-3 py-3 hover:text-brown"
                 >
                   <div>
-                    <p className="font-semibold text-charcoal">{lot.label}</p>
-                    <p className="text-charcoal/60">
+                    <p className="font-semibold text-navy">{lot.label}</p>
+                    <p className="text-text-secondary">
                       {lot.status_label}
                       {lot.location ? ` · ${lot.location}` : ""}
                     </p>
                   </div>
-                  <span className="shrink-0 font-bold text-olive">{lot.head} hd</span>
+                  <span className="shrink-0 font-bold text-brown">{lot.head} hd</span>
                 </Link>
               </li>
             ))}
@@ -135,16 +135,16 @@ export function CommandCenterPanel({ data }: CommandCenterPanelProps) {
       ) : null}
 
       {data.low_feed_items.length > 0 ? (
-        <Card className="border-rust/30 bg-rust/5">
+        <Card className="border-status-critical/30 bg-status-critical/5">
           <CardHeader>
             <CardTitle>Low feedstock</CardTitle>
             <CardDescription>Below reorder level</CardDescription>
           </CardHeader>
           <ul className="space-y-2 px-4 pb-4 text-sm">
             {data.low_feed_items.map((item) => (
-              <li key={item.id} className="flex justify-between rounded-lg bg-surface px-3 py-2">
-                <span className="font-medium text-charcoal">{item.name}</span>
-                <span className="text-rust">
+              <li key={item.id} className="flex justify-between rounded-lg bg-surface-white px-3 py-2">
+                <span className="font-medium text-navy">{item.name}</span>
+                <span className="text-status-critical">
                   {item.quantity_on_hand} {item.unit}
                 </span>
               </li>
@@ -174,14 +174,14 @@ function Row({
 }) {
   return (
     <div className="flex justify-between rounded-lg bg-cream px-3 py-2">
-      <span className="text-charcoal/70">{label}</span>
+      <span className="text-text-secondary">{label}</span>
       <span
         className={`font-semibold tabular-nums ${
           highlight === "positive"
-            ? "text-olive"
+            ? "text-brown"
             : highlight === "negative"
-              ? "text-rust"
-              : "text-charcoal"
+              ? "text-status-critical"
+              : "text-text-primary"
         }`}
       >
         {value}
@@ -200,19 +200,19 @@ function MiniStat({
   highlight?: "positive" | "negative";
 }) {
   return (
-    <div className="rounded-xl border border-border bg-surface px-3 py-4 text-center">
+    <div className="rounded-xl border border-border-neutral bg-surface-white px-3 py-4 text-center">
       <p
         className={`text-xl font-bold tabular-nums ${
           highlight === "positive"
-            ? "text-olive"
+            ? "text-brown"
             : highlight === "negative"
-              ? "text-rust"
-              : "text-olive"
+              ? "text-status-critical"
+              : "text-brown"
         }`}
       >
         {value}
       </p>
-      <p className="text-xs text-charcoal/60">{label}</p>
+      <p className="text-xs text-text-secondary">{label}</p>
     </div>
   );
 }

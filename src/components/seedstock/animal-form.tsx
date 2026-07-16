@@ -20,7 +20,7 @@ interface SeedstockAnimalFormProps {
 }
 
 const selectClass =
-  "touch-target w-full rounded-lg border border-border bg-surface px-3 py-2";
+  "touch-target w-full rounded-lg border border-border-neutral bg-surface-white px-3 py-2";
 
 export function SeedstockAnimalForm({
   orgId,
@@ -203,7 +203,7 @@ export function SeedstockAnimalForm({
         </div>
 
         <div>
-          <p className="mb-2 text-sm font-semibold text-charcoal">EPDs</p>
+          <p className="mb-2 text-sm font-semibold text-navy">EPDs</p>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div>
               <Label htmlFor="epdBw">Birth wt</Label>
@@ -298,7 +298,7 @@ export function SeedstockAnimalForm({
         </div>
 
         {error ? (
-          <p className="text-sm text-rust" role="alert">
+          <p className="text-sm text-status-critical" role="alert">
             {error}
           </p>
         ) : null}

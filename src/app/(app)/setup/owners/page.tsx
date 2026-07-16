@@ -1,4 +1,4 @@
-import Link from "next/link";
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { requireOnboardedUser } from "@/lib/auth/session";
 import { canManageInvoices } from "@/lib/auth/roles";
@@ -7,6 +7,12 @@ import { isInvoiceEmailConfigured } from "@/lib/email/resend";
 import { getAppUrl } from "@/lib/auth/app-url";
 import { listCustomerPortalAccess } from "@/lib/portal/access";
 import { OwnersClient } from "@/components/setup/owners-client";
+import { ManageSubpageHeader } from "@/components/setup/manage-subpage-header";
+import { ManageSubpageShell } from "@/components/setup/manage-subpage-shell";
+
+export const metadata: Metadata = {
+  title: "Owners & Clients — LAORS",
+};
 
 export default async function OwnersSetupPage() {
   const session = await requireOnboardedUser();
@@ -34,16 +40,11 @@ export default async function OwnersSetupPage() {
   );
 
   return (
-    <div className="space-y-6">
-      <div>
-        <Link href="/setup" className="text-sm font-medium text-olive hover:underline">
-          ← Ranch Setup
-        </Link>
-        <h1 className="mt-1 text-2xl font-bold text-charcoal">Owners</h1>
-        <p className="text-charcoal/70">
-          Billing rates, ownership groups with split %, misc charges, and portal links
-        </p>
-      </div>
+    <ManageSubpageShell>
+      <ManageSubpageHeader
+        title="Owners & Clients"
+        subtitle="Manage cattle ownership, billing rates, charges, and client access."
+      />
       <OwnersClient
         orgId={orgId}
         owners={owners}
@@ -51,6 +52,6 @@ export default async function OwnersSetupPage() {
         portalUrls={portalUrls}
         emailConfigured={isInvoiceEmailConfigured()}
       />
-    </div>
+    </ManageSubpageShell>
   );
 }

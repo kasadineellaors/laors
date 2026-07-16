@@ -1,7 +1,8 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { buildEmailConfirmUrl } from "@/lib/auth/confirm-url";
 
 type LinkResult =
-  | { ok: true; actionLink: string }
+  | { ok: true; actionLink: string; emailOtp: string }
   | { ok: false; error: string; existingAccount?: boolean };
 
 export async function createSignUpConfirmationLink(input: {
@@ -56,10 +57,12 @@ export async function createSignUpConfirmationLink(input: {
     return { ok: false, error: result.error.message };
   }
 
-  const actionLink = result.data.properties?.action_link;
-  if (!actionLink) {
+  const properties = result.data.properties ?? {};
+  const confirmUrl = buildEmailConfirmUrl(input.redirectTo, properties);
+  const emailOtp = properties.email_otp?.trim();
+  if (!confirmUrl || !emailOtp) {
     return { ok: false, error: "Could not generate confirmation link." };
   }
 
-  return { ok: true, actionLink };
+  return { ok: true, actionLink: confirmUrl, emailOtp };
 }

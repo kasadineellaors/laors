@@ -17,8 +17,8 @@ export default function AppError({
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-4 py-16 text-center">
-      <h1 className="text-xl font-bold text-charcoal">Something went wrong</h1>
-      <p className="max-w-md text-sm text-charcoal/70">
+      <h1 className="text-xl font-bold text-navy">Something went wrong</h1>
+      <p className="max-w-md text-sm text-text-secondary">
         If you just set up Supabase, run the full migration path in the README (
         <code className="text-xs">RUN_ALL_PHASES.sql</code> or{" "}
         <code className="text-xs">supabase db push</code>).

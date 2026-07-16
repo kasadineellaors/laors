@@ -20,8 +20,8 @@ export function DbSetupBanner({ issues }: DbSetupBannerProps) {
       </ul>
       <p className="mt-2 text-xs text-text-secondary">
         Recommended: run{" "}
-        <code className="rounded bg-surface-muted px-1">npx supabase db push</code> or paste{" "}
-        <code className="rounded bg-surface-muted px-1">supabase/RUN_ALL_PHASES.sql</code> in the
+        <code className="rounded bg-tan/20 px-1">npx supabase db push</code> or paste{" "}
+        <code className="rounded bg-tan/20 px-1">supabase/RUN_ALL_PHASES.sql</code> in the
         SQL Editor.
       </p>
     </AlertBanner>

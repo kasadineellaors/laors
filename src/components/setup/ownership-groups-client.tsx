@@ -51,7 +51,7 @@ export function OwnershipGroupsClient({ orgId, groups }: OwnershipGroupsClientPr
         </CardHeader>
         <ul className="space-y-2">
           {groups.length === 0 ? (
-            <li className="text-sm text-charcoal/60">None yet — add below</li>
+            <li className="text-sm text-text-secondary">None yet — add below</li>
           ) : (
             groups.map((g) => (
               <SetupEditableRow
@@ -121,7 +121,7 @@ export function OwnershipGroupsClient({ orgId, groups }: OwnershipGroupsClientPr
               placeholder="Owner, Partner, Ranch-owned"
             />
           </div>
-          {error ? <p className="text-sm text-rust">{error}</p> : null}
+          {error ? <p className="text-sm text-status-critical">{error}</p> : null}
           <Button type="submit" disabled={loading}>
             {loading ? "Adding…" : "Add group"}
           </Button>

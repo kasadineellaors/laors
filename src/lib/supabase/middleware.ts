@@ -34,7 +34,8 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/signup") ||
     pathname.startsWith("/forgot-password");
   const isResetPassword = pathname.startsWith("/reset-password");
-  const isAuthCallback = pathname.startsWith("/auth/callback");
+  const isAuthCallback =
+    pathname.startsWith("/auth/callback") || pathname.startsWith("/auth/confirm");
   const isProtectedRoute =
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/onboarding") ||

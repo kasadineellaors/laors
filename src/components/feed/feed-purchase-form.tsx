@@ -62,8 +62,8 @@ export function FeedPurchaseForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3 rounded-xl border border-border p-4">
-      <p className="text-sm font-semibold text-charcoal">Record commodity purchase</p>
+    <form onSubmit={handleSubmit} className="space-y-3 rounded-xl border border-border-neutral p-4">
+      <p className="text-sm font-semibold text-navy">Record commodity purchase</p>
       <div className="grid grid-cols-2 gap-3">
         <div>
           <Label htmlFor="purchaseDate">Date</Label>
@@ -106,7 +106,7 @@ export function FeedPurchaseForm({
         </div>
       </div>
       {unitCost != null ? (
-        <p className="text-sm text-charcoal/70">
+        <p className="text-sm text-text-secondary">
           Cost per {unit}: <span className="font-bold">${unitCost.toFixed(4)}</span>
           {" · "}updates weighted-average inventory cost
         </p>
@@ -120,7 +120,7 @@ export function FeedPurchaseForm({
         <Input id="purchaseNotes" value={notes} onChange={(e) => setNotes(e.target.value)} />
       </div>
       {error ? (
-        <p className="text-sm text-rust" role="alert">
+        <p className="text-sm text-status-critical" role="alert">
           {error}
         </p>
       ) : null}

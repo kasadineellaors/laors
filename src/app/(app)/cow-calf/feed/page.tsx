@@ -27,11 +27,11 @@ export default async function CowCalfFeedPage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <Link href="/cow-calf" className="text-sm font-medium text-olive hover:underline">
-            ← Cow-Calf
+          <Link href="/feed" className="text-sm font-medium text-brown hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2">
+            ← Feed
           </Link>
-          <h1 className="mt-1 text-2xl font-bold text-charcoal">Feed</h1>
-          <p className="text-charcoal/70">
+          <h1 className="mt-1 text-[1.75rem] font-bold leading-tight text-navy sm:text-[2rem]">Feed</h1>
+          <p className="text-text-secondary">
             {summary.thisMonth} this month · {summary.last7Days} in last 7 days
           </p>
         </div>
@@ -40,10 +40,10 @@ export default async function CowCalfFeedPage() {
         </Link>
       </div>
 
-      <p className="text-sm text-charcoal/60">
+      <p className="text-sm text-text-secondary">
         Hay, supplement, and mineral for pairs and pastures — separate from stocker/custom-feed
         billing.{" "}
-        <Link href="/feed/rations" className="font-medium text-olive hover:underline">
+        <Link href="/feed/rations" className="font-medium text-brown hover:underline">
           Manage rations
         </Link>
       </p>

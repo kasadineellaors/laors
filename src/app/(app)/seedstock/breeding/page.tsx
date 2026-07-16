@@ -28,11 +28,11 @@ export default async function SeedstockBreedingPage() {
   return (
     <div className="space-y-6">
       <div>
-        <Link href="/seedstock" className="text-sm font-medium text-olive hover:underline">
+        <Link href="/seedstock" className="text-sm font-medium text-brown hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2">
           ← Seedstock
         </Link>
-        <h1 className="mt-1 text-2xl font-bold text-charcoal">Breeding</h1>
-        <p className="text-charcoal/70">AI, natural service, and embryo transfer records</p>
+        <h1 className="mt-1 text-[1.75rem] font-bold leading-tight text-navy sm:text-[2rem]">Breeding</h1>
+        <p className="text-text-secondary">AI, natural service, and embryo transfer records</p>
       </div>
 
       <div className="grid grid-cols-3 gap-3">
@@ -43,10 +43,10 @@ export default async function SeedstockBreedingPage() {
         ].map((stat) => (
           <div
             key={stat.label}
-            className="rounded-xl border border-border bg-surface px-3 py-4 text-center"
+            className="rounded-xl border border-border-neutral bg-surface-white px-3 py-4 text-center"
           >
-            <p className="text-2xl font-bold text-olive">{stat.value}</p>
-            <p className="text-xs text-charcoal/60">{stat.label}</p>
+            <p className="text-2xl font-bold text-brown">{stat.value}</p>
+            <p className="text-xs text-text-secondary">{stat.label}</p>
           </div>
         ))}
       </div>

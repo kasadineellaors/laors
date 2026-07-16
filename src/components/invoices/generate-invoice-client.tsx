@@ -97,7 +97,7 @@ export function GenerateInvoiceClient({ orgId, ownerOptions }: GenerateInvoiceCl
   }
 
   const selectClass =
-    "flex h-12 w-full rounded-lg border-2 border-border bg-surface px-4 text-base";
+    "flex h-12 w-full rounded-lg border-2 border-border-neutral bg-surface-white px-4 text-base";
 
   if (ownerOptions.length === 0) {
     return (
@@ -143,7 +143,7 @@ export function GenerateInvoiceClient({ orgId, ownerOptions }: GenerateInvoiceCl
               ))}
             </select>
             {selectedOwner ? (
-              <p className="mt-1 text-xs text-charcoal/60">
+              <p className="mt-1 text-xs text-text-secondary">
                 {selectedOwner.yardage_rate_per_head_day != null
                   ? `$${selectedOwner.yardage_rate_per_head_day}/hd/day yardage`
                   : "No yardage rate"}
@@ -176,8 +176,8 @@ export function GenerateInvoiceClient({ orgId, ownerOptions }: GenerateInvoiceCl
               />
             </div>
           </div>
-          <div className="rounded-lg border border-border p-3">
-            <p className="text-sm font-medium text-charcoal">Add misc at invoice time (optional)</p>
+          <div className="rounded-lg border border-border-neutral p-3">
+            <p className="text-sm font-medium text-navy">Add misc at invoice time (optional)</p>
             <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_120px]">
               <Input
                 value={extraMiscDesc}
@@ -209,7 +209,7 @@ export function GenerateInvoiceClient({ orgId, ownerOptions }: GenerateInvoiceCl
             </CardDescription>
           </CardHeader>
           {preview.warnings.length > 0 ? (
-            <ul className="mb-4 space-y-1 rounded-lg bg-rust/10 px-3 py-2 text-sm text-rust">
+            <ul className="mb-4 space-y-1 rounded-lg bg-status-critical/10 px-3 py-2 text-sm text-status-critical">
               {preview.warnings.map((w) => (
                 <li key={w}>{w}</li>
               ))}
@@ -220,10 +220,10 @@ export function GenerateInvoiceClient({ orgId, ownerOptions }: GenerateInvoiceCl
               {preview.lines.map((line, i) => (
                 <li
                   key={i}
-                  className="flex items-start justify-between gap-3 rounded-lg border border-border px-3 py-2 text-sm"
+                  className="flex items-start justify-between gap-3 rounded-lg border border-border-neutral px-3 py-2 text-sm"
                 >
-                  <p className="font-medium text-charcoal">{line.description}</p>
-                  <p className="shrink-0 font-semibold text-olive">
+                  <p className="font-medium text-navy">{line.description}</p>
+                  <p className="shrink-0 font-semibold text-brown">
                     {line.category === "dead"
                       ? `${line.quantity} head`
                       : formatMoney(line.quantity * line.unitPrice)}
@@ -232,7 +232,7 @@ export function GenerateInvoiceClient({ orgId, ownerOptions }: GenerateInvoiceCl
               ))}
             </ul>
           ) : null}
-          <p className="mt-4 text-right text-xl font-bold text-olive">
+          <p className="mt-4 text-right text-xl font-bold text-brown">
             Total: {formatMoney(preview.subtotal)}
           </p>
           <Button
@@ -249,7 +249,7 @@ export function GenerateInvoiceClient({ orgId, ownerOptions }: GenerateInvoiceCl
       ) : null}
 
       {error ? (
-        <p className="text-sm text-rust" role="alert">
+        <p className="text-sm text-status-critical" role="alert">
           {error}
         </p>
       ) : null}

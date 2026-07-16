@@ -56,38 +56,38 @@ export function CowDetailClient({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl border border-border bg-surface px-4 py-4">
-        <p className="text-sm text-charcoal/60">{COW_TYPE_LABELS[cow.animal_type]}</p>
-        <h2 className="mt-1 text-xl font-bold text-charcoal">
+      <div className="rounded-xl border border-border-neutral bg-surface-white px-4 py-4">
+        <p className="text-sm text-text-secondary">{COW_TYPE_LABELS[cow.animal_type]}</p>
+        <h2 className="mt-1 text-xl font-bold text-navy">
           {cow.tag_number}
           {cow.name ? ` · ${cow.name}` : ""}
         </h2>
         <dl className="mt-4 space-y-2 text-sm">
           <div className="flex justify-between gap-4">
-            <dt className="text-charcoal/60">Status</dt>
+            <dt className="text-text-secondary">Status</dt>
             <dd className="font-medium">{ANIMAL_STATUS_LABELS[cow.status]}</dd>
           </div>
           {cow.cattle_group_name ? (
             <div className="flex justify-between gap-4">
-              <dt className="text-charcoal/60">Herd group</dt>
+              <dt className="text-text-secondary">Herd group</dt>
               <dd className="font-medium">{cow.cattle_group_name}</dd>
             </div>
           ) : null}
           {cow.location_name ? (
             <div className="flex justify-between gap-4">
-              <dt className="text-charcoal/60">Location</dt>
+              <dt className="text-text-secondary">Location</dt>
               <dd className="font-medium">{cow.location_name}</dd>
             </div>
           ) : null}
           {cow.birth_date ? (
             <div className="flex justify-between gap-4">
-              <dt className="text-charcoal/60">Birth date</dt>
+              <dt className="text-text-secondary">Birth date</dt>
               <dd className="font-medium">{cow.birth_date}</dd>
             </div>
           ) : null}
           {cow.notes ? (
             <div>
-              <dt className="text-charcoal/60">Notes</dt>
+              <dt className="text-text-secondary">Notes</dt>
               <dd className="mt-1 font-medium">{cow.notes}</dd>
             </div>
           ) : null}
@@ -95,7 +95,7 @@ export function CowDetailClient({
       </div>
 
       {error ? (
-        <p className="text-sm text-rust" role="alert">
+        <p className="text-sm text-status-critical" role="alert">
           {error}
         </p>
       ) : null}

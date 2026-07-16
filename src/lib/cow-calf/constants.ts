@@ -32,11 +32,48 @@ export const ASSISTANCE_TYPE_LABELS = {
   unknown: "Unknown",
 } as const;
 
-export const LOSS_CAUSE_LABELS = {
+export const CALVING_LOSS_CAUSE_LABELS = {
   calving_difficulty: "Calving difficulty",
   disease: "Disease",
   environmental: "Environmental",
   unknown: "Unknown",
+} as const;
+
+export const PROCESSING_EVENT_TYPE_LABELS = {
+  birth_processing: "Birth processing",
+  branding: "Branding",
+  vaccination: "Vaccination",
+  castration: "Castration",
+  deworming: "Deworming",
+  other: "Other",
+} as const;
+
+export const WEANING_METHOD_LABELS = {
+  traditional: "Traditional",
+  fence_line: "Fence-line",
+  nose_tab: "Nose tab / two-step",
+  early: "Early weaning",
+  other: "Other",
+} as const;
+
+export const COW_CALF_SALE_TYPE_LABELS = {
+  calf: "Calf",
+  cull_cow: "Cull cow",
+  bull: "Bull",
+  replacement: "Replacement",
+  pair: "Pair",
+  group: "Group",
+  other: "Other",
+} as const;
+
+export const LOSS_CAUSE_LABELS = {
+  unknown: "Unknown",
+  disease: "Disease",
+  predator: "Predator",
+  accident: "Accident",
+  calving: "Calving related",
+  old_age: "Old age",
+  other: "Other",
 } as const;
 
 export const ANIMAL_STATUS_LABELS = {
@@ -63,6 +100,7 @@ export const PREGNANCY_STATUS_LABELS = {
   confirmed: "Confirmed pregnant",
   open: "Open",
   unknown: "Unknown",
+  recheck: "Recheck",
 } as const;
 
 /** Typical gestation for cattle — used as a default expected calving hint. */
