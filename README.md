@@ -78,6 +78,7 @@ Open [http://localhost:3000](http://localhost:3000).
 2. Set all four env vars above (production `NEXT_PUBLIC_APP_URL`)
 3. Run `supabase db push` against production project (or paste `RUN_ALL_PHASES.sql`)
 4. Add production URL to Supabase Auth redirect allowlist
+5. **Settings → Git → Production Branch = `main`** — otherwise pushes to `main` may not update production (verify at `/api/build-info`)
 
 ### Supabase auth emails (sign-up, password reset)
 

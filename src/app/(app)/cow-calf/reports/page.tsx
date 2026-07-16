@@ -1,27 +1,25 @@
 import type { Metadata } from "next";
+import { requireCowCalfEnterprise } from "@/lib/cow-calf/enterprise-guard";
+import { getCowCalfReportSnapshot } from "@/lib/cow-calf/report-queries";
+import { CowCalfReportsView } from "@/components/cow-calf/cow-calf-reports-view";
 import { AppPageHeader } from "@/components/layout/app-page-header";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const metadata: Metadata = {
   title: "Reports — Cow-Calf — LAORS",
 };
 
-export default function CowCalfReportsPage() {
+export default async function CowCalfReportsPage() {
+  const session = await requireCowCalfEnterprise();
+  const orgId = session.organization!.id;
+  const report = await getCowCalfReportSnapshot(orgId);
+
   return (
     <div className="space-y-6">
       <AppPageHeader
         title="Cow-Calf reports"
-        subtitle="Inventory, reproduction, calving, and weaning — separate from Stocker P&L."
+        subtitle="Inventory, reproduction, calving, weaning, and data-quality checks — separate from stocker P&L."
       />
-      <Card>
-        <CardHeader>
-          <CardTitle>Coming in Phase 5</CardTitle>
-          <CardDescription>
-            Reproduction, calving, weaning, and bull reports will be added here. Stocker closeout and
-            enterprise P&L reports are unchanged.
-          </CardDescription>
-        </CardHeader>
-      </Card>
+      <CowCalfReportsView report={report} />
     </div>
   );
 }
