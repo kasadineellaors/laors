@@ -7,9 +7,35 @@ export interface MonthlyOperationsSummary {
   feedQuantity: number;
   feedCost: number;
   commodityPurchases: number;
+  cattlePurchases: number;
+  medicineCost: number;
+  processingCost: number;
   otherExpenses: number;
+  mortalityLoss: number;
   deaths: number;
   lotsReceived: number;
+  totalOperatingCosts: number;
+  netOperatingPl: number;
+}
+
+export interface OperationPlSummary {
+  month: string;
+  monthLabel: string;
+  headSold: number;
+  lotsReceived: number;
+  deaths: number;
+  feedDeliveries: number;
+  feedQuantity: number;
+  saleRevenue: number;
+  cattlePurchases: number;
+  feedCost: number;
+  medicineCost: number;
+  processingCost: number;
+  otherExpenses: number;
+  mortalityLoss: number;
+  commodityPurchases: number;
+  totalOperatingCosts: number;
+  netOperatingPl: number;
 }
 
 export interface EnterprisePlRow {

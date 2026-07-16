@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireOnboardedUser } from "@/lib/auth/session";
-import { currentMonthKey, getMonthlyOperationsSummary } from "@/lib/reports/monthly";
+import {
+  currentMonthKey,
+  formatShortMonth,
+  getMonthlyOperationsSummary,
+  shiftMonth,
+} from "@/lib/reports/monthly";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const metadata: Metadata = {
@@ -35,7 +40,7 @@ export default async function MonthlyReportPage({
         <p className="text-charcoal/70">{summary.monthLabel}</p>
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <Link
           href={`/reports/monthly?month=${prev}`}
           className="rounded-lg border border-border px-3 py-2 text-sm font-semibold text-olive hover:bg-olive/10"
@@ -47,6 +52,12 @@ export default async function MonthlyReportPage({
           className="rounded-lg border border-border px-3 py-2 text-sm font-semibold text-olive hover:bg-olive/10"
         >
           {formatShortMonth(next)} →
+        </Link>
+        <Link
+          href={`/reports/pl?month=${month}`}
+          className="rounded-lg border border-olive/40 bg-olive/10 px-3 py-2 text-sm font-semibold text-olive hover:bg-olive/20"
+        >
+          Full P&amp;L →
         </Link>
       </div>
 
@@ -80,17 +91,15 @@ export default async function MonthlyReportPage({
         </CardHeader>
         <dl className="grid grid-cols-2 gap-3 px-4 pb-4 text-sm">
           <Stat label="Sale revenue" value={money(summary.saleRevenue)} />
+          <Stat label="Cattle purchases" value={money(summary.cattlePurchases)} />
+          <Stat label="Medicine" value={money(summary.medicineCost)} />
+          <Stat label="Processing" value={money(summary.processingCost)} />
           <Stat label="Other lot expenses" value={money(summary.otherExpenses)} />
+          <Stat label="Death loss" value={money(summary.mortalityLoss)} />
           <Stat
-            label="Net (sales − feed − expenses)"
-            value={money(
-              summary.saleRevenue - summary.feedCost - summary.otherExpenses,
-            )}
-            highlight={
-              summary.saleRevenue - summary.feedCost - summary.otherExpenses >= 0
-                ? "positive"
-                : "negative"
-            }
+            label="Net operating P&L"
+            value={money(summary.netOperatingPl)}
+            highlight={summary.netOperatingPl >= 0 ? "positive" : "negative"}
           />
         </dl>
       </Card>
@@ -123,15 +132,4 @@ function Stat({
       </dd>
     </div>
   );
-}
-
-function shiftMonth(month: string, delta: number): string {
-  const [y, m] = month.split("-").map(Number);
-  const d = new Date(y, m - 1 + delta, 1);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-}
-
-function formatShortMonth(month: string): string {
-  const [y, m] = month.split("-").map(Number);
-  return new Date(y, m - 1, 1).toLocaleString(undefined, { month: "short", year: "numeric" });
 }
