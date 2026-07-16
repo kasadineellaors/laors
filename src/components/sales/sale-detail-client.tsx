@@ -143,6 +143,12 @@ export function SaleDetailClient({
               <dd className="font-medium text-charcoal">{formatMoney(sale.price_per_head)}</dd>
             </div>
           ) : null}
+          {sale.avg_weight_lbs != null ? (
+            <div>
+              <dt className="text-charcoal/50">Avg out weight</dt>
+              <dd className="font-medium text-charcoal">{Math.round(sale.avg_weight_lbs)} lb</dd>
+            </div>
+          ) : null}
           {sale.cattle_group_name ? (
             <div>
               <dt className="text-charcoal/50">Group</dt>

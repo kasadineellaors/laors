@@ -44,6 +44,11 @@ export function SalesList({ sales, emptyMessage }: SalesListProps) {
                 {s.cattle_group_name ? (
                   <p className="text-sm text-charcoal/70">{s.cattle_group_name}</p>
                 ) : null}
+                {s.avg_weight_lbs != null ? (
+                  <p className="text-xs text-charcoal/50">
+                    {Math.round(s.avg_weight_lbs)} lb avg out
+                  </p>
+                ) : null}
               </div>
               <div className="shrink-0 text-right">
                 <p className="text-lg font-bold text-olive">{formatMoney(s.total_amount)}</p>

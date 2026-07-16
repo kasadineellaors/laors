@@ -84,17 +84,24 @@ export default async function LotCloseoutPage({
 
   return (
     <div className="space-y-6">
-      <div>
-        <Link
-          href={`/cattle/groups/${id}`}
-          className="text-sm font-medium text-olive hover:underline"
-        >
-          ← Back to lot
-        </Link>
-        <h1 className="mt-2 text-2xl font-bold text-charcoal">Lot closeout</h1>
-        <p className="text-charcoal/70">
-          {group.lot_number || group.name} · {enterprise} · {status}
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <Link
+            href={`/cattle/groups/${id}`}
+            className="text-sm font-medium text-olive hover:underline"
+          >
+            ← Back to lot
+          </Link>
+          <h1 className="mt-2 text-2xl font-bold text-charcoal">Lot closeout</h1>
+          <p className="text-charcoal/70">
+            {group.lot_number || group.name} · {enterprise} · {status}
+          </p>
+        </div>
+        <a href={`/api/cattle/groups/${id}/closeout/pdf`} download>
+          <Button variant="secondary" size="lg">
+            Download PDF
+          </Button>
+        </a>
       </div>
 
       <Card>
