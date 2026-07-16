@@ -34,6 +34,7 @@ export function MedicineDetailClient({
   const [editing, setEditing] = useState(false);
   const [adjustMode, setAdjustMode] = useState<"receive" | "use" | null>(null);
   const [adjustQty, setAdjustQty] = useState("");
+  const [adjustCost, setAdjustCost] = useState("");
   const [adjustNotes, setAdjustNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,6 +52,7 @@ export function MedicineDetailClient({
       delta,
       adjustmentType: type,
       notes: adjustNotes || undefined,
+      totalCost: type === "receive" && adjustCost.trim() ? parseFloat(adjustCost) : undefined,
     });
     setLoading(false);
     if (result.error) setError(result.error);
@@ -138,8 +140,21 @@ export function MedicineDetailClient({
               onChange={(e) => setAdjustQty(e.target.value)}
             />
           </div>
+          {adjustMode === "receive" ? (
+            <div>
+              <Label htmlFor="adjustCost">Total purchase cost ($)</Label>
+              <Input
+                id="adjustCost"
+                type="number"
+                min={0}
+                step="0.01"
+                value={adjustCost}
+                onChange={(e) => setAdjustCost(e.target.value)}
+                placeholder="Updates weighted average for invoicing"
+              />
+            </div>
+          ) : null}
           <div>
-            <Label htmlFor="adjustNotes">Notes</Label>
             <Input
               id="adjustNotes"
               value={adjustNotes}

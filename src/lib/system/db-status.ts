@@ -186,6 +186,15 @@ export async function getDbSetupIssues(): Promise<DbSetupIssue[]> {
       fix: "Run supabase/RUN_PHASE30.sql or supabase/RUN_THIS_IN_SUPABASE.sql",
     },
     {
+      id: "phase33-owners",
+      probe: async () => {
+        const { error } = await supabase.from("owners").select("id").limit(1);
+        return !error;
+      },
+      message: "Unified owners / category invoices are not set up",
+      fix: "Run supabase/RUN_PHASE33.sql in Supabase SQL Editor",
+    },
+    {
       id: "phase32-customer-portal",
       probe: async () => {
         const { error } = await supabase

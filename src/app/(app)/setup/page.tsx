@@ -32,15 +32,9 @@ const SETUP_LINKS = [
     managerOnly: true,
   },
   {
-    href: "/setup/ownership",
-    title: "Ownership Groups",
-    description: "Stocker owners, partners, ranch-owned cattle",
-    managerOnly: true,
-  },
-  {
-    href: "/setup/customers",
-    title: "Customers",
-    description: "Yardage rates, medicine markup, billing contacts",
+    href: "/setup/owners",
+    title: "Owners",
+    description: "Billing rates, ownership groups, misc charges, portal links",
     managerOnly: true,
     finance: true,
   },

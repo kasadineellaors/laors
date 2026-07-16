@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireOnboardedUser } from "@/lib/auth/session";
 import { canWriteInventory } from "@/lib/auth/roles";
-import { listCustomerOptions } from "@/lib/customers/queries";
+import { listOwnerOptions } from "@/lib/owners/queries";
 import { getRanchOptions, getTreePickerOptions } from "@/lib/locations/options";
 import { CreateGroupForm } from "@/components/inventory/create-group-form";
 
@@ -18,13 +18,15 @@ export default async function NewCattleGroupPage() {
   }
   const orgId = session.organization!.id;
 
-  const [locationOptions, ownershipOptions, customerOptions] = await Promise.all([
+  const [locationOptions, ownerOptions] = await Promise.all([
     getTreePickerOptions(orgId).then((nodes) =>
       nodes.map((n) => ({ value: n.id, label: n.breadcrumb })),
     ),
-    getRanchOptions(orgId, "ownership_groups"),
-    listCustomerOptions(orgId).then((rows) =>
-      rows.map((c) => ({ value: c.id, label: c.name })),
+    listOwnerOptions(orgId).then((rows) =>
+      rows.map((o) => ({
+        value: o.id,
+        label: o.is_ownership_group ? `${o.name} (group)` : o.name,
+      })),
     ),
   ]);
 
@@ -39,8 +41,7 @@ export default async function NewCattleGroupPage() {
       <CreateGroupForm
         orgId={orgId}
         locationOptions={locationOptions}
-        ownershipOptions={ownershipOptions}
-        customerOptions={customerOptions}
+        ownerOptions={ownerOptions}
       />
     </div>
   );

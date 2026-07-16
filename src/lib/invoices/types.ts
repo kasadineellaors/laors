@@ -1,5 +1,13 @@
 export type InvoiceStatus = "draft" | "sent" | "paid" | "cancelled";
 
+export type BillingCategory =
+  | "yardage"
+  | "treatments"
+  | "feed"
+  | "processing"
+  | "misc"
+  | "dead";
+
 export interface InvoiceLineRecord {
   id: string;
   description: string;
@@ -7,6 +15,7 @@ export interface InvoiceLineRecord {
   unit_price: number;
   line_total: number;
   sort_order: number;
+  category: BillingCategory | null;
 }
 
 export interface InvoiceRecord {
@@ -16,6 +25,7 @@ export interface InvoiceRecord {
   customer_email: string | null;
   customer_address: string | null;
   customer_id: string | null;
+  owner_id: string | null;
   invoice_date: string;
   due_date: string | null;
   status: InvoiceStatus;
@@ -32,6 +42,7 @@ export interface InvoiceLineInput {
   description: string;
   quantity: number;
   unitPrice: number;
+  category?: BillingCategory | null;
 }
 
 export interface InvoiceSummary {
@@ -39,12 +50,13 @@ export interface InvoiceSummary {
   unpaidTotal: number;
 }
 
-export type BillingLineSource = "yardage" | "treatment" | "feeding";
+export type BillingLineSource = "yardage" | "treatment" | "feeding" | "misc";
 
 export interface BillingLinePreview {
   description: string;
   quantity: number;
   unitPrice: number;
+  category?: BillingCategory;
   source: BillingLineSource;
   treatmentId?: string;
   feedingRecordId?: string;
@@ -60,9 +72,17 @@ export interface GroupHeadDaysBreakdown {
 }
 
 export interface BillingPreview {
+  ownerId: string;
+  ownerName: string;
+  ownerEmail: string | null;
+  ownerAddress: string | null;
+  /** @deprecated use ownerId */
   customerId: string;
+  /** @deprecated use ownerName */
   customerName: string;
+  /** @deprecated use ownerEmail */
   customerEmail: string | null;
+  /** @deprecated use ownerAddress */
   customerAddress: string | null;
   periodStart: string;
   periodEnd: string;
@@ -75,4 +95,7 @@ export interface BillingPreview {
   subtotal: number;
   treatmentIds: string[];
   feedingRecordIds: string[];
+  processingEventIds: string[];
+  mortalityRecordIds: string[];
+  miscChargeIds: string[];
 }

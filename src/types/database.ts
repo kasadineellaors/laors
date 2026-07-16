@@ -439,6 +439,7 @@ export interface Database {
           location_id: string | null;
           ownership_group_id: string | null;
           customer_id: string | null;
+          owner_id: string | null;
           origin_group_id: string | null;
           is_active: boolean;
           notes: string | null;
@@ -468,6 +469,7 @@ export interface Database {
           location_id?: string | null;
           ownership_group_id?: string | null;
           customer_id?: string | null;
+          owner_id?: string | null;
           origin_group_id?: string | null;
           is_active?: boolean;
           notes?: string | null;
@@ -493,6 +495,7 @@ export interface Database {
           location_id?: string | null;
           ownership_group_id?: string | null;
           customer_id?: string | null;
+          owner_id?: string | null;
           is_active?: boolean;
           notes?: string | null;
           lot_number?: string | null;
@@ -749,6 +752,8 @@ export interface Database {
           processing_fee: number | null;
           medicine_cost: number | null;
           notes: string | null;
+          invoiced_at: string | null;
+          invoice_id: string | null;
           created_by: string | null;
           is_active: boolean;
           created_at: string;
@@ -778,6 +783,8 @@ export interface Database {
           processing_fee?: number | null;
           medicine_cost?: number | null;
           notes?: string | null;
+          invoiced_at?: string | null;
+          invoice_id?: string | null;
           is_active?: boolean;
         };
         Relationships: [];
@@ -793,6 +800,8 @@ export interface Database {
           disposal_method: string | null;
           value_lost: number | null;
           notes: string | null;
+          invoiced_at: string | null;
+          invoice_id: string | null;
           created_by: string | null;
           is_active: boolean;
           created_at: string;
@@ -818,6 +827,8 @@ export interface Database {
           disposal_method?: string | null;
           value_lost?: number | null;
           notes?: string | null;
+          invoiced_at?: string | null;
+          invoice_id?: string | null;
           is_active?: boolean;
         };
         Relationships: [];
@@ -1010,6 +1021,7 @@ export interface Database {
           unit: string;
           quantity_on_hand: number;
           price_per_cc: number | null;
+          avg_unit_cost: number | null;
           reorder_at: number | null;
           notes: string | null;
           is_active: boolean;
@@ -1023,6 +1035,7 @@ export interface Database {
           unit?: string;
           quantity_on_hand?: number;
           price_per_cc?: number | null;
+          avg_unit_cost?: number | null;
           reorder_at?: number | null;
           notes?: string | null;
         };
@@ -1031,6 +1044,7 @@ export interface Database {
           unit?: string;
           quantity_on_hand?: number;
           price_per_cc?: number | null;
+          avg_unit_cost?: number | null;
           reorder_at?: number | null;
           notes?: string | null;
           is_active?: boolean;
@@ -1048,6 +1062,7 @@ export interface Database {
           adjustment_type: string;
           treatment_record_id: string | null;
           notes: string | null;
+          unit_cost: number | null;
           created_by: string | null;
           created_at: string;
         };
@@ -1061,6 +1076,7 @@ export interface Database {
           adjustment_type?: string;
           treatment_record_id?: string | null;
           notes?: string | null;
+          unit_cost?: number | null;
           created_by?: string | null;
         };
         Update: Record<string, never>;
@@ -1561,6 +1577,135 @@ export interface Database {
         };
         Relationships: [];
       };
+      owners: {
+        Row: {
+          id: string;
+          organization_id: string;
+          name: string;
+          email: string | null;
+          phone: string | null;
+          address: string | null;
+          contact_name: string | null;
+          ownership_type: string | null;
+          is_ownership_group: boolean;
+          yardage_rate_per_head_day: number | null;
+          medicine_markup_percent: number | null;
+          feed_markup_percent: number | null;
+          notes: string | null;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          name: string;
+          email?: string | null;
+          phone?: string | null;
+          address?: string | null;
+          contact_name?: string | null;
+          ownership_type?: string | null;
+          is_ownership_group?: boolean;
+          yardage_rate_per_head_day?: number | null;
+          medicine_markup_percent?: number | null;
+          feed_markup_percent?: number | null;
+          notes?: string | null;
+        };
+        Update: {
+          name?: string;
+          email?: string | null;
+          phone?: string | null;
+          address?: string | null;
+          contact_name?: string | null;
+          ownership_type?: string | null;
+          is_ownership_group?: boolean;
+          yardage_rate_per_head_day?: number | null;
+          medicine_markup_percent?: number | null;
+          feed_markup_percent?: number | null;
+          notes?: string | null;
+          is_active?: boolean;
+        };
+        Relationships: [];
+      };
+      owner_group_members: {
+        Row: {
+          id: string;
+          organization_id: string;
+          group_owner_id: string;
+          member_owner_id: string;
+          percentage: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          group_owner_id: string;
+          member_owner_id: string;
+          percentage: number;
+        };
+        Update: {
+          percentage?: number;
+        };
+        Relationships: [];
+      };
+      owner_misc_charges: {
+        Row: {
+          id: string;
+          organization_id: string;
+          owner_id: string;
+          cattle_group_id: string | null;
+          charge_date: string;
+          description: string;
+          amount: number;
+          invoiced_at: string | null;
+          invoice_id: string | null;
+          notes: string | null;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          owner_id: string;
+          cattle_group_id?: string | null;
+          charge_date?: string;
+          description: string;
+          amount: number;
+          notes?: string | null;
+        };
+        Update: {
+          description?: string;
+          amount?: number;
+          invoiced_at?: string | null;
+          invoice_id?: string | null;
+          notes?: string | null;
+          is_active?: boolean;
+        };
+        Relationships: [];
+      };
+      owner_portal_access: {
+        Row: {
+          id: string;
+          organization_id: string;
+          owner_id: string;
+          portal_token: string;
+          created_at: string;
+          last_emailed_at: string | null;
+          is_active: boolean;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          owner_id: string;
+          portal_token: string;
+        };
+        Update: {
+          last_emailed_at?: string | null;
+          is_active?: boolean;
+        };
+        Relationships: [];
+      };
       customers: {
         Row: {
           id: string;
@@ -1868,6 +2013,7 @@ export interface Database {
           subtotal: number;
           sales_record_id: string | null;
           customer_id: string | null;
+          owner_id: string | null;
           notes: string | null;
           created_by: string | null;
           is_active: boolean;
@@ -1887,6 +2033,7 @@ export interface Database {
           subtotal?: number;
           sales_record_id?: string | null;
           customer_id?: string | null;
+          owner_id?: string | null;
           notes?: string | null;
           created_by?: string | null;
         };
@@ -1896,6 +2043,7 @@ export interface Database {
           customer_email?: string | null;
           customer_address?: string | null;
           customer_id?: string | null;
+          owner_id?: string | null;
           invoice_date?: string;
           due_date?: string | null;
           status?: string;
@@ -1916,6 +2064,7 @@ export interface Database {
           unit_price: number;
           line_total: number;
           sort_order: number;
+          category: string | null;
           created_at: string;
         };
         Insert: {
@@ -1927,6 +2076,7 @@ export interface Database {
           unit_price?: number;
           line_total?: number;
           sort_order?: number;
+          category?: string | null;
         };
         Update: {
           description?: string;
@@ -1934,6 +2084,7 @@ export interface Database {
           unit_price?: number;
           line_total?: number;
           sort_order?: number;
+          category?: string | null;
         };
         Relationships: [];
       };

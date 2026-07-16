@@ -3,6 +3,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { weightedAverageCost } from "@/lib/medicine/costing";
 import type { Database } from "@/types/database";
 import type { MedicineAdjustmentType } from "@/lib/medicine/types";
 
@@ -59,11 +60,11 @@ export async function applyMedicineDelta(
   medicineItemId: string,
   delta: number,
   adjustmentType: MedicineAdjustmentType,
-  options?: { treatmentRecordId?: string; notes?: string },
+  options?: { treatmentRecordId?: string; notes?: string; unitCost?: number },
 ): Promise<{ error?: string }> {
   const { data: item, error: fetchError } = await supabase
     .from("medicine_items")
-    .select("quantity_on_hand")
+    .select("quantity_on_hand, price_per_cc, avg_unit_cost")
     .eq("id", medicineItemId)
     .eq("organization_id", orgId)
     .eq("is_active", true)
@@ -76,9 +77,34 @@ export async function applyMedicineDelta(
   const newQty = previous + delta;
   if (newQty < 0) return { error: "Not enough medicine on hand" };
 
+  const itemRow = item as {
+    quantity_on_hand: number;
+    price_per_cc: number | null;
+    avg_unit_cost?: number | null;
+  };
+  const currentAvg =
+    itemRow.avg_unit_cost != null
+      ? Number(itemRow.avg_unit_cost)
+      : itemRow.price_per_cc != null
+        ? Number(itemRow.price_per_cc)
+        : null;
+
+  let nextAvg = currentAvg;
+  if (adjustmentType === "receive" && delta > 0 && options?.unitCost != null) {
+    nextAvg = weightedAverageCost(previous, currentAvg, delta, options.unitCost);
+  }
+
+  const itemUpdates: Database["public"]["Tables"]["medicine_items"]["Update"] = {
+    quantity_on_hand: newQty,
+  };
+  if (nextAvg != null && adjustmentType === "receive" && delta > 0 && options?.unitCost != null) {
+    itemUpdates.avg_unit_cost = nextAvg;
+    itemUpdates.price_per_cc = nextAvg;
+  }
+
   const { error: updateError } = await supabase
     .from("medicine_items")
-    .update({ quantity_on_hand: newQty })
+    .update(itemUpdates)
     .eq("id", medicineItemId)
     .eq("organization_id", orgId);
 
@@ -93,6 +119,7 @@ export async function applyMedicineDelta(
     adjustment_type: adjustmentType,
     treatment_record_id: options?.treatmentRecordId ?? null,
     notes: options?.notes?.trim() || null,
+    unit_cost: options?.unitCost ?? null,
     created_by: userId,
   });
 
@@ -185,10 +212,18 @@ export async function adjustMedicineStock(
     delta?: number;
     adjustmentType: MedicineAdjustmentType;
     notes?: string;
+    totalCost?: number;
   },
 ): Promise<MedicineActionState> {
   try {
     const { supabase, user } = await requireMember(orgId);
+    const unitCost =
+      input.adjustmentType === "receive" &&
+      input.totalCost != null &&
+      input.delta != null &&
+      input.delta > 0
+        ? input.totalCost / input.delta
+        : undefined;
 
     if (input.newQuantity !== undefined) {
       const { data: item } = await supabase
@@ -210,7 +245,7 @@ export async function adjustMedicineStock(
         itemId,
         delta,
         input.adjustmentType,
-        { notes: input.notes },
+        { notes: input.notes, unitCost: delta > 0 ? unitCost : undefined },
       );
       if (result.error) return { error: result.error };
     } else if (input.delta !== undefined) {
@@ -221,7 +256,7 @@ export async function adjustMedicineStock(
         itemId,
         input.delta,
         input.adjustmentType,
-        { notes: input.notes },
+        { notes: input.notes, unitCost },
       );
       if (result.error) return { error: result.error };
     } else {

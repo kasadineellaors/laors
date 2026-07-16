@@ -110,6 +110,7 @@ async function enrichInvoices(
       unit_price: Number(line.unit_price),
       line_total: Number(line.line_total),
       sort_order: line.sort_order,
+      category: (line.category as InvoiceLineRecord["category"]) ?? null,
     });
     linesByInvoice.set(line.invoice_id, list);
   }
@@ -120,7 +121,8 @@ async function enrichInvoices(
     customer_name: r.customer_name as string,
     customer_email: (r.customer_email as string | null) ?? null,
     customer_address: (r.customer_address as string | null) ?? null,
-    customer_id: (r.customer_id as string | null) ?? null,
+    customer_id: (r.customer_id as string | null) ?? (r.owner_id as string | null) ?? null,
+    owner_id: (r.owner_id as string | null) ?? (r.customer_id as string | null) ?? null,
     invoice_date: r.invoice_date as string,
     due_date: (r.due_date as string | null) ?? null,
     status: r.status as InvoiceStatus,

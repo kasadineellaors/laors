@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import type { Database } from "@/types/database";
 import type { InvoiceLineInput, InvoiceStatus } from "@/lib/invoices/types";
 import { buildBillingPreview } from "@/lib/invoices/billing";
-import { getCustomer } from "@/lib/customers/queries";
+import { getOwner } from "@/lib/owners/queries";
 import { getSale } from "@/lib/sales/queries";
 import { getInvoicePrintData } from "@/lib/invoices/queries";
 import { invoicePdfBase64 } from "@/lib/invoices/pdf";
@@ -76,6 +76,7 @@ function normalizeLines(lines: InvoiceLineInput[]) {
         unit_price: unitPrice,
         line_total: computeLineTotal(quantity, unitPrice),
         sort_order: i,
+        category: l.category ?? null,
       };
     });
 }
@@ -115,6 +116,7 @@ async function replaceInvoiceLines(
       unit_price: l.unit_price,
       line_total: l.line_total,
       sort_order: l.sort_order,
+      category: l.category,
     })),
   );
 
@@ -125,6 +127,7 @@ export async function createInvoice(
   orgId: string,
   input: {
     customerId?: string;
+    ownerId?: string;
     customerName: string;
     customerEmail?: string;
     customerAddress?: string;
@@ -137,12 +140,13 @@ export async function createInvoice(
   },
 ): Promise<InvoiceActionState> {
   const customerName = input.customerName.trim();
-  if (!customerName) return { error: "Customer name is required" };
+  if (!customerName) return { error: "Owner name is required" };
 
   const lines = normalizeLines(input.lines);
   if (lines.length === 0) return { error: "Add at least one line item" };
 
   const subtotal = lines.reduce((s, l) => s + l.line_total, 0);
+  const ownerId = input.ownerId ?? input.customerId ?? null;
 
   try {
     const { supabase, user } = await requireInvoiceWriter(orgId);
@@ -156,7 +160,8 @@ export async function createInvoice(
         customer_name: customerName,
         customer_email: input.customerEmail?.trim() || null,
         customer_address: input.customerAddress?.trim() || null,
-        customer_id: input.customerId || null,
+        customer_id: ownerId,
+        owner_id: ownerId,
         invoice_date: input.invoiceDate || new Date().toISOString().slice(0, 10),
         due_date: input.dueDate || null,
         status: input.status ?? "draft",
@@ -180,15 +185,24 @@ export async function createInvoice(
 
 export async function previewBillingInvoice(
   orgId: string,
-  input: { customerId: string; periodStart: string; periodEnd: string },
+  input: {
+    customerId?: string;
+    ownerId?: string;
+    periodStart: string;
+    periodEnd: string;
+    extraMiscLines?: Array<{ description: string; amount: number }>;
+  },
 ) {
   try {
     await requireInvoiceWriter(orgId);
+    const ownerId = input.ownerId ?? input.customerId;
+    if (!ownerId) return { error: "Select an owner" };
     const result = await buildBillingPreview(
       orgId,
-      input.customerId,
+      ownerId,
       input.periodStart,
       input.periodEnd,
+      { extraMiscLines: input.extraMiscLines },
     );
     if ("error" in result) return { error: result.error };
     return { preview: result };
@@ -199,30 +213,41 @@ export async function previewBillingInvoice(
 
 export async function createInvoiceFromBilling(
   orgId: string,
-  input: { customerId: string; periodStart: string; periodEnd: string },
+  input: {
+    customerId?: string;
+    ownerId?: string;
+    periodStart: string;
+    periodEnd: string;
+    extraMiscLines?: Array<{ description: string; amount: number }>;
+  },
 ): Promise<InvoiceActionState> {
+  const ownerId = input.ownerId ?? input.customerId;
+  if (!ownerId) return { error: "Select an owner" };
+
   const previewResult = await buildBillingPreview(
     orgId,
-    input.customerId,
+    ownerId,
     input.periodStart,
     input.periodEnd,
+    { extraMiscLines: input.extraMiscLines },
   );
   if ("error" in previewResult) return { error: previewResult.error };
   if (previewResult.lines.length === 0) {
-    return { error: "No billable lines — check customer rates, linked groups, and treatments." };
+    return { error: "No billable lines — check owner rates, linked lots, and charges." };
   }
 
   const lines: InvoiceLineInput[] = previewResult.lines.map((l) => ({
     description: l.description,
     quantity: l.quantity,
     unitPrice: l.unitPrice,
+    category: l.category,
   }));
 
   const result = await createInvoice(orgId, {
-    customerId: previewResult.customerId,
-    customerName: previewResult.customerName,
-    customerEmail: previewResult.customerEmail ?? undefined,
-    customerAddress: previewResult.customerAddress ?? undefined,
+    ownerId: previewResult.ownerId,
+    customerName: previewResult.ownerName,
+    customerEmail: previewResult.ownerEmail ?? undefined,
+    customerAddress: previewResult.ownerAddress ?? undefined,
     invoiceDate: input.periodEnd,
     notes: `Billing period ${input.periodStart} through ${input.periodEnd}`,
     lines,
@@ -240,7 +265,7 @@ export async function createInvoiceFromBilling(
         .eq("organization_id", orgId)
         .in("id", previewResult.treatmentIds);
     } catch {
-      // invoice created; treatment flags optional until RUN_SHIP.sql applied
+      // optional until migration applied
     }
   }
 
@@ -256,7 +281,55 @@ export async function createInvoiceFromBilling(
         .eq("organization_id", orgId)
         .in("id", previewResult.feedingRecordIds);
     } catch {
-      // invoice created; feeding flags optional until RUN_PHASE10.sql applied
+      // optional
+    }
+  }
+
+  if (result.invoiceId && previewResult.processingEventIds.length > 0) {
+    try {
+      const { supabase } = await requireInvoiceWriter(orgId);
+      await supabase
+        .from("processing_events")
+        .update({
+          invoiced_at: new Date().toISOString(),
+          invoice_id: result.invoiceId,
+        })
+        .eq("organization_id", orgId)
+        .in("id", previewResult.processingEventIds);
+    } catch {
+      // optional
+    }
+  }
+
+  if (result.invoiceId && previewResult.mortalityRecordIds.length > 0) {
+    try {
+      const { supabase } = await requireInvoiceWriter(orgId);
+      await supabase
+        .from("mortality_records")
+        .update({
+          invoiced_at: new Date().toISOString(),
+          invoice_id: result.invoiceId,
+        })
+        .eq("organization_id", orgId)
+        .in("id", previewResult.mortalityRecordIds);
+    } catch {
+      // optional
+    }
+  }
+
+  if (result.invoiceId && previewResult.miscChargeIds.length > 0) {
+    try {
+      const { supabase } = await requireInvoiceWriter(orgId);
+      await supabase
+        .from("owner_misc_charges")
+        .update({
+          invoiced_at: new Date().toISOString(),
+          invoice_id: result.invoiceId,
+        })
+        .eq("organization_id", orgId)
+        .in("id", previewResult.miscChargeIds);
+    } catch {
+      // optional
     }
   }
 
@@ -275,20 +348,21 @@ export async function createInvoiceFromSale(
   const perHead = sale.price_per_head ?? (sale.head_count > 0 ? total / sale.head_count : 0);
 
   let customerId = sale.customer_id ?? undefined;
-  let customerName = sale.buyer_name || "Customer";
+  let customerName = sale.buyer_name || "Owner";
   let customerEmail: string | undefined;
   let customerAddress: string | undefined;
 
   if (customerId) {
-    const customer = await getCustomer(orgId, customerId);
-    if (customer) {
-      customerName = customer.name;
-      customerEmail = customer.email ?? undefined;
-      customerAddress = customer.address ?? undefined;
+    const owner = await getOwner(orgId, customerId);
+    if (owner) {
+      customerName = owner.name;
+      customerEmail = owner.email ?? undefined;
+      customerAddress = owner.address ?? undefined;
     }
   }
 
   return createInvoice(orgId, {
+    ownerId: customerId,
     customerId,
     customerName,
     customerEmail,
@@ -325,7 +399,10 @@ export async function updateInvoice(
     const { supabase } = await requireInvoiceWriter(orgId);
 
     const updates: InvoiceUpdate = {};
-    if (input.customerId !== undefined) updates.customer_id = input.customerId;
+    if (input.customerId !== undefined) {
+      updates.customer_id = input.customerId;
+      updates.owner_id = input.customerId;
+    }
     if (input.customerName !== undefined) updates.customer_name = input.customerName.trim();
     if (input.customerEmail !== undefined) updates.customer_email = input.customerEmail?.trim() || null;
     if (input.customerAddress !== undefined) {
@@ -384,9 +461,12 @@ export async function sendInvoice(
 
     let recipientEmail = printData.invoice.customer_email?.trim() || null;
 
-    if (!recipientEmail && printData.invoice.customer_id) {
-      const customer = await getCustomer(orgId, printData.invoice.customer_id);
-      recipientEmail = customer?.email?.trim() || null;
+    if (!recipientEmail && (printData.invoice.owner_id || printData.invoice.customer_id)) {
+      const owner = await getOwner(
+        orgId,
+        printData.invoice.owner_id ?? printData.invoice.customer_id!,
+      );
+      recipientEmail = owner?.email?.trim() || null;
       if (recipientEmail) {
         await supabase
           .from("invoices")

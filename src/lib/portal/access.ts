@@ -17,39 +17,73 @@ function generatePortalToken(): string {
   return randomBytes(24).toString("base64url");
 }
 
-export async function getCustomerPortalAccess(
-  orgId: string,
-  customerId: string,
-): Promise<CustomerPortalAccess | null> {
+async function readOwnerPortalRow(orgId: string, ownerId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("owner_portal_access")
+    .select("portal_token, last_emailed_at")
+    .eq("organization_id", orgId)
+    .eq("owner_id", ownerId)
+    .eq("is_active", true)
+    .maybeSingle();
+  return data;
+}
+
+async function readLegacyCustomerPortalRow(orgId: string, ownerId: string) {
   const supabase = await createClient();
   const { data } = await supabase
     .from("customer_portal_access")
     .select("portal_token, last_emailed_at")
     .eq("organization_id", orgId)
-    .eq("customer_id", customerId)
+    .eq("customer_id", ownerId)
     .eq("is_active", true)
     .maybeSingle();
-
   return data;
+}
+
+export async function getCustomerPortalAccess(
+  orgId: string,
+  customerId: string,
+): Promise<CustomerPortalAccess | null> {
+  const ownerRow = await readOwnerPortalRow(orgId, customerId);
+  if (ownerRow) return ownerRow;
+  return readLegacyCustomerPortalRow(orgId, customerId);
 }
 
 export async function listCustomerPortalAccess(
   orgId: string,
 ): Promise<Record<string, CustomerPortalAccess>> {
   const supabase = await createClient();
-  const { data } = await supabase
+  const map: Record<string, CustomerPortalAccess> = {};
+
+  const { data: ownerRows } = await supabase
+    .from("owner_portal_access")
+    .select("owner_id, portal_token, last_emailed_at")
+    .eq("organization_id", orgId)
+    .eq("is_active", true);
+
+  for (const row of ownerRows ?? []) {
+    map[row.owner_id] = {
+      portal_token: row.portal_token,
+      last_emailed_at: row.last_emailed_at,
+    };
+  }
+
+  const { data: legacyRows } = await supabase
     .from("customer_portal_access")
     .select("customer_id, portal_token, last_emailed_at")
     .eq("organization_id", orgId)
     .eq("is_active", true);
 
-  const map: Record<string, CustomerPortalAccess> = {};
-  for (const row of data ?? []) {
-    map[row.customer_id] = {
-      portal_token: row.portal_token,
-      last_emailed_at: row.last_emailed_at,
-    };
+  for (const row of legacyRows ?? []) {
+    if (!map[row.customer_id]) {
+      map[row.customer_id] = {
+        portal_token: row.portal_token,
+        last_emailed_at: row.last_emailed_at,
+      };
+    }
   }
+
   return map;
 }
 
@@ -64,6 +98,18 @@ export async function ensureCustomerPortalAccess(
   const portalToken = generatePortalToken();
 
   const { data, error } = await supabase
+    .from("owner_portal_access")
+    .insert({
+      organization_id: orgId,
+      owner_id: customerId,
+      portal_token: portalToken,
+    })
+    .select("portal_token, last_emailed_at")
+    .single();
+
+  if (!error && data) return data;
+
+  const legacy = await supabase
     .from("customer_portal_access")
     .insert({
       organization_id: orgId,
@@ -73,11 +119,11 @@ export async function ensureCustomerPortalAccess(
     .select("portal_token, last_emailed_at")
     .single();
 
-  if (error || !data) {
-    throw new Error(error?.message ?? "Failed to create customer portal link");
+  if (legacy.error || !legacy.data) {
+    throw new Error(legacy.error?.message ?? error?.message ?? "Failed to create portal link");
   }
 
-  return data;
+  return legacy.data;
 }
 
 export async function resolveCustomerPortalByToken(
@@ -85,6 +131,21 @@ export async function resolveCustomerPortalByToken(
 ): Promise<ResolvedCustomerPortal | null> {
   const admin = createAdminClient();
   if (!admin) return null;
+
+  const { data: ownerRow } = await admin
+    .from("owner_portal_access")
+    .select("organization_id, owner_id, portal_token")
+    .eq("portal_token", token)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (ownerRow) {
+    return {
+      organization_id: ownerRow.organization_id,
+      customer_id: ownerRow.owner_id,
+      portal_token: ownerRow.portal_token,
+    };
+  }
 
   const { data } = await admin
     .from("customer_portal_access")
@@ -98,9 +159,16 @@ export async function resolveCustomerPortalByToken(
 
 export async function markCustomerPortalEmailed(orgId: string, customerId: string): Promise<void> {
   const supabase = await createClient();
+  const now = new Date().toISOString();
+  await supabase
+    .from("owner_portal_access")
+    .update({ last_emailed_at: now })
+    .eq("organization_id", orgId)
+    .eq("owner_id", customerId)
+    .eq("is_active", true);
   await supabase
     .from("customer_portal_access")
-    .update({ last_emailed_at: new Date().toISOString() })
+    .update({ last_emailed_at: now })
     .eq("organization_id", orgId)
     .eq("customer_id", customerId)
     .eq("is_active", true);

@@ -213,6 +213,7 @@ export async function createCattleGroup(
     notes?: string;
     ownershipGroupId?: string;
     customerId?: string;
+    ownerId?: string;
     lotNumber?: string;
     enterpriseType?: string;
     purchaseDate?: string;
@@ -245,8 +246,9 @@ export async function createCattleGroup(
         organization_id: orgId,
         name: trimmed,
         location_id: input.locationId,
-        ownership_group_id: input.ownershipGroupId || null,
-        customer_id: input.customerId || null,
+        ownership_group_id: input.ownershipGroupId || input.ownerId || null,
+        customer_id: input.customerId || input.ownerId || null,
+        owner_id: input.ownerId || input.customerId || input.ownershipGroupId || null,
         notes: input.notes?.trim() || null,
         lot_number: input.lotNumber?.trim() || null,
         enterprise_type: input.enterpriseType || "stocker",
@@ -305,6 +307,7 @@ export async function updateCattleGroup(
     notes?: string | null;
     ownershipGroupId?: string | null;
     customerId?: string | null;
+    ownerId?: string | null;
     lotNumber?: string | null;
     enterpriseType?: string;
     lotStatus?: string;
@@ -347,6 +350,13 @@ export async function updateCattleGroup(
     }
     if (data.customerId !== undefined) {
       updates.customer_id = data.customerId;
+    }
+    if (data.ownerId !== undefined) {
+      (updates as { owner_id?: string | null }).owner_id = data.ownerId;
+      if (data.ownerId) {
+        updates.customer_id = data.ownerId;
+        updates.ownership_group_id = data.ownerId;
+      }
     }
     if (data.lotNumber !== undefined) updates.lot_number = data.lotNumber?.trim() || null;
     if (data.enterpriseType !== undefined) updates.enterprise_type = data.enterpriseType;

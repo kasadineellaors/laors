@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireOnboardedUser } from "@/lib/auth/session";
 import { canManageInvoices } from "@/lib/auth/roles";
-import { listCustomerOptions } from "@/lib/customers/queries";
+import { listBillableOwners } from "@/lib/owners/queries";
 import { GenerateInvoiceClient } from "@/components/invoices/generate-invoice-client";
 
 export const metadata: Metadata = {
@@ -17,7 +17,7 @@ export default async function GenerateInvoicePage() {
   }
 
   const orgId = session.organization!.id;
-  const customerOptions = await listCustomerOptions(orgId);
+  const ownerOptions = await listBillableOwners(orgId);
 
   return (
     <div className="space-y-6">
@@ -27,10 +27,10 @@ export default async function GenerateInvoicePage() {
         </Link>
         <h1 className="mt-1 text-2xl font-bold text-charcoal">Generate invoice</h1>
         <p className="text-charcoal/70">
-          Auto-build yardage and medicine lines from customer rates and ranch activity
+          Category totals for yardage, treatments, feed, processing, misc, and dead count
         </p>
       </div>
-      <GenerateInvoiceClient orgId={orgId} customerOptions={customerOptions} />
+      <GenerateInvoiceClient orgId={orgId} ownerOptions={ownerOptions} />
     </div>
   );
 }

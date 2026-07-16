@@ -34,7 +34,6 @@ export function InvoiceDocument({ invoice, org }: InvoicePrintData) {
           {invoice.due_date ? (
             <p className="text-sm text-charcoal/70">Due: {formatDate(invoice.due_date)}</p>
           ) : null}
-          <p className="mt-1 text-sm capitalize text-charcoal/60">{invoice.status}</p>
         </div>
       </div>
 
@@ -53,20 +52,20 @@ export function InvoiceDocument({ invoice, org }: InvoicePrintData) {
         <thead>
           <tr className="border-b-2 border-olive/30 text-left text-xs font-semibold uppercase tracking-wide text-charcoal/60">
             <th className="py-2 pr-4">Description</th>
-            <th className="py-2 pr-4 text-right">Qty</th>
-            <th className="py-2 pr-4 text-right">Unit</th>
             <th className="py-2 text-right">Amount</th>
           </tr>
         </thead>
         <tbody>
-          {invoice.lines.map((line) => (
-            <tr key={line.id} className="border-b border-border/60">
-              <td className="py-3 pr-4">{line.description}</td>
-              <td className="py-3 pr-4 text-right tabular-nums">{line.quantity}</td>
-              <td className="py-3 pr-4 text-right tabular-nums">{formatMoney(line.unit_price)}</td>
-              <td className="py-3 text-right font-medium tabular-nums">{formatMoney(line.line_total)}</td>
-            </tr>
-          ))}
+          {invoice.lines.map((line) => {
+            const isDead = line.category === "dead";
+            const amount = isDead ? "—" : formatMoney(line.line_total);
+            return (
+              <tr key={line.id} className="border-b border-border/60">
+                <td className="py-3 pr-4">{line.description}</td>
+                <td className="py-3 text-right font-medium tabular-nums">{amount}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
 

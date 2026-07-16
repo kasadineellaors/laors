@@ -14,15 +14,13 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 interface CreateGroupFormProps {
   orgId: string;
   locationOptions: SelectOption[];
-  ownershipOptions: SelectOption[];
-  customerOptions: SelectOption[];
+  ownerOptions: SelectOption[];
 }
 
 export function CreateGroupForm({
   orgId,
   locationOptions,
-  ownershipOptions,
-  customerOptions,
+  ownerOptions,
 }: CreateGroupFormProps) {
   const router = useRouter();
   const today = new Date().toISOString().slice(0, 10);
@@ -31,8 +29,7 @@ export function CreateGroupForm({
   const [name, setName] = useState("");
   const [enterpriseType, setEnterpriseType] = useState<EnterpriseType>("stocker");
   const [locationId, setLocationId] = useState(locationOptions[0]?.value ?? "");
-  const [ownershipGroupId, setOwnershipGroupId] = useState("");
-  const [customerId, setCustomerId] = useState("");
+  const [ownerId, setOwnerId] = useState("");
   const [purchaseDate, setPurchaseDate] = useState(today);
   const [arrivalDate, setArrivalDate] = useState(today);
   const [sellerName, setSellerName] = useState("");
@@ -92,8 +89,7 @@ export function CreateGroupForm({
       locationId,
       headCount: count,
       notes: notes || undefined,
-      ownershipGroupId: ownershipGroupId || undefined,
-      customerId: customerId || undefined,
+      ownerId: ownerId || undefined,
       lotNumber: lotNumber || undefined,
       enterpriseType,
       purchaseDate,
@@ -211,37 +207,19 @@ export function CreateGroupForm({
             )}
           </select>
         </div>
-        {ownershipOptions.length > 0 ? (
+        {ownerOptions.length > 0 ? (
           <div>
-            <Label htmlFor="ownershipGroup">Owner</Label>
+            <Label htmlFor="owner">Owner</Label>
             <select
-              id="ownershipGroup"
-              value={ownershipGroupId}
-              onChange={(e) => setOwnershipGroupId(e.target.value)}
+              id="owner"
+              value={ownerId}
+              onChange={(e) => setOwnerId(e.target.value)}
               className={selectClass}
             >
               <option value="">Ranch-owned / none</option>
-              {ownershipOptions.map((o) => (
+              {ownerOptions.map((o) => (
                 <option key={o.value} value={o.value}>
                   {o.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        ) : null}
-        {customerOptions.length > 0 ? (
-          <div>
-            <Label htmlFor="customer">Billing customer</Label>
-            <select
-              id="customer"
-              value={customerId}
-              onChange={(e) => setCustomerId(e.target.value)}
-              className={selectClass}
-            >
-              <option value="">None</option>
-              {customerOptions.map((c) => (
-                <option key={c.value} value={c.value}>
-                  {c.label}
                 </option>
               ))}
             </select>

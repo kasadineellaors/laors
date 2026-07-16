@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import type { CustomerOption } from "@/lib/customers/types";
+import type { OwnerRecord } from "@/lib/owners/types";
 import type { BillingPreview } from "@/lib/invoices/types";
 import {
   createInvoiceFromBilling,
@@ -16,7 +16,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 
 interface GenerateInvoiceClientProps {
   orgId: string;
-  customerOptions: CustomerOption[];
+  ownerOptions: OwnerRecord[];
 }
 
 function defaultPeriodStart(): string {
@@ -32,28 +32,41 @@ function formatMoney(amount: number) {
   return amount.toLocaleString(undefined, { style: "currency", currency: "USD" });
 }
 
-export function GenerateInvoiceClient({ orgId, customerOptions }: GenerateInvoiceClientProps) {
+export function GenerateInvoiceClient({ orgId, ownerOptions }: GenerateInvoiceClientProps) {
   const router = useRouter();
-  const [customerId, setCustomerId] = useState(customerOptions[0]?.id ?? "");
+  const [ownerId, setOwnerId] = useState(ownerOptions[0]?.id ?? "");
   const [periodStart, setPeriodStart] = useState(defaultPeriodStart());
   const [periodEnd, setPeriodEnd] = useState(todayIso());
+  const [extraMiscDesc, setExtraMiscDesc] = useState("");
+  const [extraMiscAmount, setExtraMiscAmount] = useState("");
   const [preview, setPreview] = useState<BillingPreview | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const selectedCustomer = useMemo(
-    () => customerOptions.find((c) => c.id === customerId),
-    [customerOptions, customerId],
+  const selectedOwner = useMemo(
+    () => ownerOptions.find((o) => o.id === ownerId),
+    [ownerOptions, ownerId],
   );
 
+  function extraMiscLines() {
+    const amount = parseFloat(extraMiscAmount);
+    if (!extraMiscDesc.trim() || Number.isNaN(amount) || amount <= 0) return undefined;
+    return [{ description: extraMiscDesc.trim(), amount }];
+  }
+
   async function handlePreview() {
-    if (!customerId) {
-      setError("Select a customer");
+    if (!ownerId) {
+      setError("Select an owner");
       return;
     }
     setLoading(true);
     setError(null);
-    const result = await previewBillingInvoice(orgId, { customerId, periodStart, periodEnd });
+    const result = await previewBillingInvoice(orgId, {
+      ownerId,
+      periodStart,
+      periodEnd,
+      extraMiscLines: extraMiscLines(),
+    });
     setLoading(false);
     if (result.error) {
       setError(result.error);
@@ -64,10 +77,15 @@ export function GenerateInvoiceClient({ orgId, customerOptions }: GenerateInvoic
   }
 
   async function handleCreate() {
-    if (!customerId) return;
+    if (!ownerId) return;
     setLoading(true);
     setError(null);
-    const result = await createInvoiceFromBilling(orgId, { customerId, periodStart, periodEnd });
+    const result = await createInvoiceFromBilling(orgId, {
+      ownerId,
+      periodStart,
+      periodEnd,
+      extraMiscLines: extraMiscLines(),
+    });
     setLoading(false);
     if (result.error) {
       setError(result.error);
@@ -81,17 +99,17 @@ export function GenerateInvoiceClient({ orgId, customerOptions }: GenerateInvoic
   const selectClass =
     "flex h-12 w-full rounded-lg border-2 border-border bg-surface px-4 text-base";
 
-  if (customerOptions.length === 0) {
+  if (ownerOptions.length === 0) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Add customers first</CardTitle>
+          <CardTitle>Add owners first</CardTitle>
           <CardDescription>
-            Set up customers with yardage and medicine markup rates, then link cattle groups to them.
+            Set up owners with yardage and markup rates, then assign lots to them.
           </CardDescription>
         </CardHeader>
-        <Link href="/setup/customers">
-          <Button fullWidth>Go to Customers</Button>
+        <Link href="/setup/owners">
+          <Button fullWidth>Go to Owners</Button>
         </Link>
       </Card>
     );
@@ -103,41 +121,32 @@ export function GenerateInvoiceClient({ orgId, customerOptions }: GenerateInvoic
         <CardHeader>
           <CardTitle>Billing period</CardTitle>
           <CardDescription>
-            Yardage uses average daily head across the billing period. Medicine and feed lines
-            come from treatments and feed log on customer-linked groups (with markup rates).
+            One line per category. Markups are applied but not shown on the invoice.
           </CardDescription>
         </CardHeader>
         <div className="space-y-4">
           <div>
-            <Label htmlFor="customer">Customer</Label>
+            <Label htmlFor="owner">Owner</Label>
             <select
-              id="customer"
-              value={customerId}
+              id="owner"
+              value={ownerId}
               onChange={(e) => {
-                setCustomerId(e.target.value);
+                setOwnerId(e.target.value);
                 setPreview(null);
               }}
               className={selectClass}
             >
-              {customerOptions.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
+              {ownerOptions.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.name}
                 </option>
               ))}
             </select>
-            {selectedCustomer ? (
+            {selectedOwner ? (
               <p className="mt-1 text-xs text-charcoal/60">
-                {selectedCustomer.yardage_rate_per_head_day != null
-                  ? `$${selectedCustomer.yardage_rate_per_head_day}/hd/day yardage`
+                {selectedOwner.yardage_rate_per_head_day != null
+                  ? `$${selectedOwner.yardage_rate_per_head_day}/hd/day yardage`
                   : "No yardage rate"}
-                {" · "}
-                {selectedCustomer.medicine_markup_percent != null
-                  ? `${selectedCustomer.medicine_markup_percent}% medicine markup`
-                  : "No medicine markup"}
-                {" · "}
-                {selectedCustomer.feed_markup_percent != null
-                  ? `${selectedCustomer.feed_markup_percent}% feed markup`
-                  : "No feed markup"}
               </p>
             ) : null}
           </div>
@@ -167,6 +176,24 @@ export function GenerateInvoiceClient({ orgId, customerOptions }: GenerateInvoic
               />
             </div>
           </div>
+          <div className="rounded-lg border border-border p-3">
+            <p className="text-sm font-medium text-charcoal">Add misc at invoice time (optional)</p>
+            <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_120px]">
+              <Input
+                value={extraMiscDesc}
+                onChange={(e) => setExtraMiscDesc(e.target.value)}
+                placeholder="Description"
+              />
+              <Input
+                type="number"
+                min={0}
+                step="0.01"
+                value={extraMiscAmount}
+                onChange={(e) => setExtraMiscAmount(e.target.value)}
+                placeholder="Amount"
+              />
+            </div>
+          </div>
           <Button type="button" fullWidth onClick={handlePreview} disabled={loading}>
             {loading ? "Calculating…" : "Preview lines"}
           </Button>
@@ -178,40 +205,9 @@ export function GenerateInvoiceClient({ orgId, customerOptions }: GenerateInvoic
           <CardHeader>
             <CardTitle>Preview</CardTitle>
             <CardDescription>
-              {preview.totalHeadDays.toLocaleString()} head-days · {preview.dayCount} days ·{" "}
-              {preview.lines.length} line{preview.lines.length === 1 ? "" : "s"}
+              {preview.totalHeadDays.toLocaleString()} head-days · {preview.dayCount} days
             </CardDescription>
           </CardHeader>
-          {preview.headDaysBreakdown.length > 0 ? (
-            <div className="mb-4 overflow-x-auto rounded-lg border border-border">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border bg-charcoal/5 text-left text-xs text-charcoal/60">
-                    <th className="px-3 py-2 font-medium">Group</th>
-                    <th className="px-3 py-2 font-medium text-right">Start</th>
-                    <th className="px-3 py-2 font-medium text-right">End</th>
-                    <th className="px-3 py-2 font-medium text-right">Avg hd</th>
-                    <th className="px-3 py-2 font-medium text-right">Head-days</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {preview.headDaysBreakdown.map((row) => (
-                    <tr key={row.groupId} className="border-b border-border last:border-0">
-                      <td className="px-3 py-2 font-medium text-charcoal">{row.groupName}</td>
-                      <td className="px-3 py-2 text-right text-charcoal/70">{row.headAtStart}</td>
-                      <td className="px-3 py-2 text-right text-charcoal/70">{row.headAtEnd}</td>
-                      <td className="px-3 py-2 text-right text-charcoal/70">
-                        {row.avgHead.toFixed(1)}
-                      </td>
-                      <td className="px-3 py-2 text-right font-medium text-olive">
-                        {row.headDays.toLocaleString()}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : null}
           {preview.warnings.length > 0 ? (
             <ul className="mb-4 space-y-1 rounded-lg bg-rust/10 px-3 py-2 text-sm text-rust">
               {preview.warnings.map((w) => (
@@ -226,12 +222,11 @@ export function GenerateInvoiceClient({ orgId, customerOptions }: GenerateInvoic
                   key={i}
                   className="flex items-start justify-between gap-3 rounded-lg border border-border px-3 py-2 text-sm"
                 >
-                  <div>
-                    <p className="font-medium text-charcoal">{line.description}</p>
-                    <p className="text-xs capitalize text-charcoal/50">{line.source}</p>
-                  </div>
+                  <p className="font-medium text-charcoal">{line.description}</p>
                   <p className="shrink-0 font-semibold text-olive">
-                    {formatMoney(line.quantity * line.unitPrice)}
+                    {line.category === "dead"
+                      ? `${line.quantity} head`
+                      : formatMoney(line.quantity * line.unitPrice)}
                   </p>
                 </li>
               ))}
