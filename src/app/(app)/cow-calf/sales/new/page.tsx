@@ -10,7 +10,12 @@ export const metadata: Metadata = {
   title: "Record Sale — Cow-Calf — LAORS",
 };
 
-export default async function NewCowCalfSalePage() {
+export default async function NewCowCalfSalePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ herd?: string }>;
+}) {
+  const { herd } = await searchParams;
   const session = await requireCowCalfEnterprise();
   const orgId = session.organization!.id;
 
@@ -21,6 +26,8 @@ export default async function NewCowCalfSalePage() {
     listCowCalfHerdOptions(orgId),
     listCowCalfAnimalOptions(orgId, ["cow", "heifer", "bull", "other"]),
   ]);
+
+  const filteredAnimals = herd ? animals.filter((a) => a.herdId === herd) : animals;
 
   return (
     <div className="space-y-6">
@@ -34,7 +41,8 @@ export default async function NewCowCalfSalePage() {
         orgId={orgId}
         herdOptions={herds}
         locationOptions={locations}
-        animalOptions={animals}
+        animalOptions={filteredAnimals}
+        defaultHerdId={herd}
       />
     </div>
   );

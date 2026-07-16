@@ -31,6 +31,17 @@ export interface CowCalfExitReport {
   lossesLast30Days: number;
 }
 
+export interface CowCalfHerdReportRow {
+  herdId: string;
+  herdName: string;
+  locationName: string | null;
+  cows: number;
+  calvesAtSide: number;
+  pairs: number;
+  bulls: number;
+  totalPhysicalHead: number;
+}
+
 export interface CowCalfReportSnapshot {
   inventory: HerdInventorySummary & { herdCount: number };
   reproduction: CowCalfReproductionReport;
@@ -39,4 +50,5 @@ export interface CowCalfReportSnapshot {
   exits: CowCalfExitReport;
   unprocessedCalves: number;
   dataQuality: ForemanSummaryItem[];
+  herdBreakdown: CowCalfHerdReportRow[];
 }

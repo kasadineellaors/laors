@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireOnboardedUser } from "@/lib/auth/session";
 import { hasCowCalfMode } from "@/lib/cow-calf/constants";
+import { getCowCalfHerd } from "@/lib/cow-calf/herd-queries";
 import { getTreePickerOptions } from "@/lib/locations/options";
 import { listCattleGroups } from "@/lib/inventory/queries";
 import { listFeedRationOptions } from "@/lib/feed/queries";
@@ -18,14 +19,19 @@ export const metadata: Metadata = {
   title: "Log Cow-Calf Feed — LAORS",
 };
 
-export default async function NewCowCalfFeedPage() {
+export default async function NewCowCalfFeedPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ herd?: string }>;
+}) {
+  const { herd: herdId } = await searchParams;
   const session = await requireOnboardedUser();
   const modes = (session.organization!.enabled_modes ?? []) as OperationMode[];
   if (!hasCowCalfMode(modes)) redirect("/feed");
 
   const orgId = session.organization!.id;
 
-  const [locations, groups, owners, members, rationOptions] = await Promise.all([
+  const [locations, groups, owners, members, rationOptions, herd] = await Promise.all([
     getTreePickerOptions(orgId).then((nodes) =>
       nodes.map((n) => ({ value: n.id, label: n.breadcrumb })),
     ),
@@ -33,6 +39,7 @@ export default async function NewCowCalfFeedPage() {
     listOwnerOptions(orgId).then(ownersToSelectOptions),
     listOrgMembers(orgId),
     listFeedRationOptions(orgId),
+    herdId ? getCowCalfHerd(orgId, herdId) : Promise.resolve(null),
   ]);
 
   const rationUnitCosts = rationCostsToRecord(
@@ -42,6 +49,10 @@ export default async function NewCowCalfFeedPage() {
     ),
   );
 
+  const prefill = herd?.current_location_id
+    ? { locationId: herd.current_location_id }
+    : undefined;
+
   return (
     <AppPageShell>
       <div className="space-y-6">
@@ -50,6 +61,9 @@ export default async function NewCowCalfFeedPage() {
             ← Cow-calf feed
           </Link>
           <h1 className="mt-1 text-2xl font-bold text-navy">Log feed</h1>
+          {herd ? (
+            <p className="text-sm text-text-secondary">For herd: {herd.name}</p>
+          ) : null}
         </div>
         <FeedingForm
           orgId={orgId}
@@ -62,6 +76,7 @@ export default async function NewCowCalfFeedPage() {
           feedingContext="cow_calf"
           detailBasePath="/feed/cow-calf"
           listPath="/feed/cow-calf"
+          prefill={prefill}
         />
       </div>
     </AppPageShell>

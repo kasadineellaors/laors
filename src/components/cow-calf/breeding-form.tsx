@@ -35,6 +35,7 @@ interface BreedingFormProps {
   bullOptions: BullOption[];
   damOptions: DamOption[];
   record?: BreedingRecord;
+  defaultHerdId?: string;
   onSuccess?: () => void;
 }
 
@@ -48,6 +49,7 @@ export function BreedingForm({
   bullOptions,
   damOptions,
   record,
+  defaultHerdId,
   onSuccess,
 }: BreedingFormProps) {
   const router = useRouter();
@@ -55,7 +57,7 @@ export function BreedingForm({
 
   const [bredAt, setBredAt] = useState(record?.bred_at ?? new Date().toISOString().slice(0, 10));
   const [locationId, setLocationId] = useState(record?.location_id ?? "");
-  const [herdId, setHerdId] = useState(record?.cow_calf_herd_id ?? "");
+  const [herdId, setHerdId] = useState(record?.cow_calf_herd_id ?? defaultHerdId ?? "");
   const [damId, setDamId] = useState(record?.dam_id ?? "");
   const [damTag, setDamTag] = useState(record?.dam_tag ?? "");
   const [bullId, setBullId] = useState(record?.bull_id ?? "");

@@ -11,7 +11,11 @@ export type ExportRecordType =
   | "maternal_fertility"
   | "maternal_calf_crop"
   | "maternal_calving_ease"
-  | "weaning";
+  | "weaning"
+  | "weaning_cow_calf"
+  | "cow_calf_sales"
+  | "cow_calf_loss"
+  | "cow_calf_activity";
 
 export type ExportFormat = "csv" | "pdf";
 
@@ -41,4 +45,8 @@ export const EXPORT_TYPE_LABELS: Record<ExportRecordType, string> = {
   maternal_calf_crop: "Calf crop report",
   maternal_calving_ease: "Sire calving ease validation",
   weaning: "Weaning records (seedstock)",
+  weaning_cow_calf: "Weaning records (cow-calf)",
+  cow_calf_sales: "Cow-calf sales",
+  cow_calf_loss: "Cow-calf death & loss",
+  cow_calf_activity: "Cow-calf activity log",
 };

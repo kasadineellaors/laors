@@ -13,9 +13,9 @@ export const metadata: Metadata = {
 export default async function NewLossPage({
   searchParams,
 }: {
-  searchParams: Promise<{ animal?: string }>;
+  searchParams: Promise<{ animal?: string; herd?: string }>;
 }) {
-  const { animal } = await searchParams;
+  const { animal, herd } = await searchParams;
   const session = await requireCowCalfEnterprise();
   const orgId = session.organization!.id;
 
@@ -26,6 +26,10 @@ export default async function NewLossPage({
     listCowCalfHerdOptions(orgId),
     listCowCalfAnimalOptions(orgId, ["cow", "heifer", "bull", "other"]),
   ]);
+
+  const filteredAnimals = herd
+    ? animals.filter((a) => a.herdId === herd)
+    : animals;
 
   return (
     <div className="space-y-6">
@@ -39,8 +43,9 @@ export default async function NewLossPage({
         orgId={orgId}
         herdOptions={herds}
         locationOptions={locations}
-        animalOptions={animals}
+        animalOptions={filteredAnimals}
         defaultAnimalId={animal}
+        defaultHerdId={herd}
       />
     </div>
   );

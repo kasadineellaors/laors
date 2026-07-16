@@ -22,7 +22,15 @@ export function ExportHub({ orgId, showCowCalf, showSeedstock = false }: ExportH
   const [to, setTo] = useState("");
 
   const types = EXPORT_TYPES.filter((t) => {
-    if (t === "calving" || t === "breeding" || t === "feedings_cow_calf") {
+    if (
+      t === "calving" ||
+      t === "breeding" ||
+      t === "feedings_cow_calf" ||
+      t === "weaning_cow_calf" ||
+      t === "cow_calf_sales" ||
+      t === "cow_calf_loss" ||
+      t === "cow_calf_activity"
+    ) {
       return showCowCalf;
     }
     if (

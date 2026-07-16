@@ -14,6 +14,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 interface AnimalOption {
   value: string;
   label: string;
+  herdId?: string | null;
 }
 
 interface LossFormProps {
@@ -22,6 +23,7 @@ interface LossFormProps {
   locationOptions: SelectOption[];
   animalOptions: AnimalOption[];
   defaultAnimalId?: string;
+  defaultHerdId?: string;
 }
 
 const selectClass =
@@ -33,12 +35,21 @@ export function CowCalfLossForm({
   locationOptions,
   animalOptions,
   defaultAnimalId,
+  defaultHerdId,
 }: LossFormProps) {
   const router = useRouter();
   const [animalId, setAnimalId] = useState(defaultAnimalId ?? "");
   const [lossDate, setLossDate] = useState(new Date().toISOString().slice(0, 10));
   const [cause, setCause] = useState<LossCause>("unknown");
-  const [herdId, setHerdId] = useState("");
+  const [herdId, setHerdId] = useState(defaultHerdId ?? "");
+
+  function handleAnimalChange(id: string) {
+    setAnimalId(id);
+    if (!defaultHerdId && !herdId) {
+      const animal = animalOptions.find((a) => a.value === id);
+      if (animal?.herdId) setHerdId(animal.herdId);
+    }
+  }
   const [locationId, setLocationId] = useState("");
   const [disposal, setDisposal] = useState("");
   const [notes, setNotes] = useState("");
@@ -80,7 +91,12 @@ export function CowCalfLossForm({
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <Label>Animal *</Label>
-          <select className={selectClass} value={animalId} onChange={(e) => setAnimalId(e.target.value)} required>
+          <select
+            className={selectClass}
+            value={animalId}
+            onChange={(e) => handleAnimalChange(e.target.value)}
+            required
+          >
             <option value="">Select…</option>
             {animalOptions.map((a) => (
               <option key={a.value} value={a.value}>{a.label}</option>

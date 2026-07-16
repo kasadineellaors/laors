@@ -56,6 +56,7 @@ interface EnterpriseCalvingFormProps {
   herdOptions: SelectOption[];
   damOptions: DamOption[];
   bullOptions: BullOption[];
+  defaultHerdId?: string;
 }
 
 export function EnterpriseCalvingForm({
@@ -64,10 +65,11 @@ export function EnterpriseCalvingForm({
   herdOptions,
   damOptions,
   bullOptions,
+  defaultHerdId,
 }: EnterpriseCalvingFormProps) {
   const router = useRouter();
   const [calvedAt, setCalvedAt] = useState(new Date().toISOString().slice(0, 10));
-  const [herdId, setHerdId] = useState("");
+  const [herdId, setHerdId] = useState(defaultHerdId ?? "");
   const [locationId, setLocationId] = useState("");
   const [damId, setDamId] = useState("");
   const [bullId, setBullId] = useState("");

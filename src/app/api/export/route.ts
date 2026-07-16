@@ -19,6 +19,10 @@ const VALID_TYPES: ExportRecordType[] = [
   "maternal_calf_crop",
   "maternal_calving_ease",
   "weaning",
+  "weaning_cow_calf",
+  "cow_calf_sales",
+  "cow_calf_loss",
+  "cow_calf_activity",
 ];
 
 export async function GET(request: Request) {

@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireCowCalfEnterprise } from "@/lib/cow-calf/enterprise-guard";
 import { getCowCalfHerd, getHerdInventorySummary } from "@/lib/cow-calf/herd-queries";
 import { RECORDKEEPING_MODE_LABELS, HERD_STATUS_LABELS } from "@/lib/cow-calf/statuses";
+import { HerdQuickActions } from "@/components/cow-calf/herd-quick-actions";
 import { AppPageHeader } from "@/components/layout/app-page-header";
-import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const metadata: Metadata = {
@@ -92,17 +91,7 @@ export default async function HerdDetailPage({
         ) : null}
       </Card>
 
-      <div className="flex flex-wrap gap-3">
-        <Link href="/cow-calf/calving/new">
-          <Button>Record calving</Button>
-        </Link>
-        <Link href="/cow-calf/breeding/new">
-          <Button variant="secondary">Record breeding</Button>
-        </Link>
-        <Link href="/cow-calf/cows">
-          <Button variant="secondary">View cows</Button>
-        </Link>
-      </div>
+      <HerdQuickActions herdId={herd.id} />
     </div>
   );
 }

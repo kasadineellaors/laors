@@ -1,5 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
+import { listCowCalfActivityLog } from "@/lib/cow-calf/activity-log";
 import { listBreedingRecords } from "@/lib/cow-calf/breeding-queries";
+import {
+  listCowCalfLosses,
+  listCowCalfSales,
+  listCowCalfWeaningRecords,
+} from "@/lib/cow-calf/exit-queries";
 import { listCalvingRecords } from "@/lib/cow-calf/queries";
 import { listFeedingRecords } from "@/lib/feed/queries";
 import { treatmentTypeLabel } from "@/lib/health/constants";
@@ -9,6 +15,11 @@ import { listSales } from "@/lib/sales/queries";
 import { listTasks } from "@/lib/tasks/queries";
 import { getMaternalDashboard } from "@/lib/seedstock/maternal";
 import { listWeaningRecords } from "@/lib/seedstock/weaning-queries";
+import {
+  COW_CALF_SALE_TYPE_LABELS,
+  LOSS_CAUSE_LABELS,
+  WEANING_METHOD_LABELS,
+} from "@/lib/cow-calf/constants";
 import { RETENTION_RECOMMENDATION_LABELS } from "@/lib/seedstock/maternal/constants";
 import type { ExportDataset, ExportRecordType } from "./types";
 import { EXPORT_TYPE_LABELS } from "./types";
@@ -126,7 +137,7 @@ export async function buildExportDataset(
           { key: "sex", label: "Sex" },
           { key: "outcome", label: "Outcome" },
           { key: "weight", label: "Birth wt (lbs)" },
-          { key: "group", label: "Group" },
+          { key: "group", label: "Herd" },
           { key: "location", label: "Location" },
         ],
         rows: filtered.map((r) => ({
@@ -136,7 +147,7 @@ export async function buildExportDataset(
           sex: r.calf_sex,
           outcome: r.outcome,
           weight: r.birth_weight_lbs,
-          group: r.cattle_group_name ?? "",
+          group: r.herd_name ?? r.cattle_group_name ?? "",
           location: r.location_name ?? "",
         })),
       };
@@ -154,7 +165,7 @@ export async function buildExportDataset(
           { key: "method", label: "Method" },
           { key: "status", label: "Pregnancy" },
           { key: "due", label: "Expected calving" },
-          { key: "group", label: "Group" },
+          { key: "group", label: "Herd" },
         ],
         rows: filtered.map((r) => ({
           bred: r.bred_at,
@@ -163,7 +174,7 @@ export async function buildExportDataset(
           method: r.breeding_method,
           status: r.pregnancy_status,
           due: r.expected_calving_date ?? "",
-          group: r.cattle_group_name ?? "",
+          group: r.herd_name ?? r.cattle_group_name ?? "",
         })),
       };
     }
@@ -374,6 +385,116 @@ export async function buildExportDataset(
           weight: r.weaning_weight_lbs,
           retained: r.retained_as_heifer ? "Yes" : "No",
           notes: r.notes ?? "",
+        })),
+      };
+    }
+    case "weaning_cow_calf": {
+      const rows = await listCowCalfWeaningRecords(orgId);
+      const filtered = rows.filter((r) => inDateRange(r.weaned_at, from, to));
+      return {
+        title: EXPORT_TYPE_LABELS.weaning_cow_calf,
+        filename: `laors-weaning-cow-calf-${stamp()}`,
+        columns: [
+          { key: "date", label: "Weaned" },
+          { key: "calf", label: "Calf tag" },
+          { key: "dam", label: "Dam" },
+          { key: "herd", label: "Herd" },
+          { key: "destination", label: "Destination herd" },
+          { key: "weight", label: "Weight (lbs)" },
+          { key: "method", label: "Method" },
+          { key: "retained", label: "Retained heifer" },
+          { key: "notes", label: "Notes" },
+        ],
+        rows: filtered.map((r) => ({
+          date: r.weaned_at,
+          calf: r.calf_tag ?? "",
+          dam: r.dam_tag ?? "",
+          herd: r.herd_name ?? "",
+          destination: r.destination_herd_name ?? "",
+          weight: r.weaning_weight_lbs,
+          method: r.weaning_method ? WEANING_METHOD_LABELS[r.weaning_method] : "",
+          retained: r.retained_as_heifer ? "Yes" : "No",
+          notes: r.notes ?? "",
+        })),
+      };
+    }
+    case "cow_calf_sales": {
+      const rows = await listCowCalfSales(orgId);
+      const filtered = rows.filter((r) => inDateRange(r.sale_date, from, to));
+      return {
+        title: EXPORT_TYPE_LABELS.cow_calf_sales,
+        filename: `laors-cow-calf-sales-${stamp()}`,
+        columns: [
+          { key: "date", label: "Date" },
+          { key: "buyer", label: "Buyer" },
+          { key: "type", label: "Sale type" },
+          { key: "head", label: "Head" },
+          { key: "total", label: "Total" },
+          { key: "fees", label: "Fees" },
+          { key: "net", label: "Net" },
+          { key: "herd", label: "Herd" },
+          { key: "notes", label: "Notes" },
+        ],
+        rows: filtered.map((r) => ({
+          date: r.sale_date,
+          buyer: r.buyer_name ?? "",
+          type: r.cow_calf_sale_type ? COW_CALF_SALE_TYPE_LABELS[r.cow_calf_sale_type] : "",
+          head: r.head_count,
+          total: r.total_amount,
+          fees: r.fees,
+          net: r.net_amount,
+          herd: r.herd_name ?? "",
+          notes: r.notes ?? "",
+        })),
+      };
+    }
+    case "cow_calf_loss": {
+      const rows = await listCowCalfLosses(orgId);
+      const filtered = rows.filter((r) => inDateRange(r.loss_date, from, to));
+      return {
+        title: EXPORT_TYPE_LABELS.cow_calf_loss,
+        filename: `laors-cow-calf-loss-${stamp()}`,
+        columns: [
+          { key: "date", label: "Date" },
+          { key: "animal", label: "Animal tag" },
+          { key: "name", label: "Name" },
+          { key: "cause", label: "Cause" },
+          { key: "herd", label: "Herd" },
+          { key: "location", label: "Location" },
+          { key: "disposal", label: "Disposal" },
+          { key: "notes", label: "Notes" },
+        ],
+        rows: filtered.map((r) => ({
+          date: r.loss_date,
+          animal: r.animal_tag ?? "",
+          name: r.animal_name ?? "",
+          cause: LOSS_CAUSE_LABELS[r.cause],
+          herd: r.herd_name ?? "",
+          location: r.location_name ?? "",
+          disposal: r.disposal_method ?? "",
+          notes: r.notes ?? "",
+        })),
+      };
+    }
+    case "cow_calf_activity": {
+      const rows = await listCowCalfActivityLog(orgId);
+      const filtered = rows.filter((r) => inDateRange(r.created_at.slice(0, 10), from, to));
+      return {
+        title: EXPORT_TYPE_LABELS.cow_calf_activity,
+        filename: `laors-cow-calf-activity-${stamp()}`,
+        columns: [
+          { key: "date", label: "Date" },
+          { key: "action", label: "Action" },
+          { key: "summary", label: "Summary" },
+          { key: "herd", label: "Herd" },
+          { key: "source", label: "Source" },
+        ],
+        rows: filtered.map((r) => ({
+          date: r.created_at.slice(0, 10),
+          action: r.action,
+          summary: r.summary,
+          herd: r.herd_name ?? "",
+          source: r.source_table ? `${r.source_table}${r.source_id ? `:${r.source_id}` : ""}` : "",
         })),
       };
     }

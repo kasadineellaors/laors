@@ -16,7 +16,12 @@ export const metadata: Metadata = {
   title: "Record Breeding — LAORS",
 };
 
-export default async function NewBreedingPage() {
+export default async function NewBreedingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ herd?: string }>;
+}) {
+  const { herd } = await searchParams;
   const session = await requireOnboardedUser();
   const modes = (session.organization!.enabled_modes ?? []) as OperationMode[];
   if (!hasCowCalfMode(modes)) redirect("/cattle");
@@ -28,7 +33,7 @@ export default async function NewBreedingPage() {
     ),
     listCowCalfHerdOptions(orgId),
     listActiveBullOptions(orgId),
-    listCowCalfDamOptions(orgId),
+    listCowCalfDamOptions(orgId, herd),
   ]);
 
   return (
@@ -50,6 +55,7 @@ export default async function NewBreedingPage() {
         herdOptions={herds}
         bullOptions={bulls}
         damOptions={dams}
+        defaultHerdId={herd}
       />
     </div>
   );

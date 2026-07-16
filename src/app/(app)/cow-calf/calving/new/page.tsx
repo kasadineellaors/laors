@@ -16,7 +16,12 @@ export const metadata: Metadata = {
   title: "Log Calving — LAORS",
 };
 
-export default async function NewCalvingPage() {
+export default async function NewCalvingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ herd?: string }>;
+}) {
+  const { herd } = await searchParams;
   const session = await requireOnboardedUser();
   const modes = (session.organization!.enabled_modes ?? []) as OperationMode[];
   if (!hasCowCalfMode(modes)) redirect("/cattle");
@@ -28,7 +33,7 @@ export default async function NewCalvingPage() {
       nodes.map((n) => ({ value: n.id, label: n.breadcrumb })),
     ),
     listCowCalfHerdOptions(orgId),
-    listCowCalfDamOptions(orgId),
+    listCowCalfDamOptions(orgId, herd),
     listActiveBullOptions(orgId),
   ]);
 
@@ -51,6 +56,7 @@ export default async function NewCalvingPage() {
         herdOptions={herds}
         damOptions={dams}
         bullOptions={bulls}
+        defaultHerdId={herd}
       />
     </div>
   );

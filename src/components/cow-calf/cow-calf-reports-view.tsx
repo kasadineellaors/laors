@@ -140,6 +140,48 @@ export function CowCalfReportsView({ report }: { report: CowCalfReportSnapshot }
       </Section>
 
       <Section
+        title="Inventory by herd"
+        description="Current head count per active cow-calf herd."
+      >
+        {report.herdBreakdown.length === 0 ? (
+          <p className="text-sm text-text-secondary">No active herds yet.</p>
+        ) : (
+          <div className="overflow-x-auto rounded-xl border border-border-neutral">
+            <table className="min-w-full text-sm">
+              <thead className="bg-surface-muted text-left text-xs font-semibold uppercase tracking-wide text-text-secondary">
+                <tr>
+                  <th className="px-3 py-2">Herd</th>
+                  <th className="px-3 py-2">Location</th>
+                  <th className="px-3 py-2 text-right">Pairs</th>
+                  <th className="px-3 py-2 text-right">Cows</th>
+                  <th className="px-3 py-2 text-right">Calves</th>
+                  <th className="px-3 py-2 text-right">Bulls</th>
+                  <th className="px-3 py-2 text-right">Total</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border-neutral bg-surface-white">
+                {report.herdBreakdown.map((row) => (
+                  <tr key={row.herdId}>
+                    <td className="px-3 py-2 font-medium text-navy">
+                      <Link href={`/cow-calf/herds/${row.herdId}`} className="hover:underline">
+                        {row.herdName}
+                      </Link>
+                    </td>
+                    <td className="px-3 py-2 text-text-secondary">{row.locationName ?? "—"}</td>
+                    <td className="px-3 py-2 text-right">{row.pairs}</td>
+                    <td className="px-3 py-2 text-right">{row.cows}</td>
+                    <td className="px-3 py-2 text-right">{row.calvesAtSide}</td>
+                    <td className="px-3 py-2 text-right">{row.bulls}</td>
+                    <td className="px-3 py-2 text-right font-medium">{row.totalPhysicalHead}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Section>
+
+      <Section
         title="Data quality & foreman"
         description="Rule-based checks — review before breeding season or weaning."
       >

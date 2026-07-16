@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCalvingAlertInput } from "./calving-alert-queries";
 import { getBreedingSummary } from "./breeding-queries";
 import { buildForemanSummary } from "./foreman-summary";
-import { getEnterpriseInventorySummary, listCowCalfHerds } from "./herd-queries";
+import { getEnterpriseInventorySummary, getHerdInventorySummary, listCowCalfHerds } from "./herd-queries";
 import { getProcessingSummary } from "./processing-queries";
 import { getWeaningSummary, getCowCalfSalesSummary } from "./exit-queries";
 import { pregnancyRateFromResults } from "./reproduction-helpers";
@@ -130,6 +130,21 @@ export async function getCowCalfReportSnapshot(orgId: string): Promise<CowCalfRe
     openCowCount: openResult.count ?? 0,
   });
 
+  const herdSummaries = await Promise.all(
+    herds.map((h) => getHerdInventorySummary(orgId, h)),
+  );
+
+  const herdBreakdown = herds.map((h, i) => ({
+    herdId: h.id,
+    herdName: h.name,
+    locationName: h.location_name,
+    cows: herdSummaries[i].cows,
+    calvesAtSide: herdSummaries[i].calvesAtSide,
+    pairs: herdSummaries[i].pairs,
+    bulls: herdSummaries[i].bulls,
+    totalPhysicalHead: herdSummaries[i].totalPhysicalHead,
+  }));
+
   return {
     inventory: { ...inventory, herdCount: herds.length },
     reproduction: {
@@ -159,5 +174,6 @@ export async function getCowCalfReportSnapshot(orgId: string): Promise<CowCalfRe
     },
     unprocessedCalves: processingSummary.unprocessedCalves,
     dataQuality,
+    herdBreakdown,
   };
 }
