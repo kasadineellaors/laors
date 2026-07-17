@@ -50,6 +50,7 @@ export interface FeedingRecord {
   location_label: string | null;
   ownership_group_id: string | null;
   ownership_group_name: string | null;
+  owner_id: string | null;
   fed_by: string | null;
   fed_by_name: string | null;
   notes: string | null;

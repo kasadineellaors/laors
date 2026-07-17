@@ -61,6 +61,16 @@ function formatCurrency(amount: number) {
   }).format(amount);
 }
 
+function ownerFieldsFromGroupMeta(
+  meta: Record<string, string | number | null> | undefined,
+): { ownerId?: string; ownershipGroupId?: string } {
+  const ownerId = metaString(meta, "owner_id");
+  const legacyGroupId = metaString(meta, "ownership_group_id");
+  if (ownerId) return { ownerId };
+  if (legacyGroupId) return { ownershipGroupId: legacyGroupId, ownerId: legacyGroupId };
+  return {};
+}
+
 export function FeedingForm({
   orgId,
   rationOptions,
@@ -84,7 +94,8 @@ export function FeedingForm({
 
   const initialGroupId = feeding?.cattle_group_id ?? prefill?.groupId ?? "";
   const initialLocationId = feeding?.location_id ?? prefill?.locationId ?? "";
-  const initialOwnerId = feeding?.ownership_group_id ?? prefill?.ownerId ?? "";
+  const initialOwnerId =
+    feeding?.owner_id ?? feeding?.ownership_group_id ?? prefill?.ownerId ?? "";
 
   const [groupId, setGroupId] = useState(initialGroupId);
   const [locationId, setLocationId] = useState(initialLocationId);
@@ -165,10 +176,9 @@ export function FeedingForm({
     const group = groupOptions.find((g) => g.value === nextGroupId);
     if (!group) return;
     const loc = metaString(group.meta, "location_id");
-    const owner =
-      metaString(group.meta, "owner_id") || metaString(group.meta, "ownership_group_id");
+    const ownerFields = ownerFieldsFromGroupMeta(group.meta);
     if (loc) setLocationId(loc);
-    if (owner) setOwnerId(owner);
+    if (ownerFields.ownerId) setOwnerId(ownerFields.ownerId);
     void refreshPreview();
   }
 
@@ -181,6 +191,11 @@ export function FeedingForm({
     const errors: Record<string, string> = {};
     const resolvedLocationId = locationFromGroup ? groupLocationId : locationId;
     const resolvedOwnerId = ownerFromGroup ? groupOwnerId : ownerId;
+    const ownerFields = ownerFromGroup
+      ? ownerFieldsFromGroupMeta(groupMeta)
+      : resolvedOwnerId
+        ? { ownerId: resolvedOwnerId }
+        : {};
 
     if (!groupId && requireLocation && !resolvedLocationId) {
       errors.location = "Select a cattle lot or location";
@@ -217,8 +232,8 @@ export function FeedingForm({
       fedAt,
       cattleGroupId: groupId || undefined,
       locationId: resolvedLocationId || undefined,
-      ownershipGroupId: resolvedOwnerId || undefined,
-      ownerId: resolvedOwnerId || undefined,
+      ownershipGroupId: ownerFields.ownershipGroupId,
+      ownerId: ownerFields.ownerId,
       headCount: parsedHead,
       fedBy: fedBy || undefined,
       notes: notes || undefined,
@@ -234,8 +249,8 @@ export function FeedingForm({
           fedAt,
           cattleGroupId: groupId || null,
           locationId: resolvedLocationId || null,
-          ownershipGroupId: resolvedOwnerId || null,
-          ownerId: resolvedOwnerId || null,
+          ownershipGroupId: ownerFields.ownershipGroupId ?? null,
+          ownerId: ownerFields.ownerId ?? null,
           headCount: parsedHead ?? null,
           fedBy: fedBy || null,
           notes: notes || null,

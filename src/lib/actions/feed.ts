@@ -41,6 +41,26 @@ function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+/** owners.id and ownership_groups.id are different FK targets — never mix them. */
+function feedingOwnerColumns(input: {
+  ownerId?: string | null;
+  ownershipGroupId?: string | null;
+}): { owner_id: string | null; ownership_group_id: string | null } {
+  const ownerId = input.ownerId?.trim() || null;
+  const ownershipGroupId = input.ownershipGroupId?.trim() || null;
+
+  if (ownerId && ownershipGroupId) {
+    return { owner_id: ownerId, ownership_group_id: ownershipGroupId };
+  }
+  if (ownerId) {
+    return { owner_id: ownerId, ownership_group_id: null };
+  }
+  if (ownershipGroupId) {
+    return { owner_id: ownershipGroupId, ownership_group_id: ownershipGroupId };
+  }
+  return { owner_id: null, ownership_group_id: null };
+}
+
 async function resolvedRationUnitCost(orgId: string, rationId: string): Promise<number> {
   const prices = await getRationUnitPrices(orgId, [rationId]);
   return prices.get(rationId) ?? 0;
@@ -273,7 +293,10 @@ export async function createFeeding(
     const unitCost = await getRationUnitPriceAtDate(orgId, input.feedRationId, fedAt);
     const totalFeedCost = Math.round(unitCost * input.quantity * 100) / 100;
 
-    const resolvedOwnerId = input.ownerId || input.ownershipGroupId || null;
+    const ownerColumns = feedingOwnerColumns({
+      ownerId: input.ownerId,
+      ownershipGroupId: input.ownershipGroupId,
+    });
 
     const { data, error } = await supabase
       .from("feeding_records")
@@ -284,8 +307,8 @@ export async function createFeeding(
         fed_at: fedAt,
         cattle_group_id: input.cattleGroupId || null,
         location_id: input.locationId || null,
-        ownership_group_id: input.ownershipGroupId || resolvedOwnerId,
-        owner_id: resolvedOwnerId,
+        ownership_group_id: ownerColumns.ownership_group_id,
+        owner_id: ownerColumns.owner_id,
         head_count: input.headCount ?? null,
         fed_by: input.fedBy || user.id,
         notes: input.notes?.trim() || null,
@@ -372,9 +395,13 @@ export async function updateFeeding(
     if (input.fedAt !== undefined) updates.fed_at = input.fedAt;
     if (input.cattleGroupId !== undefined) updates.cattle_group_id = input.cattleGroupId;
     if (input.locationId !== undefined) updates.location_id = input.locationId;
-    if (input.ownershipGroupId !== undefined) updates.ownership_group_id = input.ownershipGroupId;
-    if (input.ownerId !== undefined) {
-      (updates as { owner_id?: string | null }).owner_id = input.ownerId;
+    if (input.ownershipGroupId !== undefined || input.ownerId !== undefined) {
+      const ownerColumns = feedingOwnerColumns({
+        ownerId: input.ownerId,
+        ownershipGroupId: input.ownershipGroupId,
+      });
+      updates.ownership_group_id = ownerColumns.ownership_group_id;
+      (updates as { owner_id?: string | null }).owner_id = ownerColumns.owner_id;
     }
     if (input.headCount !== undefined) updates.head_count = input.headCount;
     if (input.fedBy !== undefined) updates.fed_by = input.fedBy;

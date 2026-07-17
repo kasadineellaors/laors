@@ -178,6 +178,7 @@ async function enrichFeedings(orgId: string, rows: FeedingRow[]): Promise<Feedin
       ownership_group_name:
         ownerMap.get(row.owner_id ?? "") ??
         (row.ownership_group_id ? ownerMap.get(row.ownership_group_id) ?? null : null),
+      owner_id: row.owner_id ?? null,
       fed_by: row.fed_by,
       fed_by_name: row.fed_by ? profileMap.get(row.fed_by) ?? null : null,
       notes: row.notes,
