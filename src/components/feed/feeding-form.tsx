@@ -13,6 +13,12 @@ import type {
 } from "@/lib/feed/types";
 import { createFeeding, updateFeeding } from "@/lib/actions/feed";
 import {
+  convertFeedQuantity,
+  formatFeedUnitLabel,
+  getFeedEntryUnitOptions,
+  normalizeFeedUnit,
+} from "@/lib/feed/units";
+import {
   checkFeedingStock,
   estimateFeedingCost,
   type FeedCostEstimate,
@@ -107,6 +113,9 @@ export function FeedingForm({
   const [quantity, setQuantity] = useState(
     feeding != null ? String(feeding.quantity) : prefill?.quantity ?? "",
   );
+  const [entryUnit, setEntryUnit] = useState(
+    feeding?.feed_ration_unit ?? rationOptions[0]?.unit ?? "ton",
+  );
   const [showMore, setShowMore] = useState(false);
   const [headCount, setHeadCount] = useState(
     feeding?.head_count != null ? String(feeding.head_count) : "",
@@ -140,7 +149,15 @@ export function FeedingForm({
   const showOwnerField = requireOwner && !ownerFromGroup;
 
   const selectedRation = rationOptions.find((r) => r.id === feedRationId);
-  const amountUnit = selectedRation?.unit?.trim() || null;
+  const rationUnit = selectedRation?.unit?.trim() || "unit";
+  const entryUnitOptions = getFeedEntryUnitOptions(rationUnit);
+
+  const quantityInRationUnit = useMemo(() => {
+    const qty = parseFloat(quantity);
+    if (Number.isNaN(qty) || qty <= 0) return null;
+    if (normalizeFeedUnit(entryUnit) === normalizeFeedUnit(rationUnit)) return qty;
+    return convertFeedQuantity(qty, entryUnit, rationUnit);
+  }, [quantity, entryUnit, rationUnit]);
 
   const effectiveHeadCount = useMemo(() => {
     const override = headCount.trim() ? parseInt(headCount, 10) : null;
@@ -155,6 +172,8 @@ export function FeedingForm({
     nextQuantity = quantity,
     nextFedAt = fedAt,
     nextHeadCount = effectiveHeadCount,
+    nextEntryUnit = entryUnit,
+    nextRationUnit = rationUnit,
   ) {
     const qty = parseFloat(nextQuantity);
     if (!nextRationId || Number.isNaN(qty) || qty <= 0) {
@@ -163,9 +182,19 @@ export function FeedingForm({
       return;
     }
 
+    const rationQty =
+      normalizeFeedUnit(nextEntryUnit) === normalizeFeedUnit(nextRationUnit)
+        ? qty
+        : convertFeedQuantity(qty, nextEntryUnit, nextRationUnit);
+    if (rationQty == null || rationQty <= 0) {
+      setCostEstimate(null);
+      setStockCheck(null);
+      return;
+    }
+
     const [cost, stock] = await Promise.all([
-      estimateFeedingCost(orgId, nextRationId, qty, nextFedAt, nextHeadCount),
-      checkFeedingStock(orgId, nextRationId, qty),
+      estimateFeedingCost(orgId, nextRationId, rationQty, nextFedAt, nextHeadCount),
+      checkFeedingStock(orgId, nextRationId, rationQty),
     ]);
     setCostEstimate(cost);
     setStockCheck(stock);
@@ -215,6 +244,20 @@ export function FeedingForm({
       errors.quantity = "Enter an amount greater than zero";
     }
 
+    const rationQty =
+      !Number.isNaN(qty) && qty > 0
+        ? normalizeFeedUnit(entryUnit) === normalizeFeedUnit(rationUnit)
+          ? qty
+          : convertFeedQuantity(qty, entryUnit, rationUnit)
+        : null;
+
+    if (!Number.isNaN(qty) && qty > 0 && rationQty == null) {
+      errors.quantity = `Cannot convert ${formatFeedUnitLabel(entryUnit)} to ${formatFeedUnitLabel(rationUnit)}`;
+    }
+    if (rationQty != null && rationQty <= 0) {
+      errors.quantity = "Enter an amount greater than zero";
+    }
+
     const parsedHead = headCount.trim() ? parseInt(headCount, 10) : undefined;
     if (headCount.trim() && (Number.isNaN(parsedHead!) || parsedHead! <= 0)) {
       errors.headCount = "Head count must be a positive number";
@@ -228,7 +271,7 @@ export function FeedingForm({
 
     const payload = {
       feedRationId,
-      quantity: qty,
+      quantity: rationQty!,
       fedAt,
       cattleGroupId: groupId || undefined,
       locationId: resolvedLocationId || undefined,
@@ -245,7 +288,7 @@ export function FeedingForm({
     const result = isEdit
       ? await updateFeeding(orgId, feeding!.id, {
           feedRationId,
-          quantity: qty,
+          quantity: rationQty!,
           fedAt,
           cattleGroupId: groupId || null,
           locationId: resolvedLocationId || null,
@@ -336,6 +379,7 @@ export function FeedingForm({
               setQuantity("");
               setNotes("");
               setHeadCount("");
+              setEntryUnit(rationUnit);
             }}
           >
             Log another feeding
@@ -469,8 +513,22 @@ export function FeedingForm({
             id="ration"
             value={feedRationId}
             onChange={(e) => {
-              setFeedRationId(e.target.value);
-              void refreshPreview(e.target.value, quantity, fedAt, effectiveHeadCount);
+              const nextRationId = e.target.value;
+              const nextRation = rationOptions.find((r) => r.id === nextRationId);
+              const nextRationUnit = nextRation?.unit?.trim() || "unit";
+              const nextEntryOptions = getFeedEntryUnitOptions(nextRationUnit);
+              setFeedRationId(nextRationId);
+              setEntryUnit((current) =>
+                nextEntryOptions.includes(current) ? current : nextRationUnit,
+              );
+              void refreshPreview(
+                nextRationId,
+                quantity,
+                fedAt,
+                effectiveHeadCount,
+                nextEntryOptions.includes(entryUnit) ? entryUnit : nextRationUnit,
+                nextRationUnit,
+              );
             }}
             className={cn(selectClass, fieldErrors.ration && "border-status-critical")}
             required
@@ -499,22 +557,61 @@ export function FeedingForm({
         </div>
 
         <div>
-          <Label htmlFor="quantity">{amountUnit ? `Amount (${amountUnit})` : "Amount"}</Label>
-          <Input
-            id="quantity"
-            type="number"
-            min={0.01}
-            step="any"
-            value={quantity}
-            onChange={(e) => {
-              setQuantity(e.target.value);
-              void refreshPreview(feedRationId, e.target.value, fedAt, effectiveHeadCount);
-            }}
-            required
-            placeholder="0"
-            aria-invalid={Boolean(fieldErrors.quantity)}
-            aria-describedby={fieldErrors.quantity ? "quantity-error" : "cost-preview"}
-          />
+          <Label htmlFor="quantity">Amount fed</Label>
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+            <Input
+              id="quantity"
+              type="number"
+              min={0.01}
+              step="any"
+              value={quantity}
+              onChange={(e) => {
+                setQuantity(e.target.value);
+                void refreshPreview(
+                  feedRationId,
+                  e.target.value,
+                  fedAt,
+                  effectiveHeadCount,
+                  entryUnit,
+                  rationUnit,
+                );
+              }}
+              required
+              placeholder="0"
+              aria-invalid={Boolean(fieldErrors.quantity)}
+              aria-describedby={fieldErrors.quantity ? "quantity-error" : "cost-preview"}
+            />
+            <select
+              id="entryUnit"
+              value={entryUnit}
+              onChange={(e) => {
+                setEntryUnit(e.target.value);
+                void refreshPreview(
+                  feedRationId,
+                  quantity,
+                  fedAt,
+                  effectiveHeadCount,
+                  e.target.value,
+                  rationUnit,
+                );
+              }}
+              className={cn(selectClass, "min-w-[5.5rem] px-3")}
+              aria-label="Feed amount unit"
+            >
+              {entryUnitOptions.map((unit) => (
+                <option key={unit} value={unit}>
+                  {formatFeedUnitLabel(unit)}
+                </option>
+              ))}
+            </select>
+          </div>
+          {quantityInRationUnit != null &&
+          normalizeFeedUnit(entryUnit) !== normalizeFeedUnit(rationUnit) ? (
+            <p className="mt-1 text-xs text-text-secondary">
+              = {quantityInRationUnit.toLocaleString()} {formatFeedUnitLabel(rationUnit)} stored
+              on ration
+            </p>
+          ) : null}
           {fieldErrors.quantity ? (
             <p id="quantity-error" className="mt-1 text-sm text-status-critical" role="alert">
               {fieldErrors.quantity}
@@ -564,9 +661,15 @@ export function FeedingForm({
             <p className="font-medium text-text-primary">
               Estimated feed cost: {formatCurrency(costEstimate.totalCost)}
             </p>
-            {costEstimate.amountPerHead != null && amountUnit ? (
+            {costEstimate.amountPerHead != null ? (
               <p className="mt-1 text-text-secondary">
-                Amount per head: {costEstimate.amountPerHead.toFixed(2)} {amountUnit}
+                Amount per head: {costEstimate.amountPerHead.toFixed(2)}{" "}
+                {formatFeedUnitLabel(rationUnit)}
+                {normalizeFeedUnit(entryUnit) !== normalizeFeedUnit(rationUnit) &&
+                quantityInRationUnit != null &&
+                effectiveHeadCount
+                  ? ` (${(parseFloat(quantity) / effectiveHeadCount).toFixed(2)} ${formatFeedUnitLabel(entryUnit)})`
+                  : null}
               </p>
             ) : null}
             {costEstimate.costPerHead != null ? (
