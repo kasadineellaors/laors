@@ -1,8 +1,10 @@
 import Link from "next/link";
 import type { SaleRecord } from "@/lib/sales/types";
+import { ArchivedToggleSection } from "@/components/ui/archived-toggle-section";
 
 interface SalesListProps {
   sales: SaleRecord[];
+  archivedSales?: SaleRecord[];
   emptyMessage?: string;
 }
 
@@ -19,8 +21,8 @@ function formatMoney(amount: number | null) {
   return amount.toLocaleString(undefined, { style: "currency", currency: "USD" });
 }
 
-export function SalesList({ sales, emptyMessage }: SalesListProps) {
-  if (sales.length === 0) {
+export function SalesList({ sales, archivedSales = [], emptyMessage }: SalesListProps) {
+  if (sales.length === 0 && archivedSales.length === 0) {
     return (
       <p className="rounded-xl border border-dashed border-border-neutral px-4 py-8 text-center text-sm text-text-secondary">
         {emptyMessage ?? "No sales recorded yet."}
@@ -29,35 +31,54 @@ export function SalesList({ sales, emptyMessage }: SalesListProps) {
   }
 
   return (
-    <ul className="space-y-3">
-      {sales.map((s) => (
-        <li key={s.id}>
-          <Link
-            href={`/sales/${s.id}`}
-            className="block rounded-xl border border-border-neutral bg-surface-white px-4 py-3 hover:border-navy/40"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="font-semibold text-navy">
-                  {s.head_count} head{s.buyer_name ? ` → ${s.buyer_name}` : ""}
-                </p>
-                {s.cattle_group_name ? (
-                  <p className="text-sm text-text-secondary">{s.cattle_group_name}</p>
-                ) : null}
-                {s.avg_weight_lbs != null ? (
-                  <p className="text-xs text-text-secondary">
-                    {Math.round(s.avg_weight_lbs)} lb avg out
-                  </p>
-                ) : null}
-              </div>
-              <div className="shrink-0 text-right">
-                <p className="text-lg font-bold text-brown">{formatMoney(s.total_amount)}</p>
-                <p className="text-xs text-text-secondary">{formatDate(s.sale_date)}</p>
-              </div>
-            </div>
-          </Link>
-        </li>
-      ))}
-    </ul>
+    <>
+      <ul className="space-y-3">
+        {sales.map((s) => (
+          <li key={s.id}>
+            <Link
+              href={`/sales/${s.id}`}
+              className="block rounded-xl border border-border-neutral bg-surface-white px-4 py-3 hover:border-navy/40"
+            >
+              <SaleRow sale={s} />
+            </Link>
+          </li>
+        ))}
+      </ul>
+      <ArchivedToggleSection count={archivedSales.length} label="archived sales">
+        <ul className="space-y-3">
+          {archivedSales.map((s) => (
+            <li
+              key={s.id}
+              className="rounded-xl border border-dashed border-border-neutral bg-cream/30 px-4 py-3"
+            >
+              <SaleRow sale={s} />
+              <p className="mt-2 text-xs text-text-secondary">Archived — hidden from lists and summaries</p>
+            </li>
+          ))}
+        </ul>
+      </ArchivedToggleSection>
+    </>
+  );
+}
+
+function SaleRow({ sale: s }: { sale: SaleRecord }) {
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <div>
+        <p className="font-semibold text-navy">
+          {s.head_count} head{s.buyer_name ? ` → ${s.buyer_name}` : ""}
+        </p>
+        {s.cattle_group_name ? (
+          <p className="text-sm text-text-secondary">{s.cattle_group_name}</p>
+        ) : null}
+        {s.avg_weight_lbs != null ? (
+          <p className="text-xs text-text-secondary">{Math.round(s.avg_weight_lbs)} lb avg out</p>
+        ) : null}
+      </div>
+      <div className="shrink-0 text-right">
+        <p className="text-lg font-bold text-brown">{formatMoney(s.total_amount)}</p>
+        <p className="text-xs text-text-secondary">{formatDate(s.sale_date)}</p>
+      </div>
+    </div>
   );
 }

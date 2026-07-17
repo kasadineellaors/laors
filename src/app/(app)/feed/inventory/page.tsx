@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireOnboardedUser } from "@/lib/auth/session";
-import { listFeedItems } from "@/lib/feed/inventory-queries";
+import { listArchivedFeedItems, listFeedItems } from "@/lib/feed/inventory-queries";
 import { FeedItemList } from "@/components/feed/feed-item-list";
 import { Button } from "@/components/ui/button";
 import { AppPageHeader } from "@/components/layout/app-page-header";
@@ -14,7 +14,10 @@ export const metadata: Metadata = {
 export default async function FeedInventoryPage() {
   const session = await requireOnboardedUser();
   const orgId = session.organization!.id;
-  const items = await listFeedItems(orgId);
+  const [items, archivedItems] = await Promise.all([
+    listFeedItems(orgId),
+    listArchivedFeedItems(orgId),
+  ]);
   const lowStock = items.filter((i) => i.is_low_stock).length;
 
   return (
@@ -34,6 +37,7 @@ export default async function FeedInventoryPage() {
       />
       <FeedItemList
         items={items}
+        archivedItems={archivedItems}
         emptyMessage="Add feedstuff you keep on hand — then build rations from inventory."
       />
     </AppPageShell>

@@ -18,6 +18,21 @@ export async function listSales(orgId: string, limit = 50): Promise<SaleRecord[]
   return enrichSales(orgId, rows);
 }
 
+export async function listArchivedSales(orgId: string, limit = 50): Promise<SaleRecord[]> {
+  const supabase = await createClient();
+  const { data: rows, error } = await supabase
+    .from("sales_records")
+    .select("*")
+    .eq("organization_id", orgId)
+    .eq("is_active", false)
+    .order("sale_date", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error || !rows?.length) return [];
+  return enrichSales(orgId, rows);
+}
+
 export async function getSale(orgId: string, id: string): Promise<SaleRecord | null> {
   const supabase = await createClient();
   const { data: row } = await supabase

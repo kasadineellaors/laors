@@ -7,6 +7,8 @@ import {
   cattleNavIsActive,
 } from "@/lib/enterprise/ui";
 import type { OperationMode } from "@/types/auth";
+import type { AppModuleId } from "@/lib/auth/modules";
+import { navKeyVisible } from "@/lib/auth/modules";
 import { cn } from "@/lib/utils/cn";
 
 const BASE_NAV = [
@@ -45,14 +47,21 @@ const MORE_NAV = {
 interface AppNavProps {
   calendarEnabled?: boolean;
   enabledModes?: OperationMode[];
+  visibleModules?: AppModuleId[];
 }
 
-export function AppNav({ calendarEnabled = false, enabledModes = [] }: AppNavProps) {
+export function AppNav({
+  calendarEnabled = false,
+  enabledModes = [],
+  visibleModules,
+}: AppNavProps) {
   const pathname = usePathname();
   const modes = enabledModes;
-  const navItems = calendarEnabled
+  const modules = visibleModules ?? [];
+  const navItems = (calendarEnabled
     ? [...BASE_NAV, CALENDAR_NAV, MORE_NAV]
-    : [...BASE_NAV, MORE_NAV];
+    : [...BASE_NAV, MORE_NAV]
+  ).filter((item) => navKeyVisible(item.key, modules, calendarEnabled));
 
   return (
     <nav

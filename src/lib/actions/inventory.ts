@@ -700,7 +700,11 @@ export async function updateMovementNotes(
   }
 }
 
-export async function archiveCattleGroup(orgId: string, groupId: string): Promise<ActionState> {
+export async function archiveCattleGroup(
+  orgId: string,
+  groupId: string,
+  options?: { force?: boolean },
+): Promise<ActionState> {
   try {
     const { supabase } = await requireOrgAccess(orgId);
 
@@ -710,8 +714,10 @@ export async function archiveCattleGroup(orgId: string, groupId: string): Promis
       .eq("cattle_group_id", groupId);
 
     const total = (counts ?? []).reduce((s, c) => s + c.head_count, 0);
-    if (total > 0) {
-      return { error: "Move or zero out all head before archiving this group" };
+    if (total > 0 && !options?.force) {
+      return {
+        error: `This lot is not zeroed out (${total} head). Confirm archive to proceed.`,
+      };
     }
 
     const { error } = await supabase

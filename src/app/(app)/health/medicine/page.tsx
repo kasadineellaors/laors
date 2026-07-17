@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireOnboardedUser } from "@/lib/auth/session";
-import { listMedicineItems } from "@/lib/medicine/queries";
+import { listArchivedMedicineItems, listMedicineItems } from "@/lib/medicine/queries";
 import { MedicineList } from "@/components/health/medicine-list";
 import { MedicineSummaryMetrics } from "@/components/health/medicine-summary-metrics";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,10 @@ export const metadata: Metadata = {
 export default async function MedicinePage() {
   const session = await requireOnboardedUser();
   const orgId = session.organization!.id;
-  const items = await listMedicineItems(orgId);
+  const [items, archivedItems] = await Promise.all([
+    listMedicineItems(orgId),
+    listArchivedMedicineItems(orgId),
+  ]);
 
   const lowStock = items.filter((i) => i.is_low_stock && !i.is_out_of_stock).length;
   const outOfStock = items.filter((i) => i.is_out_of_stock).length;
@@ -47,6 +50,7 @@ export default async function MedicinePage() {
 
       <MedicineList
         items={items}
+        archivedItems={archivedItems}
         emptyMessage="No medicine tracked yet — add your vaccines and supplies."
       />
     </div>

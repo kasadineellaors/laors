@@ -123,9 +123,20 @@ export function GroupDetailClient({
   }
 
   async function handleArchive() {
-    if (!window.confirm(`Archive "${group.name}"?`)) return;
+    const head = group.total_head;
+    if (head > 0) {
+      const ok = window.confirm(
+        `This lot is not zeroed out (${head} head still on it). Are you sure you want to archive? It will be hidden from active lists and dashboards.`,
+      );
+      if (!ok) return;
+    } else if (!window.confirm(`Archive "${group.name}"?`)) {
+      return;
+    }
+
     setLoading(true);
-    const result = await archiveCattleGroup(orgId, group.id);
+    const result = await archiveCattleGroup(orgId, group.id, {
+      force: head > 0,
+    });
     setLoading(false);
     if (result.error) setError(result.error);
     else router.push("/cattle");

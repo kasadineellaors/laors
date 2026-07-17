@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireOnboardedUser } from "@/lib/auth/session";
-import { getSalesSummary, listSales } from "@/lib/sales/queries";
+import { getSalesSummary, listArchivedSales, listSales } from "@/lib/sales/queries";
 import { SalesList } from "@/components/sales/sales-list";
 import { ExportButtons } from "@/components/export/export-buttons";
 import { Button } from "@/components/ui/button";
@@ -16,8 +16,9 @@ export default async function SalesPage() {
   const session = await requireOnboardedUser();
   const orgId = session.organization!.id;
 
-  const [sales, summary] = await Promise.all([
+  const [sales, archivedSales, summary] = await Promise.all([
     listSales(orgId),
+    listArchivedSales(orgId),
     getSalesSummary(orgId),
   ]);
 
@@ -40,7 +41,7 @@ export default async function SalesPage() {
           </div>
         }
       />
-      <SalesList sales={sales} emptyMessage="No sales yet — tap + Sale to record one." />
+      <SalesList sales={sales} archivedSales={archivedSales} emptyMessage="No sales yet — tap + Sale to record one." />
     </AppPageShell>
   );
 }

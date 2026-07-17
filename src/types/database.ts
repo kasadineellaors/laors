@@ -112,6 +112,7 @@ export interface Database {
           user_id: string;
           system_role: SystemRole;
           ranch_role_id: string | null;
+          visible_modules: string[] | null;
           is_active: boolean;
           invited_email: string | null;
           invited_at: string | null;
@@ -125,6 +126,7 @@ export interface Database {
           user_id: string;
           system_role?: SystemRole;
           ranch_role_id?: string | null;
+          visible_modules?: string[] | null;
           is_active?: boolean;
           invited_email?: string | null;
           invited_at?: string | null;
@@ -138,6 +140,7 @@ export interface Database {
           user_id?: string;
           system_role?: SystemRole;
           ranch_role_id?: string | null;
+          visible_modules?: string[] | null;
           is_active?: boolean;
           invited_email?: string | null;
           invited_at?: string | null;

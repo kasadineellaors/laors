@@ -27,6 +27,19 @@ export async function listTasks(
   return enrichTasks(orgId, tasks);
 }
 
+export async function listArchivedTasks(orgId: string): Promise<TaskRecord[]> {
+  const supabase = await createClient();
+  const { data: tasks, error } = await supabase
+    .from("tasks")
+    .select("*")
+    .eq("organization_id", orgId)
+    .eq("is_active", false)
+    .order("updated_at", { ascending: false });
+
+  if (error || !tasks?.length) return [];
+  return enrichTasks(orgId, tasks);
+}
+
 export async function getTask(orgId: string, taskId: string): Promise<TaskRecord | null> {
   const supabase = await createClient();
   const { data: task } = await supabase

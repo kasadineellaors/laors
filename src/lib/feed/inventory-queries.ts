@@ -63,6 +63,32 @@ export async function listFeedItems(orgId: string): Promise<FeedItemRecord[]> {
   });
 }
 
+export async function listArchivedFeedItems(orgId: string): Promise<FeedItemRecord[]> {
+  const supabase = await createClient();
+  const { data: rows, error } = await supabase
+    .from("feed_items")
+    .select("*")
+    .eq("organization_id", orgId)
+    .eq("is_active", false)
+    .order("name");
+
+  if (error || !rows?.length) return [];
+
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    unit: r.unit,
+    quantity_on_hand: Number(r.quantity_on_hand),
+    reorder_at: r.reorder_at != null ? Number(r.reorder_at) : null,
+    price_per_unit: r.price_per_unit != null ? Number(r.price_per_unit) : null,
+    notes: r.notes,
+    is_low_stock: false,
+    projected_days_remaining: null,
+    created_at: r.created_at,
+    updated_at: r.updated_at,
+  }));
+}
+
 export async function getFeedItem(orgId: string, itemId: string): Promise<FeedItemRecord | null> {
   const items = await listFeedItems(orgId);
   return items.find((i) => i.id === itemId) ?? null;

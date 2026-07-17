@@ -13,12 +13,14 @@ import { ENTERPRISE_LABELS } from "@/lib/lots/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CattleLotCard } from "@/components/inventory/cattle-lot-card";
+import { ArchivedToggleSection } from "@/components/ui/archived-toggle-section";
 import { cn } from "@/lib/utils/cn";
 
 type StatusFilter = "all" | "open" | "closed";
 
 interface CattleGroupsListProps {
   groups: CattleGroupSummary[];
+  archivedGroups?: CattleGroupSummary[];
   canManageCattle?: boolean;
   className?: string;
 }
@@ -35,6 +37,7 @@ function statusPillClass(active: boolean) {
 
 export function CattleGroupsList({
   groups,
+  archivedGroups = [],
   canManageCattle = false,
   className,
 }: CattleGroupsListProps) {
@@ -399,6 +402,26 @@ export function CattleGroupsList({
           ))}
         </ul>
       )}
+
+      <ArchivedToggleSection count={archivedGroups.length} label="archived lots">
+        <ul className="space-y-3">
+          {archivedGroups.map((group) => (
+            <li
+              key={group.id}
+              className="rounded-[var(--radius-card)] border border-dashed border-border-neutral bg-cream/30 px-4 py-3"
+            >
+              <p className="font-semibold text-navy">{group.lot_number || group.name}</p>
+              <p className="text-sm text-text-secondary">
+                {getLotLocationLabel(group)}
+                {group.total_head > 0 ? ` · ${group.total_head} hd` : ""}
+              </p>
+              <p className="mt-1 text-xs text-text-secondary">
+                Archived — hidden from dashboards and active lists
+              </p>
+            </li>
+          ))}
+        </ul>
+      </ArchivedToggleSection>
     </div>
   );
 }

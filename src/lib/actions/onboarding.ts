@@ -10,6 +10,7 @@ import { getSuggestedLocationTypes } from "@/lib/config/defaults";
 import type { OperationMode } from "@/types/auth";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { sanitizeModuleIds } from "@/lib/auth/modules";
 
 export type ActionState = {
   error?: string;
@@ -250,17 +251,32 @@ export async function setupOnboardingConfig(
 const inviteSchema = z.object({
   orgId: z.string().uuid(),
   email: z.string().email(),
-  role: z.enum(["manager", "worker"]),
+  role: z.enum(["manager", "worker", "accountant", "veterinarian", "viewer"]),
+  visibleModules: z.array(z.string()).optional(),
 });
+
+function parseVisibleModules(formData: FormData): string[] | null {
+  const raw = formData.get("visibleModules");
+  if (typeof raw !== "string" || !raw.trim()) return null;
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return null;
+    return sanitizeModuleIds(parsed.map(String));
+  } catch {
+    return null;
+  }
+}
 
 export async function inviteTeamMember(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
+  const visibleModulesRaw = parseVisibleModules(formData);
   const parsed = inviteSchema.safeParse({
     orgId: formData.get("orgId"),
     email: formData.get("email"),
     role: formData.get("role") ?? "worker",
+    visibleModules: visibleModulesRaw ?? undefined,
   });
 
   if (!parsed.success) {
@@ -272,7 +288,32 @@ export async function inviteTeamMember(
   const orgId = parsed.data.orgId;
 
   try {
-    await requireOrgAccess(orgId);
+    const { supabase } = await requireOrgAccess(orgId);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    const { data: inviter } = await supabase
+      .from("organization_members")
+      .select("system_role")
+      .eq("organization_id", orgId)
+      .eq("user_id", user!.id)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    const inviterIsOwner = inviter?.system_role === "owner";
+    let visibleModules: string[] | null = null;
+    if (inviterIsOwner && visibleModulesRaw) {
+      if (visibleModulesRaw.length === 0) {
+        return { error: "Select at least one area for this person to see" };
+      }
+      visibleModules = visibleModulesRaw;
+    }
+
+    const memberPayload = {
+      system_role: role,
+      visible_modules: visibleModules,
+    };
 
     const admin = createAdminClient();
     const appUrl = await getAppUrl();
@@ -296,7 +337,7 @@ export async function inviteTeamMember(
             {
               organization_id: orgId,
               user_id: existing.id,
-              system_role: role,
+              ...memberPayload,
               is_active: true,
               joined_at: new Date().toISOString(),
             },
@@ -322,7 +363,7 @@ export async function inviteTeamMember(
       const { error: memberError } = await admin.from("organization_members").insert({
         organization_id: orgId,
         user_id: invite.userId,
-        system_role: role,
+        ...memberPayload,
         joined_at: new Date().toISOString(),
       });
 
@@ -334,7 +375,6 @@ export async function inviteTeamMember(
       return { success: `Invite email sent to ${email}` };
     }
 
-    const { supabase } = await requireOrgAccess(orgId);
     const { data: org } = await supabase
       .from("organizations")
       .select("settings")
@@ -342,9 +382,18 @@ export async function inviteTeamMember(
       .single();
 
     const settings = (org?.settings as Record<string, unknown>) ?? {};
-    const pending = (settings.pending_invites as Array<{ email: string; role: string }>) ?? [];
+    const pending =
+      (settings.pending_invites as Array<{
+        email: string;
+        role: string;
+        visible_modules?: string[] | null;
+      }>) ?? [];
     if (!pending.some((p) => p.email.toLowerCase() === email)) {
-      pending.push({ email, role });
+      pending.push({
+        email,
+        role,
+        visible_modules: visibleModules,
+      });
     }
 
     const { error } = await supabase

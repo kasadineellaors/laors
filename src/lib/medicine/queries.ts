@@ -35,6 +35,38 @@ export async function listMedicineItems(orgId: string): Promise<MedicineItemReco
   });
 }
 
+export async function listArchivedMedicineItems(orgId: string): Promise<MedicineItemRecord[]> {
+  const supabase = await createClient();
+  const { data: rows, error } = await supabase
+    .from("medicine_items")
+    .select("*")
+    .eq("organization_id", orgId)
+    .eq("is_active", false)
+    .order("name");
+
+  if (error || !rows?.length) return [];
+
+  return rows.map((r) => {
+    const qty = Number(r.quantity_on_hand);
+    const row = r as Record<string, unknown>;
+    return {
+      id: r.id,
+      name: r.name,
+      unit: r.unit,
+      quantity_on_hand: qty,
+      price_per_cc: r.price_per_cc != null ? Number(r.price_per_cc) : null,
+      avg_unit_cost: row.avg_unit_cost != null ? Number(row.avg_unit_cost) : null,
+      withdrawal_days: row.withdrawal_days != null ? Number(row.withdrawal_days) : null,
+      reorder_at: r.reorder_at != null ? Number(r.reorder_at) : null,
+      notes: r.notes,
+      is_low_stock: false,
+      is_out_of_stock: qty <= 0,
+      created_at: r.created_at,
+      updated_at: r.updated_at,
+    };
+  });
+}
+
 export async function getMedicineItem(
   orgId: string,
   itemId: string,

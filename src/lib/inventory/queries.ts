@@ -76,8 +76,10 @@ function resolveOwnerName(
 export async function listCattleGroups(
   orgId: string,
   supabaseClient?: SupabaseClient<Database>,
+  options?: { active?: boolean },
 ): Promise<CattleGroupSummary[]> {
   const supabase = supabaseClient ?? (await createClient());
+  const active = options?.active ?? true;
 
   const baseSelect =
     "id, name, location_id, notes, ownership_group_id, customer_id, lot_number, enterprise_type, lot_status, opened_at, closed_at, purchase_date, arrival_date, starting_head, pay_weight_lbs, shrunk_weight_lbs, received_weight_lbs, avg_weight_lbs, purchase_price_per_lb, landed_cost, seller_name, source_name";
@@ -86,7 +88,7 @@ export async function listCattleGroups(
     .from("cattle_groups")
     .select(`${baseSelect}, owner_id, current_avg_weight_lbs`)
     .eq("organization_id", orgId)
-    .eq("is_active", true)
+    .eq("is_active", active)
     .order("name");
 
   let groupRows: GroupRow[];
@@ -97,7 +99,7 @@ export async function listCattleGroups(
       .from("cattle_groups")
       .select(baseSelect)
       .eq("organization_id", orgId)
-      .eq("is_active", true)
+      .eq("is_active", active)
       .order("name");
     if (basicRes.error) throw new Error(basicRes.error.message);
     groupRows = (basicRes.data ?? []) as GroupRow[];
@@ -220,6 +222,10 @@ export async function listCattleGroups(
       source_name: g.source_name ?? null,
     };
   });
+}
+
+export async function listArchivedCattleGroups(orgId: string): Promise<CattleGroupSummary[]> {
+  return listCattleGroups(orgId, undefined, { active: false });
 }
 
 export async function getCattleGroup(

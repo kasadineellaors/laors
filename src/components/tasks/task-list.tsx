@@ -18,6 +18,7 @@ import {
   todayIso,
 } from "@/lib/tasks/display";
 import { Button } from "@/components/ui/button";
+import { ArchivedToggleSection } from "@/components/ui/archived-toggle-section";
 import { cn } from "@/lib/utils/cn";
 
 type StatusFilter = "open" | "due_today" | "overdue" | "completed" | "all";
@@ -25,6 +26,7 @@ type StatusFilter = "open" | "due_today" | "overdue" | "completed" | "all";
 interface TaskListProps {
   orgId: string;
   tasks: TaskRecord[];
+  archivedTasks?: TaskRecord[];
   currentUserId?: string;
 }
 
@@ -254,7 +256,7 @@ function EmptyState({ filter }: { filter: StatusFilter }) {
   );
 }
 
-export function TaskList({ orgId, tasks, currentUserId }: TaskListProps) {
+export function TaskList({ orgId, tasks, archivedTasks = [], currentUserId }: TaskListProps) {
   const router = useRouter();
   const today = todayIso();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("open");
@@ -584,6 +586,23 @@ export function TaskList({ orgId, tasks, currentUserId }: TaskListProps) {
           ))}
         </ul>
       )}
+
+      <ArchivedToggleSection count={archivedTasks.length} label="archived jobs">
+        <ul className="space-y-3">
+          {archivedTasks.map((task) => (
+            <li
+              key={task.id}
+              className="rounded-xl border border-dashed border-border-neutral bg-cream/30 px-4 py-3"
+            >
+              <p className="font-semibold text-navy">{task.title}</p>
+              {task.due_date ? (
+                <p className="text-sm text-text-secondary">Due {task.due_date}</p>
+              ) : null}
+              <p className="mt-1 text-xs text-text-secondary">Archived — hidden from job board</p>
+            </li>
+          ))}
+        </ul>
+      </ArchivedToggleSection>
     </div>
   );
 }

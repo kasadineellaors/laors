@@ -4,6 +4,7 @@ import { requireOnboardedUser } from "@/lib/auth/session";
 import { canManageTeam } from "@/lib/auth/roles";
 import { createClient } from "@/lib/supabase/server";
 import { getEmailDeliveryStatus } from "@/lib/email/setup-status";
+import type { SystemRole } from "@/types/database";
 import { TeamSetupClient } from "@/components/setup/team-setup-client";
 import { ManageSubpageHeader } from "@/components/setup/manage-subpage-header";
 import { ManageSubpageShell } from "@/components/setup/manage-subpage-shell";
@@ -19,6 +20,7 @@ export default async function TeamSetupPage() {
   }
 
   const orgId = session.organization!.id;
+  const inviterIsOwner = session.membership?.system_role === "owner";
   const supabase = await createClient();
 
   const { data: org } = await supabase
@@ -29,13 +31,33 @@ export default async function TeamSetupPage() {
 
   const settings = (org?.settings as Record<string, unknown>) ?? {};
   const pendingInvites =
-    (settings.pending_invites as Array<{ email: string; role: string }>) ?? [];
+    (settings.pending_invites as Array<{
+      email: string;
+      role: string;
+      visible_modules?: string[] | null;
+    }>) ?? [];
 
-  const { data: memberRows } = await supabase
+  const { data: memberRowsRaw, error: membersError } = await supabase
     .from("organization_members")
-    .select("system_role, user_id")
+    .select("id, system_role, visible_modules, user_id")
     .eq("organization_id", orgId)
     .eq("is_active", true);
+
+  let memberRows = memberRowsRaw;
+  if (
+    membersError &&
+    (membersError.message.includes("visible_modules") ||
+      membersError.message.includes("schema cache"))
+  ) {
+    const { data: fallback } = await supabase
+      .from("organization_members")
+      .select("id, system_role, user_id")
+      .eq("organization_id", orgId)
+      .eq("is_active", true);
+    memberRows = (fallback ?? []).map((row) => ({ ...row, visible_modules: null }));
+  } else if (membersError) {
+    throw membersError;
+  }
 
   const userIds = (memberRows ?? []).map((m) => m.user_id);
   const { data: profiles } = userIds.length
@@ -46,9 +68,10 @@ export default async function TeamSetupPage() {
   const members = (memberRows ?? []).map((m) => {
     const p = profileById.get(m.user_id);
     return {
+      id: m.id,
       name: p?.full_name?.trim() || "Team member",
-      role: m.system_role,
-      email: null as string | null,
+      role: m.system_role as SystemRole,
+      visibleModules: m.visible_modules,
     };
   });
 
@@ -58,10 +81,11 @@ export default async function TeamSetupPage() {
     <ManageSubpageShell>
       <ManageSubpageHeader
         title="Team"
-        subtitle="Invite workers, assign roles, and manage permissions."
+        subtitle="Invite workers, assign roles, and choose what each person can see."
       />
       <TeamSetupClient
         orgId={orgId}
+        inviterIsOwner={inviterIsOwner}
         pendingInvites={pendingInvites}
         members={members}
         emailConfigured={emailStatus.configured}

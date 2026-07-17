@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { requireOnboardedUser } from "@/lib/auth/session";
-import { listTasks } from "@/lib/tasks/queries";
+import { listArchivedTasks, listTasks } from "@/lib/tasks/queries";
 import { computeJobsSummary } from "@/lib/tasks/summary";
 import { JobsPageHeader } from "@/components/tasks/jobs-page-header";
 import { JobsSummaryMetrics } from "@/components/tasks/jobs-summary-metrics";
@@ -16,7 +16,10 @@ export default async function JobsPage() {
   const orgId = session.organization!.id;
   const userId = session.user.id;
 
-  const tasks = await listTasks(orgId, "all");
+  const [tasks, archivedTasks] = await Promise.all([
+    listTasks(orgId, "all"),
+    listArchivedTasks(orgId),
+  ]);
   const summary = computeJobsSummary(tasks);
   const showMetrics = tasks.length > 0;
 
@@ -26,7 +29,7 @@ export default async function JobsPage() {
 
       {showMetrics ? <JobsSummaryMetrics summary={summary} /> : null}
 
-      <TaskList orgId={orgId} tasks={tasks} currentUserId={userId} />
+      <TaskList orgId={orgId} tasks={tasks} archivedTasks={archivedTasks} currentUserId={userId} />
     </AppPageShell>
   );
 }
