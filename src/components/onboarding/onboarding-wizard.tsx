@@ -56,7 +56,7 @@ export function OnboardingWizard({
   const [locationTypes, setLocationTypes] = useState(
     getSuggestedLocationTypes(selectedModes.length ? selectedModes : ["cow_calf"]),
   );
-  const [propertyName, setPropertyName] = useState("Home Place");
+  const [propertyName, setPropertyName] = useState("Property 1");
   const [locationName, setLocationName] = useState("");
   const [propertyId, setPropertyId] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState("");
@@ -231,7 +231,7 @@ export function OnboardingWizard({
                 required
                 value={ranchName}
                 onChange={(e) => setRanchName(e.target.value)}
-                placeholder="Double K Cattle Co"
+                placeholder="Example Ranch"
               />
             </div>
             <div>
@@ -340,7 +340,7 @@ export function OnboardingWizard({
                 id="locationName"
                 value={locationName}
                 onChange={(e) => setLocationName(e.target.value)}
-                placeholder="South Trap"
+                placeholder="Pasture 1"
               />
             </div>
             <Button type="submit" fullWidth size="xl" disabled={loading}>

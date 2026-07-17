@@ -8,6 +8,7 @@ import {
   calfSexToAnimalSex,
   inferTwinStatus,
 } from "@/lib/cow-calf/calving-alerts";
+import { reserveGenericCalfTags } from "@/lib/cow-calf/tag-generation";
 import type {
   AssistanceType,
   CalfSex,
@@ -110,14 +111,17 @@ export async function saveCowCalfCalving(
 
     const calvingIds: string[] = [];
     let anyLiveAtSide = false;
+    const autoCalfTags = await reserveGenericCalfTags(
+      supabase,
+      orgId,
+      input.calves.length,
+    );
 
     for (let i = 0; i < input.calves.length; i++) {
       const calf = input.calves[i];
       const outcome = calf.outcome ?? "live";
       const calfSex = calf.calfSex ?? "unknown";
-      const calfTag =
-        calf.calfTag?.trim() ||
-        `${damTag}-${calvedAt.replace(/-/g, "")}${input.calves.length > 1 ? `-${i + 1}` : ""}`;
+      const calfTag = calf.calfTag?.trim() || autoCalfTags[i];
 
       let calfId: string | null = null;
 

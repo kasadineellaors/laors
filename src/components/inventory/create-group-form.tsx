@@ -129,7 +129,7 @@ export function CreateGroupForm({
               id="lotNumber"
               value={lotNumber}
               onChange={(e) => setLotNumber(e.target.value)}
-              placeholder="2025 RE-JRS"
+              placeholder="Lot 1"
             />
           </div>
           <div>
@@ -154,7 +154,7 @@ export function CreateGroupForm({
             id="groupName"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="JRS stockers — south trap"
+            placeholder="Stocker lot — Pen 1"
           />
         </div>
         <div className="grid grid-cols-2 gap-3">

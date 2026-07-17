@@ -87,6 +87,7 @@ export function CowForm({ orgId, locationOptions, groupOptions, cow, onSuccess }
               id="tagNumber"
               value={tagNumber}
               onChange={(e) => setTagNumber(e.target.value)}
+              placeholder="Cow 1"
               required
             />
           </div>

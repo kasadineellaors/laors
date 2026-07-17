@@ -251,7 +251,7 @@ export function EnterpriseCalvingForm({
                 <Input
                   value={calf.calfTag}
                   onChange={(e) => updateCalf(index, { calfTag: e.target.value })}
-                  placeholder="Auto-generated if blank"
+                  placeholder="e.g. Calf 1 (auto if blank)"
                 />
               </div>
               <div>

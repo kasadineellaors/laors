@@ -171,7 +171,7 @@ export function TaskForm({
             id="description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="South trap — float valve stuck"
+            placeholder="Pen 1 — float valve stuck"
             rows={3}
             className="flex min-h-[5rem] w-full rounded-lg border border-border-neutral bg-surface-white px-4 py-3 text-base"
           />

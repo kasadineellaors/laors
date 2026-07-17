@@ -47,7 +47,7 @@ export function HerdForm({
             id="herd-name"
             name="name"
             required
-            placeholder="Spring Calvers"
+            placeholder="Herd 1"
             className="w-full rounded-lg border border-border-neutral bg-surface-white px-3 py-2 text-navy"
           />
         </div>

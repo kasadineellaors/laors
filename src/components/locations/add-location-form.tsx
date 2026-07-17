@@ -203,7 +203,7 @@ export function AddLocationForm({
             id="name"
             name="name"
             required
-            placeholder={mode === "property" ? "Home Place" : "North Trap"}
+            placeholder={mode === "property" ? "Property 1" : "Pasture 1"}
           />
         </div>
         <div className="grid gap-3 sm:grid-cols-2">

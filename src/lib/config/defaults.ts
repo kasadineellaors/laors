@@ -55,13 +55,13 @@ export function getSuggestedLocationTypes(
 }
 
 export const DEFAULT_PROPERTY_NAMES = [
-  "Home Place",
-  "Main Unit",
+  "Property 1",
+  "Property 2",
   "Headquarters",
 ];
 
 export const DEFAULT_FIRST_LOCATION_NAMES = [
-  "South Trap",
-  "North Section",
+  "Pasture 1",
+  "Pasture 2",
   "Pen 1",
 ];

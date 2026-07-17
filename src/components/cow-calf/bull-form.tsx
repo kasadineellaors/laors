@@ -90,6 +90,7 @@ export function BullForm({
               id="tagNumber"
               value={tagNumber}
               onChange={(e) => setTagNumber(e.target.value)}
+              placeholder="Bull 1"
               required
             />
           </div>
