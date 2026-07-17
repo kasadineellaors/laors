@@ -15,18 +15,20 @@ interface CreateGroupFormProps {
   orgId: string;
   locationOptions: SelectOption[];
   ownerOptions: SelectOption[];
+  lotLabelOptions: SelectOption[];
 }
 
 export function CreateGroupForm({
   orgId,
   locationOptions,
   ownerOptions,
+  lotLabelOptions,
 }: CreateGroupFormProps) {
   const router = useRouter();
   const today = new Date().toISOString().slice(0, 10);
+  const listId = `lot-label-options-${orgId}`;
 
-  const [lotNumber, setLotNumber] = useState("");
-  const [name, setName] = useState("");
+  const [lotLabel, setLotLabel] = useState("");
   const [enterpriseType, setEnterpriseType] = useState<EnterpriseType>("stocker");
   const [locationId, setLocationId] = useState(locationOptions[0]?.value ?? "");
   const [ownerId, setOwnerId] = useState("");
@@ -36,7 +38,6 @@ export function CreateGroupForm({
   const [sourceName, setSourceName] = useState("");
   const [headCount, setHeadCount] = useState("");
   const [payWeight, setPayWeight] = useState("");
-  const [shrunkWeight, setShrunkWeight] = useState("");
   const [receivedWeight, setReceivedWeight] = useState("");
   const [pricePerLb, setPricePerLb] = useState("");
   const [landedCost, setLandedCost] = useState("");
@@ -50,16 +51,13 @@ export function CreateGroupForm({
   const head = parseInt(headCount, 10);
   const hasHead = !Number.isNaN(head) && head > 0;
   const payNum = payWeight.trim() ? parseFloat(payWeight) : null;
-  const shrunkNum = shrunkWeight.trim() ? parseFloat(shrunkWeight) : null;
   const receivedNum = receivedWeight.trim() ? parseFloat(receivedWeight) : null;
   const avgIn = hasHead
     ? computeAvgWeightIn(head, {
         payWeightLbs: payNum,
-        shrunkWeightLbs: shrunkNum,
         receivedWeightLbs: receivedNum,
       })
     : null;
-  const payToShrunk = shrinkPct(payNum, shrunkNum);
   const payToReceived = shrinkPct(payNum, receivedNum);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -74,8 +72,14 @@ export function CreateGroupForm({
       return;
     }
 
+    const trimmedLot = lotLabel.trim();
+    if (!trimmedLot) {
+      setError("Select or enter a lot name");
+      setLoading(false);
+      return;
+    }
+
     const pay = payWeight.trim() ? parseFloat(payWeight) : undefined;
-    const shrunk = shrunkWeight.trim() ? parseFloat(shrunkWeight) : undefined;
     const received = receivedWeight.trim() ? parseFloat(receivedWeight) : undefined;
     const price = pricePerLb.trim() ? parseFloat(pricePerLb) : undefined;
     const landed = landedCost.trim()
@@ -85,17 +89,16 @@ export function CreateGroupForm({
         : undefined;
 
     const result = await createCattleGroup(orgId, {
-      name: name.trim() || lotNumber.trim() || `Lot ${purchaseDate}`,
+      name: trimmedLot,
       locationId,
       headCount: count,
       notes: notes || undefined,
       ownerId: ownerId || undefined,
-      lotNumber: lotNumber || undefined,
+      lotNumber: trimmedLot,
       enterpriseType,
       purchaseDate,
       arrivalDate,
       payWeightLbs: pay,
-      shrunkWeightLbs: shrunk,
       receivedWeightLbs: received,
       purchasePricePerLb: price,
       landedCost: landed,
@@ -122,15 +125,25 @@ export function CreateGroupForm({
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
-            <Label htmlFor="lotNumber">Lot ID</Label>
+            <Label htmlFor="lotLabel">Lot</Label>
             <Input
-              id="lotNumber"
-              value={lotNumber}
-              onChange={(e) => setLotNumber(e.target.value)}
+              id="lotLabel"
+              list={listId}
+              value={lotLabel}
+              onChange={(e) => setLotLabel(e.target.value)}
               placeholder="Lot 1"
+              required
             />
+            <datalist id={listId}>
+              {lotLabelOptions.map((option) => (
+                <option key={option.value} value={option.label} />
+              ))}
+            </datalist>
+            <p className="mt-1 text-xs text-text-secondary">
+              Pick a saved name from Manage → Lot Names, or type a new one.
+            </p>
           </div>
           <div>
             <Label htmlFor="enterprise">Enterprise</Label>
@@ -147,15 +160,6 @@ export function CreateGroupForm({
               ))}
             </select>
           </div>
-        </div>
-        <div>
-          <Label htmlFor="groupName">Lot name / description</Label>
-          <Input
-            id="groupName"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Stocker lot — Pen 1"
-          />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -242,23 +246,16 @@ export function CreateGroupForm({
           <div>
             <p className="text-sm font-semibold text-navy">Purchase weights</p>
             <p className="text-xs text-text-secondary">
-              Total lot pounds — pay at sale barn, shrunk after pencil shrink, received on ranch scale.
+              Pay weight at purchase, and received weight on your ranch scale if different.
             </p>
           </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <WeightField
               id="payWeight"
               label="Pay weight (lb)"
               value={payWeight}
               onChange={setPayWeight}
               perHead={hasHead ? perHeadAvg(payNum, head) : null}
-            />
-            <WeightField
-              id="shrunkWeight"
-              label="Shrunk weight (lb)"
-              value={shrunkWeight}
-              onChange={setShrunkWeight}
-              perHead={hasHead ? perHeadAvg(shrunkNum, head) : null}
             />
             <WeightField
               id="receivedWeight"
@@ -268,16 +265,11 @@ export function CreateGroupForm({
               perHead={hasHead ? perHeadAvg(receivedNum, head) : null}
             />
           </div>
-          {avgIn != null || payToShrunk != null || payToReceived != null ? (
+          {avgIn != null || payToReceived != null ? (
             <div className="flex flex-wrap gap-2 text-xs text-text-secondary">
               {avgIn != null ? (
                 <span className="rounded-full bg-surface-white px-2.5 py-1 font-medium">
                   Avg weight in: {Math.round(avgIn)} lb / hd
-                </span>
-              ) : null}
-              {payToShrunk != null ? (
-                <span className="rounded-full bg-surface-white px-2.5 py-1 font-medium">
-                  Pay → shrunk: {payToShrunk.toFixed(1)}%
                 </span>
               ) : null}
               {payToReceived != null ? (

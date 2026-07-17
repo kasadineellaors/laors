@@ -21,6 +21,7 @@ import { closeLot } from "@/lib/actions/lots";
 import { LotSummaryPanel } from "@/components/lots/lot-summary-panel";
 import { PurchaseWeightsCard } from "@/components/lots/purchase-weights-card";
 import { LotQuickActions } from "@/components/lots/lot-quick-actions";
+import { ReceiveCattleToLotForm } from "@/components/inventory/receive-cattle-to-lot-form";
 import { LotExpensesPanel } from "@/components/lots/lot-expenses-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,9 +67,6 @@ export function GroupDetailClient({
   const [payWeight, setPayWeight] = useState(
     group.pay_weight_lbs != null ? String(group.pay_weight_lbs) : "",
   );
-  const [shrunkWeight, setShrunkWeight] = useState(
-    group.shrunk_weight_lbs != null ? String(group.shrunk_weight_lbs) : "",
-  );
   const [receivedWeight, setReceivedWeight] = useState(
     group.received_weight_lbs != null ? String(group.received_weight_lbs) : "",
   );
@@ -89,7 +87,6 @@ export function GroupDetailClient({
       ownershipGroupId: ownershipGroupId || null,
       customerId: customerId || null,
       payWeightLbs: payWeight.trim() ? parseFloat(payWeight) : null,
-      shrunkWeightLbs: shrunkWeight.trim() ? parseFloat(shrunkWeight) : null,
       receivedWeightLbs: receivedWeight.trim() ? parseFloat(receivedWeight) : null,
     });
     setLoading(false);
@@ -159,6 +156,14 @@ export function GroupDetailClient({
       />
 
       <PurchaseWeightsCard group={group} />
+
+      {canManageCattle && group.lot_status !== "closed" ? (
+        <ReceiveCattleToLotForm
+          orgId={orgId}
+          groupId={group.id}
+          lotLabel={group.lot_number || group.name}
+        />
+      ) : null}
 
       {canManageCattle ? <LotQuickActions orgId={orgId} groupId={group.id} /> : null}
 
@@ -276,7 +281,7 @@ export function GroupDetailClient({
                 </select>
               </div>
             ) : null}
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <Label htmlFor="editPayWeight">Pay weight (lb)</Label>
                 <Input
@@ -286,17 +291,6 @@ export function GroupDetailClient({
                   step="0.01"
                   value={payWeight}
                   onChange={(e) => setPayWeight(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="editShrunkWeight">Shrunk weight (lb)</Label>
-                <Input
-                  id="editShrunkWeight"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={shrunkWeight}
-                  onChange={(e) => setShrunkWeight(e.target.value)}
                 />
               </div>
               <div>

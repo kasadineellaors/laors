@@ -616,6 +616,25 @@ export interface Database {
         Update: { name?: string; is_active?: boolean };
         Relationships: [];
       };
+      lot_labels: {
+        Row: {
+          id: string;
+          organization_id: string;
+          name: string;
+          sort_order: number;
+          is_active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          name: string;
+          sort_order?: number;
+          is_active?: boolean;
+        };
+        Update: { name?: string; is_active?: boolean; sort_order?: number };
+        Relationships: [];
+      };
       adjustment_reasons: {
         Row: {
           id: string;

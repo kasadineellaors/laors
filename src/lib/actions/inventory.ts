@@ -469,6 +469,158 @@ export async function setGroupHeadCount(
   }
 }
 
+export async function receiveCattleToLot(
+  orgId: string,
+  groupId: string,
+  input: {
+    headCount: number;
+    purchaseDate?: string;
+    payWeightLbs?: number;
+    receivedWeightLbs?: number;
+    purchasePricePerLb?: number;
+    landedCost?: number;
+    sellerName?: string;
+    sourceName?: string;
+    notes?: string;
+  },
+): Promise<ActionState> {
+  if (input.headCount <= 0) return { error: "Enter a head count greater than zero" };
+
+  try {
+    const { supabase, user } = await requireOrgAccess(orgId);
+
+    const { data: group, error: groupError } = await supabase
+      .from("cattle_groups")
+      .select(
+        "id, name, lot_number, lot_status, starting_head, pay_weight_lbs, received_weight_lbs, landed_cost, purchase_date, arrival_date",
+      )
+      .eq("id", groupId)
+      .eq("organization_id", orgId)
+      .maybeSingle();
+
+    if (groupError || !group) return { error: groupError?.message ?? "Lot not found" };
+    if (group.lot_status === "closed") return { error: "This lot is closed — reopen or create a new lot" };
+
+    const defaultClassId = await getDefaultHeadClassificationId(orgId);
+
+    const { data: purchasedReason } = await supabase
+      .from("adjustment_reasons")
+      .select("id")
+      .eq("organization_id", orgId)
+      .eq("name", "Purchased")
+      .eq("is_active", true)
+      .maybeSingle();
+
+    const { data: existingRows } = await supabase
+      .from("group_inventory_counts")
+      .select("head_count")
+      .eq("cattle_group_id", groupId);
+
+    const previous = (existingRows ?? []).reduce((sum, row) => sum + row.head_count, 0);
+    const newCount = previous + input.headCount;
+
+    await supabase.from("group_inventory_counts").delete().eq("cattle_group_id", groupId);
+
+    if (newCount > 0) {
+      const { error: countError } = await supabase.from("group_inventory_counts").insert({
+        organization_id: orgId,
+        cattle_group_id: groupId,
+        classification_id: defaultClassId,
+        head_count: newCount,
+      });
+      if (countError) return { error: countError.message };
+    }
+
+    const nextStartingHead = (group.starting_head ?? previous) + input.headCount;
+    const nextPayWeight =
+      input.payWeightLbs != null
+        ? (group.pay_weight_lbs ?? 0) + input.payWeightLbs
+        : group.pay_weight_lbs;
+    const nextReceivedWeight =
+      input.receivedWeightLbs != null
+        ? (group.received_weight_lbs ?? 0) + input.receivedWeightLbs
+        : group.received_weight_lbs;
+    const nextLandedCost =
+      input.landedCost != null
+        ? (group.landed_cost ?? 0) + input.landedCost
+        : group.landed_cost;
+
+    const avgWeight = computeAvgWeightIn(nextStartingHead, {
+      payWeightLbs: nextPayWeight,
+      receivedWeightLbs: nextReceivedWeight,
+    });
+
+    const groupUpdates: {
+      starting_head: number;
+      pay_weight_lbs: number | null;
+      received_weight_lbs: number | null;
+      landed_cost: number | null;
+      avg_weight_lbs: number | null;
+      purchase_date?: string;
+      arrival_date?: string;
+      seller_name?: string;
+      source_name?: string;
+      lot_status?: string;
+    } = {
+      starting_head: nextStartingHead,
+      pay_weight_lbs: nextPayWeight,
+      received_weight_lbs: nextReceivedWeight,
+      landed_cost: nextLandedCost,
+      avg_weight_lbs: avgWeight,
+    };
+
+    if (input.purchaseDate) {
+      if (!group.purchase_date) groupUpdates.purchase_date = input.purchaseDate;
+      if (!group.arrival_date) groupUpdates.arrival_date = input.purchaseDate;
+    }
+    if (input.sellerName?.trim()) groupUpdates.seller_name = input.sellerName.trim();
+    if (input.sourceName?.trim()) groupUpdates.source_name = input.sourceName.trim();
+    if (group.lot_status === "receiving" && newCount > 0) {
+      groupUpdates.lot_status = "active";
+    }
+
+    const { error: updateError } = await supabase
+      .from("cattle_groups")
+      .update(groupUpdates)
+      .eq("id", groupId)
+      .eq("organization_id", orgId);
+
+    if (updateError) return { error: updateError.message };
+
+    await supabase.from("inventory_adjustments").insert({
+      organization_id: orgId,
+      cattle_group_id: groupId,
+      classification_id: defaultClassId,
+      adjustment_reason_id: purchasedReason?.id ?? null,
+      previous_count: previous,
+      new_count: newCount,
+      delta: input.headCount,
+      notes: input.notes?.trim() || "Received cattle to existing lot",
+      created_by: user.id,
+    });
+
+    await syncLotStatusAfterHeadChange(supabase, orgId, groupId, newCount);
+
+    await logAuditEvent(orgId, {
+      action: "lot.received",
+      tableName: "cattle_groups",
+      recordId: groupId,
+      userId: user.id,
+      newData: {
+        lot_label: group.lot_number || group.name,
+        head_count: input.headCount,
+        receive_to_existing: true,
+      },
+    });
+
+    revalidateInventory();
+    revalidatePath(`/cattle/groups/${groupId}`);
+    return { success: `Received ${input.headCount} head to lot` };
+  } catch (e) {
+    return { error: formatDbError(e instanceof Error ? e.message : "Failed") };
+  }
+}
+
 export async function executeCattleMove(
   orgId: string,
   input: {

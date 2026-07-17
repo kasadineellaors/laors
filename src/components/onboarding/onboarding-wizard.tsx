@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   createRanchOrganization,
   saveOperationModes,
@@ -45,6 +46,7 @@ export function OnboardingWizard({
   existingOrgName,
   existingModes = [],
 }: OnboardingWizardProps) {
+  const router = useRouter();
   const [stepIndex, setStepIndex] = useState(existingOrgId ? 1 : 0);
   const [orgId, setOrgId] = useState<string | null>(existingOrgId ?? null);
   const [ranchName, setRanchName] = useState(existingOrgName ?? "");
@@ -166,24 +168,46 @@ export function OnboardingWizard({
   async function handleInviteSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!orgId) return;
+    if (!inviteEmail.trim()) {
+      await handleFinish();
+      return;
+    }
     setLoading(true);
     setError(null);
-    if (inviteEmail.trim()) {
-      const formData = new FormData();
-      formData.set("orgId", orgId);
-      formData.set("email", inviteEmail);
-      formData.set("role", "worker");
-      const result = await inviteTeamMember({}, formData);
-      if (result.error) setError(result.error);
-      else setInviteMessage(result.success ?? "Invite recorded");
+    const formData = new FormData();
+    formData.set("orgId", orgId);
+    formData.set("email", inviteEmail);
+    formData.set("role", "worker");
+    const result = await inviteTeamMember({}, formData);
+    if (result.error) {
+      setError(result.error);
+      setLoading(false);
+      return;
     }
+    setInviteMessage(result.success ?? "Invite recorded");
     setLoading(false);
   }
 
   async function handleFinish() {
-    if (!orgId) return;
+    if (!orgId) {
+      setError("Ranch setup is not ready yet. Go back and finish the ranch name step.");
+      return;
+    }
     setLoading(true);
-    await completeOnboarding(orgId);
+    setError(null);
+    const result = await completeOnboarding(orgId);
+    if (result.error) {
+      setError(result.error);
+      setLoading(false);
+      return;
+    }
+    router.push("/dashboard");
+    router.refresh();
+  }
+
+  function skipToTeamStep() {
+    setError(null);
+    setStepIndex(5);
   }
 
   return (
@@ -346,7 +370,7 @@ export function OnboardingWizard({
             <Button type="submit" fullWidth size="xl" disabled={loading}>
               {loading ? "Saving…" : "Continue"}
             </Button>
-            <Button type="button" variant="ghost" fullWidth onClick={() => setStepIndex(5)}>
+            <Button type="button" variant="ghost" fullWidth disabled={loading} onClick={skipToTeamStep}>
               Skip for now
             </Button>
           </form>
@@ -380,8 +404,8 @@ export function OnboardingWizard({
               type="button"
               fullWidth
               size="xl"
-              disabled={loading || !orgId}
-              onClick={handleFinish}
+              disabled={loading}
+              onClick={() => void handleFinish()}
             >
               {loading ? "Finishing…" : "Go to Dashboard"}
             </Button>

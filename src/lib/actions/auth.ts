@@ -568,7 +568,8 @@ export async function completeOnboarding(orgId: string): Promise<AuthActionState
   if (error) return { error: formatDbError(error.message) };
 
   revalidatePath("/dashboard");
-  redirect("/dashboard");
+  revalidatePath("/onboarding");
+  return { success: "onboarding_complete" };
 }
 
 export async function skipOnboardingForNow(orgId: string) {

@@ -45,6 +45,11 @@ export default async function SetupPage() {
                 description="Customize cattle classes such as cow, calf, bull, steer, heifer, and stocker."
               />
               <ManageNavRow
+                href="/setup/lot-labels"
+                title="Lot Names"
+                description="Saved lot names for quick selection when receiving cattle."
+              />
+              <ManageNavRow
                 href="/setup/dictionary"
                 title="Categories & Labels"
                 description="Manage task categories, treatment reasons, and financial labels."

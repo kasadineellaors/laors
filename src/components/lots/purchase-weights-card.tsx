@@ -14,13 +14,15 @@ export function PurchaseWeightsCard({ group }: PurchaseWeightsCardProps) {
   const pay = group.pay_weight_lbs;
   const shrunk = group.shrunk_weight_lbs;
   const received = group.received_weight_lbs;
+  const showShrunk =
+    shrunk != null && (pay == null || Math.abs(shrunk - pay) > 0.01);
 
-  if (pay == null && shrunk == null && received == null) {
+  if (pay == null && !showShrunk && received == null) {
     return null;
   }
 
-  const payToShrunk = shrinkPct(pay, shrunk);
-  const shrunkToReceived = shrinkPct(shrunk, received);
+  const payToShrunk = showShrunk ? shrinkPct(pay, shrunk) : null;
+  const shrunkToReceived = showShrunk ? shrinkPct(shrunk, received) : null;
   const payToReceived = shrinkPct(pay, received);
 
   return (
@@ -35,7 +37,7 @@ export function PurchaseWeightsCard({ group }: PurchaseWeightsCardProps) {
             perHead={perHeadAvg(pay, head)}
           />
         ) : null}
-        {shrunk != null ? (
+        {showShrunk && shrunk != null ? (
           <WeightRow
             label="Shrunk weight"
             total={shrunk}
@@ -57,7 +59,7 @@ export function PurchaseWeightsCard({ group }: PurchaseWeightsCardProps) {
         {shrunkToReceived != null ? (
           <ShrinkBadge label="Shrunk → received" value={shrunkToReceived} />
         ) : null}
-        {payToReceived != null && shrunk == null ? (
+        {payToReceived != null && !showShrunk ? (
           <ShrinkBadge label="Pay → received" value={payToReceived} />
         ) : null}
       </div>
