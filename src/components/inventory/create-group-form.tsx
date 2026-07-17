@@ -6,9 +6,11 @@ import type { SelectOption } from "@/lib/locations/options";
 import { createCattleGroup } from "@/lib/actions/inventory";
 import { computeAvgWeightIn, perHeadAvg, shrinkPct } from "@/lib/lots/purchase-weights";
 import { ENTERPRISE_LABELS, type EnterpriseType } from "@/lib/lots/types";
+import type { RanchFieldSuggestions } from "@/lib/ranch/field-suggestions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SuggestionInput } from "@/components/ui/suggestion-input";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface CreateGroupFormProps {
@@ -16,6 +18,7 @@ interface CreateGroupFormProps {
   locationOptions: SelectOption[];
   ownerOptions: SelectOption[];
   lotLabelOptions: SelectOption[];
+  fieldSuggestions: Pick<RanchFieldSuggestions, "sellers" | "sources">;
 }
 
 export function CreateGroupForm({
@@ -23,6 +26,7 @@ export function CreateGroupForm({
   locationOptions,
   ownerOptions,
   lotLabelOptions,
+  fieldSuggestions,
 }: CreateGroupFormProps) {
   const router = useRouter();
   const today = new Date().toISOString().slice(0, 10);
@@ -164,11 +168,23 @@ export function CreateGroupForm({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label htmlFor="seller">Seller</Label>
-            <Input id="seller" value={sellerName} onChange={(e) => setSellerName(e.target.value)} />
+            <SuggestionInput
+              id="seller"
+              value={sellerName}
+              onChange={(e) => setSellerName(e.target.value)}
+              suggestions={fieldSuggestions.sellers}
+              placeholder="Start typing — past sellers appear"
+            />
           </div>
           <div>
             <Label htmlFor="source">Source / market</Label>
-            <Input id="source" value={sourceName} onChange={(e) => setSourceName(e.target.value)} />
+            <SuggestionInput
+              id="source"
+              value={sourceName}
+              onChange={(e) => setSourceName(e.target.value)}
+              suggestions={fieldSuggestions.sources}
+              placeholder="Sale barn, market, etc."
+            />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3">

@@ -12,6 +12,7 @@ import type {
 import type { LotExpenseRecord } from "@/lib/expenses/types";
 import { PROCESSING_TYPE_LABELS } from "@/lib/lots/types";
 import type { SelectOption } from "@/lib/locations/options";
+import type { RanchFieldSuggestions } from "@/lib/ranch/field-suggestions";
 import {
   archiveCattleGroup,
   setGroupHeadCount,
@@ -39,6 +40,7 @@ interface GroupDetailClientProps {
   adjustmentReasonOptions: SelectOption[];
   ownershipOptions: SelectOption[];
   customerOptions: SelectOption[];
+  fieldSuggestions: Pick<RanchFieldSuggestions, "sellers" | "sources" | "suppliers">;
   canManageCattle: boolean;
 }
 
@@ -57,6 +59,7 @@ export function GroupDetailClient({
   adjustmentReasonOptions,
   ownershipOptions,
   customerOptions,
+  fieldSuggestions,
   canManageCattle,
 }: GroupDetailClientProps) {
   const router = useRouter();
@@ -162,6 +165,10 @@ export function GroupDetailClient({
           orgId={orgId}
           groupId={group.id}
           lotLabel={group.lot_number || group.name}
+          fieldSuggestions={{
+            sellers: fieldSuggestions.sellers,
+            sources: fieldSuggestions.sources,
+          }}
         />
       ) : null}
 
@@ -173,6 +180,7 @@ export function GroupDetailClient({
         expenses={lotExpenses}
         categoryOptions={expenseCategoryOptions}
         canManage={canManageCattle}
+        supplierSuggestions={fieldSuggestions.suppliers}
       />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

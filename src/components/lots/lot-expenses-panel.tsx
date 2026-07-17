@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SuggestionInput } from "@/components/ui/suggestion-input";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 function money(n: number) {
@@ -24,6 +25,7 @@ interface LotExpensesPanelProps {
   expenses: LotExpenseRecord[];
   categoryOptions: SelectOption[];
   canManage: boolean;
+  supplierSuggestions: string[];
 }
 
 export function LotExpensesPanel({
@@ -32,6 +34,7 @@ export function LotExpensesPanel({
   expenses,
   categoryOptions,
   canManage,
+  supplierSuggestions,
 }: LotExpensesPanelProps) {
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
@@ -208,10 +211,12 @@ export function LotExpensesPanel({
             </div>
             <div>
               <Label htmlFor="expVendor">Vendor</Label>
-              <Input
+              <SuggestionInput
                 id="expVendor"
                 value={vendorName}
                 onChange={(e) => setVendorName(e.target.value)}
+                suggestions={supplierSuggestions}
+                placeholder="Start typing — past vendors appear"
               />
             </div>
             <div className="grid grid-cols-2 gap-2">

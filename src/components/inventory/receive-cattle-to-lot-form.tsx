@@ -4,21 +4,25 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { receiveCattleToLot } from "@/lib/actions/inventory";
 import { computeAvgWeightIn, perHeadAvg, shrinkPct } from "@/lib/lots/purchase-weights";
+import type { RanchFieldSuggestions } from "@/lib/ranch/field-suggestions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SuggestionInput } from "@/components/ui/suggestion-input";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface ReceiveCattleToLotFormProps {
   orgId: string;
   groupId: string;
   lotLabel: string;
+  fieldSuggestions: Pick<RanchFieldSuggestions, "sellers" | "sources">;
 }
 
 export function ReceiveCattleToLotForm({
   orgId,
   groupId,
   lotLabel,
+  fieldSuggestions,
 }: ReceiveCattleToLotFormProps) {
   const router = useRouter();
   const today = new Date().toISOString().slice(0, 10);
@@ -138,18 +142,22 @@ export function ReceiveCattleToLotForm({
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="receiveSeller">Seller</Label>
-                <Input
+                <SuggestionInput
                   id="receiveSeller"
                   value={sellerName}
                   onChange={(e) => setSellerName(e.target.value)}
+                  suggestions={fieldSuggestions.sellers}
+                  placeholder="Start typing — past sellers appear"
                 />
               </div>
               <div>
                 <Label htmlFor="receiveSource">Source / market</Label>
-                <Input
+                <SuggestionInput
                   id="receiveSource"
                   value={sourceName}
                   onChange={(e) => setSourceName(e.target.value)}
+                  suggestions={fieldSuggestions.sources}
+                  placeholder="Sale barn, market, etc."
                 />
               </div>
             </div>

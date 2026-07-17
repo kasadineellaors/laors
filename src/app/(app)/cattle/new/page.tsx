@@ -5,6 +5,7 @@ import { canWriteInventory } from "@/lib/auth/roles";
 import { listOwnerOptions } from "@/lib/owners/queries";
 import { getTreePickerOptions } from "@/lib/locations/options";
 import { listLotLabelOptions } from "@/lib/lot-labels/queries";
+import { getRanchFieldSuggestions } from "@/lib/ranch/field-suggestions";
 import { CreateGroupForm } from "@/components/inventory/create-group-form";
 import { AppPageHeader } from "@/components/layout/app-page-header";
 import { AppPageShell } from "@/components/layout/app-page-shell";
@@ -20,7 +21,7 @@ export default async function NewCattleGroupPage() {
   }
   const orgId = session.organization!.id;
 
-  const [locationOptions, ownerOptions, lotLabelOptions] = await Promise.all([
+  const [locationOptions, ownerOptions, lotLabelOptions, fieldSuggestions] = await Promise.all([
     getTreePickerOptions(orgId).then((nodes) =>
       nodes.map((n) => ({ value: n.id, label: n.breadcrumb })),
     ),
@@ -31,6 +32,7 @@ export default async function NewCattleGroupPage() {
       })),
     ),
     listLotLabelOptions(orgId),
+    getRanchFieldSuggestions(orgId),
   ]);
 
   return (
@@ -41,6 +43,10 @@ export default async function NewCattleGroupPage() {
         locationOptions={locationOptions}
         ownerOptions={ownerOptions}
         lotLabelOptions={lotLabelOptions}
+        fieldSuggestions={{
+          sellers: fieldSuggestions.sellers,
+          sources: fieldSuggestions.sources,
+        }}
       />
     </AppPageShell>
   );

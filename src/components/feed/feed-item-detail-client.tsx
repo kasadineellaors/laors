@@ -16,6 +16,7 @@ interface FeedItemDetailClientProps {
   item: FeedItemRecord;
   adjustments: FeedStockAdjustment[];
   purchases: FeedPurchaseRecord[];
+  supplierSuggestions: string[];
 }
 
 function formatWhen(iso: string) {
@@ -32,6 +33,7 @@ export function FeedItemDetailClient({
   item,
   adjustments,
   purchases,
+  supplierSuggestions,
 }: FeedItemDetailClientProps) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
@@ -140,6 +142,7 @@ export function FeedItemDetailClient({
           orgId={orgId}
           itemId={item.id}
           unit={item.unit}
+          supplierSuggestions={supplierSuggestions}
           onSuccess={() => {
             setAdjustMode(null);
             router.refresh();

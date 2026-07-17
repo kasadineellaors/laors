@@ -18,6 +18,7 @@ interface SaleDetailClientProps {
   locationOptions: SelectOption[];
   categoryOptions: SelectOption[];
   customerOptions?: CustomerOption[];
+  buyerSuggestions?: string[];
   canCreateInvoice?: boolean;
   canDeductInventory?: boolean;
 }
@@ -42,6 +43,7 @@ export function SaleDetailClient({
   locationOptions,
   categoryOptions,
   customerOptions = [],
+  buyerSuggestions = [],
   canCreateInvoice,
   canDeductInventory = false,
 }: SaleDetailClientProps) {
@@ -83,6 +85,7 @@ export function SaleDetailClient({
           groupOptions={[]}
           categoryOptions={categoryOptions}
           customerOptions={customerOptions}
+          buyerSuggestions={buyerSuggestions}
           canDeductInventory={canDeductInventory}
           onSuccess={() => {
             setEditing(false);

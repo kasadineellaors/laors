@@ -5,11 +5,13 @@ import { recordFeedPurchase } from "@/lib/actions/feed-inventory";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SuggestionInput } from "@/components/ui/suggestion-input";
 
 interface FeedPurchaseFormProps {
   orgId: string;
   itemId: string;
   unit: string;
+  supplierSuggestions: string[];
   onSuccess?: () => void;
   onCancel?: () => void;
 }
@@ -18,6 +20,7 @@ export function FeedPurchaseForm({
   orgId,
   itemId,
   unit,
+  supplierSuggestions,
   onSuccess,
   onCancel,
 }: FeedPurchaseFormProps) {
@@ -76,7 +79,13 @@ export function FeedPurchaseForm({
         </div>
         <div>
           <Label htmlFor="vendor">Supplier</Label>
-          <Input id="vendor" value={vendorName} onChange={(e) => setVendorName(e.target.value)} />
+          <SuggestionInput
+            id="vendor"
+            value={vendorName}
+            onChange={(e) => setVendorName(e.target.value)}
+            suggestions={supplierSuggestions}
+            placeholder="Start typing — past suppliers appear"
+          />
         </div>
       </div>
       <div className="grid grid-cols-2 gap-3">

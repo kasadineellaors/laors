@@ -11,6 +11,7 @@ import { createSale, updateSale } from "@/lib/actions/sales";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SuggestionInput } from "@/components/ui/suggestion-input";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface PrefillAnimal {
@@ -26,6 +27,7 @@ interface SaleFormProps {
   groupOptions: SelectOption[];
   categoryOptions: SelectOption[];
   customerOptions?: CustomerOption[];
+  buyerSuggestions?: string[];
   canDeductInventory?: boolean;
   prefillAnimal?: PrefillAnimal;
   sale?: SaleRecord;
@@ -38,6 +40,7 @@ export function SaleForm({
   groupOptions,
   categoryOptions,
   customerOptions = [],
+  buyerSuggestions = [],
   canDeductInventory = false,
   prefillAnimal,
   sale,
@@ -231,10 +234,11 @@ export function SaleForm({
         ) : null}
         <div>
           <Label htmlFor="buyer">Buyer (optional)</Label>
-          <Input
+          <SuggestionInput
             id="buyer"
             value={buyerName}
             onChange={(e) => setBuyerName(e.target.value)}
+            suggestions={buyerSuggestions}
             placeholder="Buyer or market name"
           />
         </div>

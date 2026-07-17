@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { parseSegmentDigits } from "@/lib/ranch/date-segments";
 import { cn } from "@/lib/utils/cn";
 
 function parseIsoDate(value: string): { month: string; day: string; year: string } {
@@ -27,8 +28,9 @@ function segmentsToIso(month: string, day: string, year: string): string | null 
   return iso;
 }
 
-function digitsOnly(value: string, maxLength: number): string {
-  return value.replace(/\D/g, "").slice(0, maxLength);
+function selectSegmentContents(e: React.FocusEvent<HTMLInputElement> | React.MouseEvent<HTMLInputElement>) {
+  const el = e.currentTarget;
+  requestAnimationFrame(() => el.select());
 }
 
 export interface DateInputProps {
@@ -75,22 +77,43 @@ export function DateInput({
     else if (!nextMonth && !nextDay && !nextYear) onChange("");
   }
 
-  function handleMonthChange(raw: string) {
-    const next = digitsOnly(raw, 2);
+  function handleMonthChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const el = e.target;
+    const next = parseSegmentDigits(
+      el.value,
+      2,
+      month,
+      el.selectionStart ?? 0,
+      el.selectionEnd ?? 0,
+    );
     setMonth(next);
     emit(next, day, year);
     if (next.length === 2) dayRef.current?.focus();
   }
 
-  function handleDayChange(raw: string) {
-    const next = digitsOnly(raw, 2);
+  function handleDayChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const el = e.target;
+    const next = parseSegmentDigits(
+      el.value,
+      2,
+      day,
+      el.selectionStart ?? 0,
+      el.selectionEnd ?? 0,
+    );
     setDay(next);
     emit(month, next, year);
     if (next.length === 2) yearRef.current?.focus();
   }
 
-  function handleYearChange(raw: string) {
-    const next = digitsOnly(raw, 4);
+  function handleYearChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const el = e.target;
+    const next = parseSegmentDigits(
+      el.value,
+      4,
+      year,
+      el.selectionStart ?? 0,
+      el.selectionEnd ?? 0,
+    );
     setYear(next);
     emit(month, day, next);
   }
@@ -130,7 +153,9 @@ export function DateInput({
           disabled={disabled}
           required={required}
           className={cn(segmentClass, "w-16")}
-          onChange={(e) => handleMonthChange(e.target.value)}
+          onChange={handleMonthChange}
+          onFocus={selectSegmentContents}
+          onClick={selectSegmentContents}
           onKeyDown={(e) => handleKeyDown(e, "month")}
         />
         <span className="text-text-secondary" aria-hidden>
@@ -148,7 +173,9 @@ export function DateInput({
           disabled={disabled}
           required={required}
           className={cn(segmentClass, "w-16")}
-          onChange={(e) => handleDayChange(e.target.value)}
+          onChange={handleDayChange}
+          onFocus={selectSegmentContents}
+          onClick={selectSegmentContents}
           onKeyDown={(e) => handleKeyDown(e, "day")}
         />
         <span className="text-text-secondary" aria-hidden>
@@ -166,7 +193,9 @@ export function DateInput({
           disabled={disabled}
           required={required}
           className={cn(segmentClass, "w-24")}
-          onChange={(e) => handleYearChange(e.target.value)}
+          onChange={handleYearChange}
+          onFocus={selectSegmentContents}
+          onClick={selectSegmentContents}
           onKeyDown={(e) => handleKeyDown(e, "year")}
         />
         {name ? <input type="hidden" name={name} value={value} /> : null}

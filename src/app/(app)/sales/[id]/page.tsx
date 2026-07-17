@@ -4,6 +4,7 @@ import { requireOnboardedUser } from "@/lib/auth/session";
 import { canDeductInventoryOnSale, canManageInvoices } from "@/lib/auth/roles";
 import { listCustomerOptions } from "@/lib/customers/queries";
 import { getRanchOptions, getTreePickerOptions } from "@/lib/locations/options";
+import { getRanchFieldSuggestions } from "@/lib/ranch/field-suggestions";
 import { getSale } from "@/lib/sales/queries";
 import { SaleDetailClient } from "@/components/sales/sale-detail-client";
 
@@ -23,7 +24,7 @@ export default async function SaleDetailPage({
   const sale = await getSale(orgId, id);
   if (!sale) notFound();
 
-  const [locations, categories, customerOptions] = await Promise.all([
+  const [locations, categories, customerOptions, fieldSuggestions] = await Promise.all([
     getTreePickerOptions(orgId).then((nodes) =>
       nodes.map((n) => ({ value: n.id, label: n.breadcrumb })),
     ),
@@ -31,6 +32,7 @@ export default async function SaleDetailPage({
       opts.filter((o) => o.meta?.category_type === "income"),
     ),
     listCustomerOptions(orgId),
+    getRanchFieldSuggestions(orgId),
   ]);
 
   const canCreateInvoice = canManageInvoices(session.membership?.system_role);
@@ -43,6 +45,7 @@ export default async function SaleDetailPage({
       locationOptions={locations}
       categoryOptions={categories}
       customerOptions={customerOptions}
+      buyerSuggestions={fieldSuggestions.buyers}
       canCreateInvoice={canCreateInvoice}
       canDeductInventory={canDeduct}
     />

@@ -6,6 +6,7 @@ import { listCustomerOptions } from "@/lib/customers/queries";
 import { getSeedstockAnimal } from "@/lib/seedstock/queries";
 import { listCattleGroups } from "@/lib/inventory/queries";
 import { getRanchOptions, getTreePickerOptions } from "@/lib/locations/options";
+import { getRanchFieldSuggestions } from "@/lib/ranch/field-suggestions";
 import { SaleForm } from "@/components/sales/sale-form";
 
 export const metadata: Metadata = {
@@ -35,7 +36,7 @@ export default async function NewSalePage({
       )
     : null;
 
-  const [locations, groups, categories, customerOptions] = await Promise.all([
+  const [locations, groups, categories, customerOptions, fieldSuggestions] = await Promise.all([
     getTreePickerOptions(orgId).then((nodes) =>
       nodes.map((n) => ({ value: n.id, label: n.breadcrumb })),
     ),
@@ -49,6 +50,7 @@ export default async function NewSalePage({
       opts.filter((o) => o.meta?.category_type === "income"),
     ),
     listCustomerOptions(orgId),
+    getRanchFieldSuggestions(orgId),
   ]);
 
   return (
@@ -70,6 +72,7 @@ export default async function NewSalePage({
         groupOptions={groups}
         categoryOptions={categories}
         customerOptions={customerOptions}
+        buyerSuggestions={fieldSuggestions.buyers}
         canDeductInventory={canDeduct}
         prefillAnimal={prefillAnimal ?? undefined}
       />
