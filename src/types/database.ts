@@ -2230,6 +2230,63 @@ export interface Database {
         };
         Relationships: [];
       };
+      cattle_group_purchases: {
+        Row: {
+          id: string;
+          organization_id: string;
+          cattle_group_id: string;
+          purchased_at: string;
+          arrival_date: string | null;
+          seller_name: string | null;
+          source_name: string | null;
+          invoice_ref: string | null;
+          head_count: number;
+          pay_weight_lbs: number | null;
+          received_weight_lbs: number | null;
+          purchase_price_per_lb: number | null;
+          landed_cost: number | null;
+          notes: string | null;
+          inventory_adjustment_id: string | null;
+          created_by: string | null;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          cattle_group_id: string;
+          purchased_at?: string;
+          arrival_date?: string | null;
+          seller_name?: string | null;
+          source_name?: string | null;
+          invoice_ref?: string | null;
+          head_count: number;
+          pay_weight_lbs?: number | null;
+          received_weight_lbs?: number | null;
+          purchase_price_per_lb?: number | null;
+          landed_cost?: number | null;
+          notes?: string | null;
+          inventory_adjustment_id?: string | null;
+          created_by?: string | null;
+          is_active?: boolean;
+        };
+        Update: {
+          purchased_at?: string;
+          arrival_date?: string | null;
+          seller_name?: string | null;
+          source_name?: string | null;
+          invoice_ref?: string | null;
+          head_count?: number;
+          pay_weight_lbs?: number | null;
+          received_weight_lbs?: number | null;
+          purchase_price_per_lb?: number | null;
+          landed_cost?: number | null;
+          notes?: string | null;
+          is_active?: boolean;
+        };
+        Relationships: [];
+      };
       feed_purchases: {
         Row: {
           id: string;

@@ -9,6 +9,7 @@ import type {
   MortalityRecord,
   ProcessingEventRecord,
 } from "@/lib/lots/types";
+import type { LotPurchaseRecord } from "@/lib/lots/purchase-types";
 import type { LotExpenseRecord } from "@/lib/expenses/types";
 import { PROCESSING_TYPE_LABELS } from "@/lib/lots/types";
 import type { SelectOption } from "@/lib/locations/options";
@@ -24,6 +25,7 @@ import { PurchaseWeightsCard } from "@/components/lots/purchase-weights-card";
 import { LotQuickActions } from "@/components/lots/lot-quick-actions";
 import { ReceiveCattleToLotForm } from "@/components/inventory/receive-cattle-to-lot-form";
 import { LotExpensesPanel } from "@/components/lots/lot-expenses-panel";
+import { LotPurchaseHistory } from "@/components/lots/lot-purchase-history";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,6 +38,7 @@ interface GroupDetailClientProps {
   processingEvents: ProcessingEventRecord[];
   mortalityRecords: MortalityRecord[];
   lotExpenses: LotExpenseRecord[];
+  lotPurchases: LotPurchaseRecord[];
   expenseCategoryOptions: SelectOption[];
   adjustmentReasonOptions: SelectOption[];
   ownerOptions: SelectOption[];
@@ -54,6 +57,7 @@ export function GroupDetailClient({
   processingEvents,
   mortalityRecords,
   lotExpenses,
+  lotPurchases,
   expenseCategoryOptions,
   adjustmentReasonOptions,
   ownerOptions,
@@ -168,6 +172,17 @@ export function GroupDetailClient({
       />
 
       <PurchaseWeightsCard group={group} />
+
+      <LotPurchaseHistory
+        orgId={orgId}
+        groupId={group.id}
+        purchases={lotPurchases}
+        canManage={canManageCattle}
+        fieldSuggestions={{
+          sellers: fieldSuggestions.sellers,
+          sources: fieldSuggestions.sources,
+        }}
+      />
 
       {canManageCattle && group.lot_status !== "closed" ? (
         <ReceiveCattleToLotForm

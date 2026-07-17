@@ -11,6 +11,7 @@ import {
 import { computeAvgWeightIn } from "@/lib/lots/purchase-weights";
 import { listGroupsAtLocation } from "@/lib/inventory/queries";
 import { logAuditEvent } from "@/lib/audit/log";
+import { insertLotPurchase } from "@/lib/actions/lot-purchases";
 import type { ActionState } from "./onboarding";
 
 const DB_PHASE2_HINT =
@@ -260,6 +261,7 @@ export async function createCattleGroup(
     landedCost?: number;
     sellerName?: string;
     sourceName?: string;
+    invoiceRef?: string;
   },
 ): Promise<ActionState & { groupId?: string }> {
   try {
@@ -332,6 +334,21 @@ export async function createCattleGroup(
         head_count: input.headCount,
       },
     });
+
+    const purchaseResult = await insertLotPurchase(supabase, orgId, user.id, group.id, {
+      purchasedAt: input.purchaseDate || input.arrivalDate,
+      arrivalDate: input.arrivalDate,
+      sellerName: input.sellerName,
+      sourceName: input.sourceName,
+      invoiceRef: input.invoiceRef,
+      headCount: input.headCount,
+      payWeightLbs: input.payWeightLbs,
+      receivedWeightLbs: input.receivedWeightLbs,
+      purchasePricePerLb: input.purchasePricePerLb,
+      landedCost: input.landedCost,
+      notes: input.notes,
+    });
+    if (purchaseResult.error) return { error: purchaseResult.error };
 
     revalidateInventory();
     return { success: "Group created", groupId: group.id };
@@ -530,6 +547,7 @@ export async function receiveCattleToLot(
     landedCost?: number;
     sellerName?: string;
     sourceName?: string;
+    invoiceRef?: string;
     notes?: string;
   },
 ): Promise<ActionState> {
@@ -580,73 +598,59 @@ export async function receiveCattleToLot(
       if (countError) return { error: countError.message };
     }
 
-    const nextStartingHead = (group.starting_head ?? previous) + input.headCount;
-    const nextPayWeight =
-      input.payWeightLbs != null
-        ? (group.pay_weight_lbs ?? 0) + input.payWeightLbs
-        : group.pay_weight_lbs;
-    const nextReceivedWeight =
-      input.receivedWeightLbs != null
-        ? (group.received_weight_lbs ?? 0) + input.receivedWeightLbs
-        : group.received_weight_lbs;
-    const nextLandedCost =
-      input.landedCost != null
-        ? (group.landed_cost ?? 0) + input.landedCost
-        : group.landed_cost;
-
-    const avgWeight = computeAvgWeightIn(nextStartingHead, {
-      payWeightLbs: nextPayWeight,
-      receivedWeightLbs: nextReceivedWeight,
-    });
-
-    const groupUpdates: {
-      starting_head: number;
-      pay_weight_lbs: number | null;
-      received_weight_lbs: number | null;
-      landed_cost: number | null;
-      avg_weight_lbs: number | null;
-      purchase_date?: string;
-      arrival_date?: string;
-      seller_name?: string;
-      source_name?: string;
-      lot_status?: string;
-    } = {
-      starting_head: nextStartingHead,
-      pay_weight_lbs: nextPayWeight,
-      received_weight_lbs: nextReceivedWeight,
-      landed_cost: nextLandedCost,
-      avg_weight_lbs: avgWeight,
-    };
-
-    if (input.purchaseDate) {
-      if (!group.purchase_date) groupUpdates.purchase_date = input.purchaseDate;
-      if (!group.arrival_date) groupUpdates.arrival_date = input.purchaseDate;
-    }
-    if (input.sellerName?.trim()) groupUpdates.seller_name = input.sellerName.trim();
-    if (input.sourceName?.trim()) groupUpdates.source_name = input.sourceName.trim();
     if (group.lot_status === "receiving" && newCount > 0) {
-      groupUpdates.lot_status = "active";
+      const { error: statusError } = await supabase
+        .from("cattle_groups")
+        .update({ lot_status: "active" })
+        .eq("id", groupId)
+        .eq("organization_id", orgId);
+      if (statusError) return { error: statusError.message };
     }
 
-    const { error: updateError } = await supabase
-      .from("cattle_groups")
-      .update(groupUpdates)
-      .eq("id", groupId)
-      .eq("organization_id", orgId);
+    const { data: adjustment, error: adjError } = await supabase
+      .from("inventory_adjustments")
+      .insert({
+        organization_id: orgId,
+        cattle_group_id: groupId,
+        classification_id: defaultClassId,
+        adjustment_reason_id: purchasedReason?.id ?? null,
+        previous_count: previous,
+        new_count: newCount,
+        delta: input.headCount,
+        notes: input.notes?.trim() || "Received cattle to existing lot",
+        created_by: user.id,
+      })
+      .select("id")
+      .single();
 
-    if (updateError) return { error: updateError.message };
+    if (adjError) return { error: adjError.message };
 
-    await supabase.from("inventory_adjustments").insert({
-      organization_id: orgId,
-      cattle_group_id: groupId,
-      classification_id: defaultClassId,
-      adjustment_reason_id: purchasedReason?.id ?? null,
-      previous_count: previous,
-      new_count: newCount,
-      delta: input.headCount,
-      notes: input.notes?.trim() || "Received cattle to existing lot",
-      created_by: user.id,
-    });
+    const pay = input.payWeightLbs;
+    const price = input.purchasePricePerLb;
+    const landed =
+      input.landedCost ?? (pay != null && price != null ? pay * price : undefined);
+
+    const purchaseResult = await insertLotPurchase(
+      supabase,
+      orgId,
+      user.id,
+      groupId,
+      {
+        purchasedAt: input.purchaseDate,
+        arrivalDate: input.purchaseDate,
+        sellerName: input.sellerName,
+        sourceName: input.sourceName,
+        invoiceRef: input.invoiceRef,
+        headCount: input.headCount,
+        payWeightLbs: pay,
+        receivedWeightLbs: input.receivedWeightLbs,
+        purchasePricePerLb: price,
+        landedCost: landed,
+        notes: input.notes,
+      },
+      { inventoryAdjustmentId: adjustment.id },
+    );
+    if (purchaseResult.error) return { error: purchaseResult.error };
 
     await syncLotStatusAfterHeadChange(supabase, orgId, groupId, newCount);
 

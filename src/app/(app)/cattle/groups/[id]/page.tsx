@@ -9,6 +9,7 @@ import {
   listMortalityRecords,
   listProcessingEvents,
 } from "@/lib/lots/queries";
+import { listLotPurchases } from "@/lib/lots/purchase-queries";
 import { listLotExpenses } from "@/lib/expenses/queries";
 import { getRanchFieldSuggestions } from "@/lib/ranch/field-suggestions";
 import { getRanchOptions } from "@/lib/locations/options";
@@ -38,6 +39,7 @@ export default async function CattleGroupPage({
     processingEvents,
     mortalityRecords,
     lotExpenses,
+    lotPurchases,
     fieldSuggestions,
   ] = await Promise.all([
     getRanchOptions(orgId, "adjustment_reasons"),
@@ -59,6 +61,7 @@ export default async function CattleGroupPage({
     listProcessingEvents(orgId, id),
     listMortalityRecords(orgId, id),
     listLotExpenses(orgId, id),
+    listLotPurchases(orgId, id),
     getRanchFieldSuggestions(orgId),
   ]);
 
@@ -72,6 +75,7 @@ export default async function CattleGroupPage({
       processingEvents={processingEvents}
       mortalityRecords={mortalityRecords}
       lotExpenses={lotExpenses}
+      lotPurchases={lotPurchases}
       expenseCategoryOptions={expenseCategoryOptions}
       adjustmentReasonOptions={adjustmentReasons}
       ownerOptions={ownerOptions}

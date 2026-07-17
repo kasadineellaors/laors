@@ -35,6 +35,7 @@ export function ReceiveCattleToLotForm({
   const [landedCost, setLandedCost] = useState("");
   const [sellerName, setSellerName] = useState("");
   const [sourceName, setSourceName] = useState("");
+  const [invoiceRef, setInvoiceRef] = useState("");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -79,6 +80,7 @@ export function ReceiveCattleToLotForm({
       landedCost: landed,
       sellerName: sellerName || undefined,
       sourceName: sourceName || undefined,
+      invoiceRef: invoiceRef || undefined,
       notes: notes || undefined,
     });
     setLoading(false);
@@ -96,6 +98,7 @@ export function ReceiveCattleToLotForm({
     setLandedCost("");
     setSellerName("");
     setSourceName("");
+    setInvoiceRef("");
     setNotes("");
     router.refresh();
   }
@@ -215,6 +218,15 @@ export function ReceiveCattleToLotForm({
                   placeholder="Auto from weight × price"
                 />
               </div>
+            </div>
+            <div>
+              <Label htmlFor="receiveInvoice">Invoice / ticket #</Label>
+              <Input
+                id="receiveInvoice"
+                value={invoiceRef}
+                onChange={(e) => setInvoiceRef(e.target.value)}
+                placeholder="Purchase invoice or sale ticket"
+              />
             </div>
             <div>
               <Label htmlFor="receiveNotes">Notes</Label>

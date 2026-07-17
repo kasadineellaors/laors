@@ -40,6 +40,7 @@ export function CreateGroupForm({
   const [arrivalDate, setArrivalDate] = useState(today);
   const [sellerName, setSellerName] = useState("");
   const [sourceName, setSourceName] = useState("");
+  const [invoiceRef, setInvoiceRef] = useState("");
   const [headCount, setHeadCount] = useState("");
   const [payWeight, setPayWeight] = useState("");
   const [receivedWeight, setReceivedWeight] = useState("");
@@ -108,6 +109,7 @@ export function CreateGroupForm({
       landedCost: landed,
       sellerName: sellerName || undefined,
       sourceName: sourceName || undefined,
+      invoiceRef: invoiceRef || undefined,
     });
 
     setLoading(false);
@@ -321,6 +323,15 @@ export function CreateGroupForm({
               placeholder="Auto from weight × price"
             />
           </div>
+        </div>
+        <div>
+          <Label htmlFor="invoiceRef">Invoice / ticket #</Label>
+          <Input
+            id="invoiceRef"
+            value={invoiceRef}
+            onChange={(e) => setInvoiceRef(e.target.value)}
+            placeholder="Purchase invoice or sale ticket"
+          />
         </div>
         <div>
           <Label htmlFor="notes">Notes</Label>
