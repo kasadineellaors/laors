@@ -156,13 +156,14 @@ export async function updateFeedItem(
   input: {
     name?: string;
     unit?: string;
+    quantityOnHand?: number;
     reorderAt?: number | null;
     pricePerUnit?: number | null;
     notes?: string | null;
   },
 ): Promise<FeedInventoryActionState> {
   try {
-    const { supabase } = await requireMember(orgId);
+    const { supabase, user } = await requireMember(orgId);
     const updates: Database["public"]["Tables"]["feed_items"]["Update"] = {};
     if (input.name !== undefined) updates.name = input.name.trim();
     if (input.unit !== undefined) updates.unit = input.unit.trim() || "ton";
@@ -170,13 +171,46 @@ export async function updateFeedItem(
     if (input.pricePerUnit !== undefined) updates.price_per_unit = input.pricePerUnit;
     if (input.notes !== undefined) updates.notes = input.notes?.trim() || null;
 
-    const { error } = await supabase
-      .from("feed_items")
-      .update(updates)
-      .eq("id", itemId)
-      .eq("organization_id", orgId);
+    if (input.quantityOnHand !== undefined) {
+      if (input.quantityOnHand < 0) return { error: "Quantity cannot be negative" };
 
-    if (error) return { error: formatDbError(error.message) };
+      const { data: item, error: fetchError } = await supabase
+        .from("feed_items")
+        .select("quantity_on_hand")
+        .eq("id", itemId)
+        .eq("organization_id", orgId)
+        .eq("is_active", true)
+        .maybeSingle();
+
+      if (fetchError) return { error: formatDbError(fetchError.message) };
+      if (!item) return { error: "Feedstuff not found" };
+
+      const previous = Number(item.quantity_on_hand);
+      const delta = input.quantityOnHand - previous;
+      if (delta !== 0) {
+        const stockResult = await applyFeedDelta(
+          supabase,
+          orgId,
+          user.id,
+          itemId,
+          delta,
+          "adjust",
+          { notes: "Amount on hand corrected" },
+        );
+        if (stockResult.error) return { error: stockResult.error };
+      }
+    }
+
+    if (Object.keys(updates).length > 0) {
+      const { error } = await supabase
+        .from("feed_items")
+        .update(updates)
+        .eq("id", itemId)
+        .eq("organization_id", orgId);
+
+      if (error) return { error: formatDbError(error.message) };
+    }
+
     revalidateFeedInventory();
     revalidatePath(`/feed/inventory/${itemId}`);
     return { success: "Feedstuff updated" };
@@ -483,6 +517,7 @@ export async function adjustFeedStock(
   orgId: string,
   itemId: string,
   input: {
+    newQuantity?: number;
     delta?: number;
     adjustmentType: FeedAdjustmentType;
     notes?: string;
@@ -490,18 +525,49 @@ export async function adjustFeedStock(
 ): Promise<FeedInventoryActionState> {
   try {
     const { supabase, user } = await requireMember(orgId);
-    if (input.delta === undefined) return { error: "Provide quantity" };
 
-    const result = await applyFeedDelta(
-      supabase,
-      orgId,
-      user.id,
-      itemId,
-      input.delta,
-      input.adjustmentType,
-      { notes: input.notes },
-    );
-    if (result.error) return { error: result.error };
+    if (input.newQuantity !== undefined) {
+      if (input.newQuantity < 0) return { error: "Quantity cannot be negative" };
+
+      const { data: item, error: fetchError } = await supabase
+        .from("feed_items")
+        .select("quantity_on_hand")
+        .eq("id", itemId)
+        .eq("organization_id", orgId)
+        .eq("is_active", true)
+        .maybeSingle();
+
+      if (fetchError) return { error: formatDbError(fetchError.message) };
+      if (!item) return { error: "Feedstuff not found" };
+
+      const previous = Number(item.quantity_on_hand);
+      const delta = input.newQuantity - previous;
+      if (delta === 0) return { success: "Stock unchanged", itemId };
+
+      const result = await applyFeedDelta(
+        supabase,
+        orgId,
+        user.id,
+        itemId,
+        delta,
+        input.adjustmentType,
+        { notes: input.notes },
+      );
+      if (result.error) return { error: result.error };
+    } else if (input.delta !== undefined) {
+      const result = await applyFeedDelta(
+        supabase,
+        orgId,
+        user.id,
+        itemId,
+        input.delta,
+        input.adjustmentType,
+        { notes: input.notes },
+      );
+      if (result.error) return { error: result.error };
+    } else {
+      return { error: "Provide quantity" };
+    }
 
     revalidateFeedInventory();
     revalidatePath(`/feed/inventory/${itemId}`);

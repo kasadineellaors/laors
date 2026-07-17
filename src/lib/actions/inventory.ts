@@ -38,6 +38,41 @@ async function requireOrgAccess(orgId: string) {
   return { supabase, user };
 }
 
+async function resolveCattleGroupOwnerColumns(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  orgId: string,
+  selectedOwnerId: string | null,
+): Promise<{
+  owner_id: string | null;
+  customer_id: string | null;
+  ownership_group_id: string | null;
+}> {
+  if (!selectedOwnerId) {
+    return { owner_id: null, customer_id: null, ownership_group_id: null };
+  }
+
+  const [{ data: customer }, { data: ownershipGroup }] = await Promise.all([
+    supabase
+      .from("customers")
+      .select("id")
+      .eq("organization_id", orgId)
+      .eq("id", selectedOwnerId)
+      .maybeSingle(),
+    supabase
+      .from("ownership_groups")
+      .select("id")
+      .eq("organization_id", orgId)
+      .eq("id", selectedOwnerId)
+      .maybeSingle(),
+  ]);
+
+  return {
+    owner_id: selectedOwnerId,
+    customer_id: customer?.id ?? null,
+    ownership_group_id: ownershipGroup?.id ?? null,
+  };
+}
+
 async function requireAnyMember(orgId: string) {
   const supabase = await createClient();
   const {
@@ -240,15 +275,21 @@ export async function createCattleGroup(
       receivedWeightLbs: input.receivedWeightLbs,
     });
 
+    const ownerColumns = await resolveCattleGroupOwnerColumns(
+      supabase,
+      orgId,
+      input.ownerId || input.customerId || input.ownershipGroupId || null,
+    );
+
     const { data: group, error: groupError } = await supabase
       .from("cattle_groups")
       .insert({
         organization_id: orgId,
         name: trimmed,
         location_id: input.locationId,
-        ownership_group_id: input.ownershipGroupId || input.ownerId || null,
-        customer_id: input.customerId || input.ownerId || null,
-        owner_id: input.ownerId || input.customerId || input.ownershipGroupId || null,
+        ownership_group_id: ownerColumns.ownership_group_id,
+        customer_id: ownerColumns.customer_id,
+        owner_id: ownerColumns.owner_id,
         notes: input.notes?.trim() || null,
         lot_number: input.lotNumber?.trim() || null,
         enterprise_type: input.enterpriseType || "stocker",
@@ -329,6 +370,7 @@ export async function updateCattleGroup(
       notes?: string | null;
       ownership_group_id?: string | null;
       customer_id?: string | null;
+      owner_id?: string | null;
       lot_number?: string | null;
       enterprise_type?: string;
       lot_status?: string;
@@ -345,18 +387,25 @@ export async function updateCattleGroup(
     } = {};
     if (data.name !== undefined) updates.name = data.name.trim();
     if (data.notes !== undefined) updates.notes = data.notes?.trim() || null;
-    if (data.ownershipGroupId !== undefined) {
-      updates.ownership_group_id = data.ownershipGroupId;
-    }
-    if (data.customerId !== undefined) {
-      updates.customer_id = data.customerId;
-    }
-    if (data.ownerId !== undefined) {
-      (updates as { owner_id?: string | null }).owner_id = data.ownerId;
-      if (data.ownerId) {
-        updates.customer_id = data.ownerId;
-        updates.ownership_group_id = data.ownerId;
-      }
+    if (
+      data.ownerId !== undefined ||
+      data.customerId !== undefined ||
+      data.ownershipGroupId !== undefined
+    ) {
+      const selectedOwnerId =
+        data.ownerId !== undefined
+          ? data.ownerId
+          : data.customerId !== undefined
+            ? data.customerId
+            : (data.ownershipGroupId ?? null);
+      const ownerColumns = await resolveCattleGroupOwnerColumns(
+        supabase,
+        orgId,
+        selectedOwnerId,
+      );
+      updates.owner_id = ownerColumns.owner_id;
+      updates.customer_id = ownerColumns.customer_id;
+      updates.ownership_group_id = ownerColumns.ownership_group_id;
     }
     if (data.lotNumber !== undefined) updates.lot_number = data.lotNumber?.trim() || null;
     if (data.enterpriseType !== undefined) updates.enterprise_type = data.enterpriseType;

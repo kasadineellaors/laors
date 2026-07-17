@@ -37,7 +37,7 @@ export function FeedItemDetailClient({
 }: FeedItemDetailClientProps) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
-  const [adjustMode, setAdjustMode] = useState<"receive" | "use" | "purchase" | null>(null);
+  const [adjustMode, setAdjustMode] = useState<"receive" | "use" | "set" | "purchase" | null>(null);
   const [editingPurchaseId, setEditingPurchaseId] = useState<string | null>(null);
   const [adjustQty, setAdjustQty] = useState("");
   const [adjustNotes, setAdjustNotes] = useState("");
@@ -56,6 +56,29 @@ export function FeedItemDetailClient({
     const result = await adjustFeedStock(orgId, item.id, {
       delta,
       adjustmentType: type,
+      notes: adjustNotes || undefined,
+    });
+    setLoading(false);
+    if (result.error) setError(result.error);
+    else {
+      setAdjustMode(null);
+      setAdjustQty("");
+      setAdjustNotes("");
+      router.refresh();
+    }
+  }
+
+  async function handleSetOnHand() {
+    const qty = parseFloat(adjustQty);
+    if (Number.isNaN(qty) || qty < 0) {
+      setError("Enter a valid amount on hand");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    const result = await adjustFeedStock(orgId, item.id, {
+      newQuantity: qty,
+      adjustmentType: "adjust",
       notes: adjustNotes || undefined,
     });
     setLoading(false);
@@ -144,7 +167,7 @@ export function FeedItemDetailClient({
         ) : null}
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <Button
           variant="secondary"
           size="lg"
@@ -161,10 +184,24 @@ export function FeedItemDetailClient({
           size="lg"
           onClick={() => {
             setAdjustMode("use");
+            setAdjustQty("");
             setError(null);
           }}
         >
           Use / adjust out
+        </Button>
+        <Button
+          variant="secondary"
+          size="lg"
+          className="sm:col-span-1 col-span-2"
+          onClick={() => {
+            setAdjustMode("set");
+            setAdjustQty(String(item.quantity_on_hand));
+            setAdjustNotes("");
+            setError(null);
+          }}
+        >
+          Correct amount on hand
         </Button>
       </div>
 
@@ -207,6 +244,39 @@ export function FeedItemDetailClient({
               onClick={() => handleAdjust(adjustMode)}
             >
               Confirm
+            </Button>
+            <Button variant="secondary" size="lg" onClick={() => setAdjustMode(null)}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
+      {adjustMode === "set" ? (
+        <div className="space-y-3 rounded-xl border border-border-neutral p-4">
+          <p className="text-sm font-semibold text-navy">Set amount on hand</p>
+          <p className="text-sm text-text-secondary">
+            Enter the correct total on hand — useful when the original count was wrong.
+          </p>
+          <Label htmlFor="setQty">Amount on hand ({item.unit})</Label>
+          <Input
+            id="setQty"
+            type="number"
+            min={0}
+            step="0.01"
+            value={adjustQty}
+            onChange={(e) => setAdjustQty(e.target.value)}
+          />
+          <Label htmlFor="setNotes">Notes</Label>
+          <Input
+            id="setNotes"
+            value={adjustNotes}
+            onChange={(e) => setAdjustNotes(e.target.value)}
+            placeholder="Why the count changed"
+          />
+          <div className="grid grid-cols-2 gap-3">
+            <Button size="lg" disabled={loading} onClick={handleSetOnHand}>
+              Save
             </Button>
             <Button variant="secondary" size="lg" onClick={() => setAdjustMode(null)}>
               Cancel

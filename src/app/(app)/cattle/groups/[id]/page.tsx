@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { requireOnboardedUser } from "@/lib/auth/session";
-import { listCustomerOptions } from "@/lib/customers/queries";
+import { listOwnerOptions } from "@/lib/owners/queries";
 import { canWriteInventory } from "@/lib/auth/roles";
 import { getCattleGroup } from "@/lib/inventory/queries";
 import {
@@ -32,8 +32,7 @@ export default async function CattleGroupPage({
 
   const [
     adjustmentReasons,
-    ownershipOptions,
-    customerOptions,
+    ownerOptions,
     expenseCategoryOptions,
     lotSummary,
     processingEvents,
@@ -42,9 +41,11 @@ export default async function CattleGroupPage({
     fieldSuggestions,
   ] = await Promise.all([
     getRanchOptions(orgId, "adjustment_reasons"),
-    getRanchOptions(orgId, "ownership_groups"),
-    listCustomerOptions(orgId).then((rows) =>
-      rows.map((c) => ({ value: c.id, label: c.name })),
+    listOwnerOptions(orgId).then((rows) =>
+      rows.map((o) => ({
+        value: o.id,
+        label: o.is_ownership_group ? `${o.name} (group)` : o.name,
+      })),
     ),
     getRanchOptions(orgId, "financial_categories"),
     getLotOperationalSummary(
@@ -73,8 +74,7 @@ export default async function CattleGroupPage({
       lotExpenses={lotExpenses}
       expenseCategoryOptions={expenseCategoryOptions}
       adjustmentReasonOptions={adjustmentReasons}
-      ownershipOptions={ownershipOptions}
-      customerOptions={customerOptions}
+      ownerOptions={ownerOptions}
       fieldSuggestions={{
         sellers: fieldSuggestions.sellers,
         sources: fieldSuggestions.sources,

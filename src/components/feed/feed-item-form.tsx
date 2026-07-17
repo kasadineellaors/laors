@@ -45,8 +45,8 @@ export function FeedItemForm({ orgId, item, onSuccess }: FeedItemFormProps) {
     const reorder = reorderAt.trim() ? parseFloat(reorderAt) : undefined;
     const price = pricePerUnit.trim() ? parseFloat(pricePerUnit) : undefined;
 
-    if (!isEdit && (Number.isNaN(qty) || qty < 0)) {
-      setError("Enter a valid starting quantity");
+    if (Number.isNaN(qty) || qty < 0) {
+      setError("Enter a valid quantity on hand");
       setLoading(false);
       return;
     }
@@ -55,6 +55,7 @@ export function FeedItemForm({ orgId, item, onSuccess }: FeedItemFormProps) {
       ? await updateFeedItem(orgId, item!.id, {
           name,
           unit,
+          quantityOnHand: qty,
           reorderAt: reorderAt.trim() ? reorder! : null,
           pricePerUnit: pricePerUnit.trim() ? price! : null,
           notes: notes || null,
@@ -114,20 +115,18 @@ export function FeedItemForm({ orgId, item, onSuccess }: FeedItemFormProps) {
               ))}
             </select>
           </div>
-          {!isEdit ? (
-            <div>
-              <Label htmlFor="qty">Starting on hand</Label>
-              <Input
-                id="qty"
-                type="number"
-                min={0}
-                step="0.01"
-                value={quantityOnHand}
-                onChange={(e) => setQuantityOnHand(e.target.value)}
-                required
-              />
-            </div>
-          ) : null}
+          <div>
+            <Label htmlFor="qty">{isEdit ? "Amount on hand" : "Starting on hand"}</Label>
+            <Input
+              id="qty"
+              type="number"
+              min={0}
+              step="0.01"
+              value={quantityOnHand}
+              onChange={(e) => setQuantityOnHand(e.target.value)}
+              required
+            />
+          </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>

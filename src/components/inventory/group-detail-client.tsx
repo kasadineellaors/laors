@@ -38,8 +38,7 @@ interface GroupDetailClientProps {
   lotExpenses: LotExpenseRecord[];
   expenseCategoryOptions: SelectOption[];
   adjustmentReasonOptions: SelectOption[];
-  ownershipOptions: SelectOption[];
-  customerOptions: SelectOption[];
+  ownerOptions: SelectOption[];
   fieldSuggestions: Pick<RanchFieldSuggestions, "sellers" | "sources" | "suppliers">;
   canManageCattle: boolean;
 }
@@ -57,16 +56,16 @@ export function GroupDetailClient({
   lotExpenses,
   expenseCategoryOptions,
   adjustmentReasonOptions,
-  ownershipOptions,
-  customerOptions,
+  ownerOptions,
   fieldSuggestions,
   canManageCattle,
 }: GroupDetailClientProps) {
   const router = useRouter();
   const [name, setName] = useState(group.name);
   const [notes, setNotes] = useState(group.notes ?? "");
-  const [ownershipGroupId, setOwnershipGroupId] = useState(group.ownership_group_id ?? "");
-  const [customerId, setCustomerId] = useState(group.customer_id ?? "");
+  const [ownerId, setOwnerId] = useState(
+    group.owner_id ?? group.customer_id ?? group.ownership_group_id ?? "",
+  );
   const [payWeight, setPayWeight] = useState(
     group.pay_weight_lbs != null ? String(group.pay_weight_lbs) : "",
   );
@@ -87,8 +86,7 @@ export function GroupDetailClient({
     const result = await updateCattleGroup(orgId, group.id, {
       name,
       notes,
-      ownershipGroupId: ownershipGroupId || null,
-      customerId: customerId || null,
+      ownerId: ownerId || null,
       payWeightLbs: payWeight.trim() ? parseFloat(payWeight) : null,
       receivedWeightLbs: receivedWeight.trim() ? parseFloat(receivedWeight) : null,
     });
@@ -264,37 +262,19 @@ export function GroupDetailClient({
               <Label htmlFor="editNotes">Notes</Label>
               <Input id="editNotes" value={notes} onChange={(e) => setNotes(e.target.value)} />
             </div>
-            {ownershipOptions.length > 0 ? (
+            {ownerOptions.length > 0 ? (
               <div>
-                <Label htmlFor="editOwnership">Ownership group</Label>
+                <Label htmlFor="editOwner">Owner / customer</Label>
                 <select
-                  id="editOwnership"
-                  value={ownershipGroupId}
-                  onChange={(e) => setOwnershipGroupId(e.target.value)}
+                  id="editOwner"
+                  value={ownerId}
+                  onChange={(e) => setOwnerId(e.target.value)}
                   className="flex h-12 w-full rounded-lg border-2 border-border-neutral bg-surface-white px-4 text-base"
                 >
                   <option value="">Ranch-owned / none</option>
-                  {ownershipOptions.map((o) => (
+                  {ownerOptions.map((o) => (
                     <option key={o.value} value={o.value}>
                       {o.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ) : null}
-            {customerOptions.length > 0 ? (
-              <div>
-                <Label htmlFor="editCustomer">Billing customer</Label>
-                <select
-                  id="editCustomer"
-                  value={customerId}
-                  onChange={(e) => setCustomerId(e.target.value)}
-                  className="flex h-12 w-full rounded-lg border-2 border-border-neutral bg-surface-white px-4 text-base"
-                >
-                  <option value="">None</option>
-                  {customerOptions.map((c) => (
-                    <option key={c.value} value={c.value}>
-                      {c.label}
                     </option>
                   ))}
                 </select>
