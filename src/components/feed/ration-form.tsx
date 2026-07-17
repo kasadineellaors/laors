@@ -56,7 +56,7 @@ export function RationForm({
         : [],
   );
   const [ingredientMode, setIngredientMode] = useState<IngredientBuildMode>(
-    ingredients.length > 0 ? detectIngredientMode(ingredients) : "percent",
+    ingredients.length > 0 ? detectIngredientMode(ingredients) : "amount",
   );
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -76,7 +76,7 @@ export function RationForm({
     const parsedIngredients = parseIngredientLines(ingredientLines, ingredientMode);
     if (ingredientMode === "percent") {
       const total = parsedIngredients.reduce((s, i) => s + (i.inclusionPercent ?? 0), 0);
-      if (parsedIngredients.length > 0 && Math.abs(total - 100) >= 0.5) {
+      if (parsedIngredients.length > 0 && Math.abs(total - 100) >= 0.01) {
         setError("Inclusion percentages must total 100%");
         setLoading(false);
         return;

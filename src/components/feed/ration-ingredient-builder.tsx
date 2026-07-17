@@ -100,7 +100,7 @@ export function RationIngredientBuilder({
     "flex h-12 w-full rounded-lg border-2 border-border-neutral bg-surface-white px-4 text-base";
 
   const percentTotal = mode === "percent" ? computePercentTotal(lines) : 0;
-  const percentOk = Math.abs(percentTotal - 100) < 0.5;
+  const percentOk = Math.abs(percentTotal - 100) < 0.01;
   const recipeCost = computeRecipeCost(lines, feedItems);
 
   function updateLine(index: number, patch: Partial<IngredientLine>) {
@@ -162,7 +162,7 @@ export function RationIngredientBuilder({
         <p
           className={`text-sm font-semibold ${percentOk ? "text-brown" : "text-status-critical"}`}
         >
-          Inclusion total: {percentTotal.toFixed(1)}%
+          Inclusion total: {percentTotal.toFixed(3).replace(/\.?0+$/, "")}%
           {!percentOk ? " — should equal 100%" : ""}
         </p>
       ) : null}
@@ -208,7 +208,8 @@ export function RationIngredientBuilder({
                   type="number"
                   min={0}
                   max={100}
-                  step="0.1"
+                  step="any"
+                  inputMode="decimal"
                   value={line.inclusionPercent}
                   onChange={(e) => updateLine(index, { inclusionPercent: e.target.value })}
                   placeholder="%"
@@ -218,7 +219,8 @@ export function RationIngredientBuilder({
                 <Input
                   type="number"
                   min={0}
-                  step="0.01"
+                  step="any"
+                  inputMode="decimal"
                   value={line.quantityPerRationUnit}
                   onChange={(e) => updateLine(index, { quantityPerRationUnit: e.target.value })}
                   placeholder="Qty"

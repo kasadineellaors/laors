@@ -112,7 +112,9 @@ export function RationDetailClient({
                   <p key={i.id} className="font-medium text-navy">
                     {i.inclusion_percent != null
                       ? `${i.inclusion_percent}%`
-                      : `${i.quantity_per_ration_unit}`}{" "}
+                      : Number(i.quantity_per_ration_unit).toLocaleString(undefined, {
+                          maximumFractionDigits: 4,
+                        })}{" "}
                     {i.feed_item_unit} {i.feed_item_name}
                   </p>
                 ))}
