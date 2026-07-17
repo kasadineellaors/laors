@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { FeedItemRecord, FeedPurchaseRecord, FeedStockAdjustment } from "@/lib/feed/inventory-types";
-import { adjustFeedStock, archiveFeedItem } from "@/lib/actions/feed-inventory";
+import { adjustFeedStock, archiveFeedItem, archiveFeedPurchase } from "@/lib/actions/feed-inventory";
 import { FeedItemForm } from "@/components/feed/feed-item-form";
 import { FeedPurchaseForm } from "@/components/feed/feed-purchase-form";
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,7 @@ export function FeedItemDetailClient({
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [adjustMode, setAdjustMode] = useState<"receive" | "use" | "purchase" | null>(null);
+  const [editingPurchaseId, setEditingPurchaseId] = useState<string | null>(null);
   const [adjustQty, setAdjustQty] = useState("");
   const [adjustNotes, setAdjustNotes] = useState("");
   const [loading, setLoading] = useState(false);
@@ -75,6 +76,35 @@ export function FeedItemDetailClient({
     if (result.error) setError(result.error);
     else router.push("/feed/inventory");
   }
+
+  function startEditPurchase(purchaseId: string) {
+    setEditingPurchaseId(purchaseId);
+    setAdjustMode(null);
+    setError(null);
+  }
+
+  function cancelPurchaseForm() {
+    setAdjustMode(null);
+    setEditingPurchaseId(null);
+    setError(null);
+  }
+
+  async function handleArchivePurchase(purchaseId: string) {
+    if (!window.confirm("Remove this purchase? Inventory on hand will be adjusted.")) return;
+    setLoading(true);
+    setError(null);
+    const result = await archiveFeedPurchase(orgId, item.id, purchaseId);
+    setLoading(false);
+    if (result.error) setError(result.error);
+    else {
+      if (editingPurchaseId === purchaseId) cancelPurchaseForm();
+      router.refresh();
+    }
+  }
+
+  const editingPurchase = editingPurchaseId
+    ? purchases.find((p) => p.id === editingPurchaseId)
+    : undefined;
 
   if (editing) {
     return (
@@ -120,6 +150,7 @@ export function FeedItemDetailClient({
           size="lg"
           onClick={() => {
             setAdjustMode("purchase");
+            setEditingPurchaseId(null);
             setError(null);
           }}
         >
@@ -137,17 +168,18 @@ export function FeedItemDetailClient({
         </Button>
       </div>
 
-      {adjustMode === "purchase" ? (
+      {adjustMode === "purchase" || editingPurchase ? (
         <FeedPurchaseForm
           orgId={orgId}
           itemId={item.id}
           unit={item.unit}
           supplierSuggestions={supplierSuggestions}
+          purchase={editingPurchase}
           onSuccess={() => {
-            setAdjustMode(null);
+            cancelPurchaseForm();
             router.refresh();
           }}
-          onCancel={() => setAdjustMode(null)}
+          onCancel={cancelPurchaseForm}
         />
       ) : null}
 
@@ -204,15 +236,40 @@ export function FeedItemDetailClient({
           <ul className="space-y-2 text-sm">
             {purchases.map((p) => (
               <li key={p.id} className="rounded-lg border border-border-neutral px-3 py-2">
-                <span className="font-medium">{p.purchased_at}</span>
-                {": "}
-                {p.quantity} {item.unit} for $
-                {p.total_cost.toFixed(2)}
-                <span className="block text-xs text-text-secondary">
-                  ${p.unit_cost.toFixed(4)}/{item.unit}
-                  {p.vendor_name ? ` · ${p.vendor_name}` : ""}
-                  {p.invoice_ref ? ` · #${p.invoice_ref}` : ""}
-                </span>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <span className="font-medium">{p.purchased_at}</span>
+                    {": "}
+                    {p.quantity} {item.unit} for $
+                    {p.total_cost.toFixed(2)}
+                    <span className="block text-xs text-text-secondary">
+                      ${p.unit_cost.toFixed(4)}/{item.unit}
+                      {p.vendor_name ? ` · ${p.vendor_name}` : ""}
+                      {p.invoice_ref ? ` · #${p.invoice_ref}` : ""}
+                      {p.notes ? ` · ${p.notes}` : ""}
+                    </span>
+                  </div>
+                  <div className="flex shrink-0 gap-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => startEditPurchase(p.id)}
+                      disabled={loading}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleArchivePurchase(p.id)}
+                      disabled={loading}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                </div>
               </li>
             ))}
           </ul>

@@ -12,6 +12,29 @@ export function weightedAverageCost(
   return (existingValue + newValue) / totalQty;
 }
 
+/** Undo one purchase receipt from current on-hand qty and weighted-average cost. */
+export function weightedAverageBeforeReceipt(
+  qtyAfter: number,
+  priceAfter: number | null,
+  receivedQty: number,
+  receivedUnitCost: number,
+): { qtyBefore: number; priceBefore: number | null } {
+  const qtyBefore = qtyAfter - receivedQty;
+  if (receivedQty <= 0) {
+    return { qtyBefore, priceBefore: priceAfter };
+  }
+  if (qtyBefore <= 0) {
+    return { qtyBefore: 0, priceBefore: null };
+  }
+  const totalAfter = (priceAfter ?? 0) * qtyAfter;
+  const receiptValue = receivedUnitCost * receivedQty;
+  const priceBefore = (totalAfter - receiptValue) / qtyBefore;
+  return {
+    qtyBefore,
+    priceBefore: Number.isFinite(priceBefore) && priceBefore >= 0 ? priceBefore : null,
+  };
+}
+
 export interface RecipeIngredientCost {
   quantity_per_ration_unit: number;
   price_per_unit: number | null;

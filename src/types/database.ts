@@ -2218,7 +2218,13 @@ export interface Database {
           notes?: string | null;
           created_by?: string | null;
         };
-        Update: Record<string, never>;
+        Update: {
+          previous_quantity?: number;
+          new_quantity?: number;
+          delta?: number;
+          unit_cost?: number | null;
+          notes?: string | null;
+        };
         Relationships: [];
       };
       feed_purchases: {
@@ -2255,8 +2261,14 @@ export interface Database {
           is_active?: boolean;
         };
         Update: {
-          is_active?: boolean;
+          purchased_at?: string;
+          vendor_name?: string | null;
+          quantity?: number;
+          unit_cost?: number;
+          total_cost?: number;
+          invoice_ref?: string | null;
           notes?: string | null;
+          is_active?: boolean;
         };
         Relationships: [];
       };

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { recordFeedPurchase } from "@/lib/actions/feed-inventory";
+import { useEffect, useState } from "react";
+import type { FeedPurchaseRecord } from "@/lib/feed/inventory-types";
+import { recordFeedPurchase, updateFeedPurchase } from "@/lib/actions/feed-inventory";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +13,7 @@ interface FeedPurchaseFormProps {
   itemId: string;
   unit: string;
   supplierSuggestions: string[];
+  purchase?: FeedPurchaseRecord;
   onSuccess?: () => void;
   onCancel?: () => void;
 }
@@ -21,18 +23,32 @@ export function FeedPurchaseForm({
   itemId,
   unit,
   supplierSuggestions,
+  purchase,
   onSuccess,
   onCancel,
 }: FeedPurchaseFormProps) {
+  const isEdit = Boolean(purchase);
   const today = new Date().toISOString().slice(0, 10);
-  const [purchasedAt, setPurchasedAt] = useState(today);
-  const [vendorName, setVendorName] = useState("");
-  const [quantity, setQuantity] = useState("");
-  const [totalCost, setTotalCost] = useState("");
-  const [invoiceRef, setInvoiceRef] = useState("");
-  const [notes, setNotes] = useState("");
+
+  const [purchasedAt, setPurchasedAt] = useState(purchase?.purchased_at ?? today);
+  const [vendorName, setVendorName] = useState(purchase?.vendor_name ?? "");
+  const [quantity, setQuantity] = useState(purchase ? String(purchase.quantity) : "");
+  const [totalCost, setTotalCost] = useState(purchase ? String(purchase.total_cost) : "");
+  const [invoiceRef, setInvoiceRef] = useState(purchase?.invoice_ref ?? "");
+  const [notes, setNotes] = useState(purchase?.notes ?? "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!purchase) return;
+    setPurchasedAt(purchase.purchased_at);
+    setVendorName(purchase.vendor_name ?? "");
+    setQuantity(String(purchase.quantity));
+    setTotalCost(String(purchase.total_cost));
+    setInvoiceRef(purchase.invoice_ref ?? "");
+    setNotes(purchase.notes ?? "");
+    setError(null);
+  }, [purchase]);
 
   const qty = parseFloat(quantity);
   const cost = parseFloat(totalCost);
@@ -51,14 +67,20 @@ export function FeedPurchaseForm({
     }
     setLoading(true);
     setError(null);
-    const result = await recordFeedPurchase(orgId, itemId, {
+
+    const payload = {
       purchasedAt,
       vendorName: vendorName || undefined,
       quantity: qty,
       totalCost: cost,
       invoiceRef: invoiceRef || undefined,
       notes: notes || undefined,
-    });
+    };
+
+    const result = isEdit
+      ? await updateFeedPurchase(orgId, itemId, purchase!.id, payload)
+      : await recordFeedPurchase(orgId, itemId, payload);
+
     setLoading(false);
     if (result.error) setError(result.error);
     else onSuccess?.();
@@ -66,7 +88,9 @@ export function FeedPurchaseForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3 rounded-xl border border-border-neutral p-4">
-      <p className="text-sm font-semibold text-navy">Record commodity purchase</p>
+      <p className="text-sm font-semibold text-navy">
+        {isEdit ? "Edit purchase" : "Record commodity purchase"}
+      </p>
       <div className="grid grid-cols-2 gap-3">
         <div>
           <Label htmlFor="purchaseDate">Date</Label>
@@ -117,7 +141,8 @@ export function FeedPurchaseForm({
       {unitCost != null ? (
         <p className="text-sm text-text-secondary">
           Cost per {unit}: <span className="font-bold">${unitCost.toFixed(4)}</span>
-          {" · "}updates weighted-average inventory cost
+          {" · "}
+          {isEdit ? "updates inventory on hand and weighted-average cost" : "updates weighted-average inventory cost"}
         </p>
       ) : null}
       <div>
@@ -135,7 +160,7 @@ export function FeedPurchaseForm({
       ) : null}
       <div className="grid grid-cols-2 gap-3">
         <Button type="submit" size="lg" disabled={loading}>
-          {loading ? "Saving…" : "Record purchase"}
+          {loading ? "Saving…" : isEdit ? "Save changes" : "Record purchase"}
         </Button>
         {onCancel ? (
           <Button type="button" variant="secondary" size="lg" onClick={onCancel}>

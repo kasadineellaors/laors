@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type { Database } from "@/types/database";
 import type { FeedAdjustmentType } from "@/lib/feed/inventory-types";
-import { weightedAverageCost } from "@/lib/feed/costing";
+import { weightedAverageCost, weightedAverageBeforeReceipt } from "@/lib/feed/costing";
 
 export type FeedInventoryActionState = {
   error?: string;
@@ -259,6 +259,221 @@ export async function recordFeedPurchase(
     revalidateFeedInventory();
     revalidatePath(`/feed/inventory/${itemId}`);
     return { success: "Purchase recorded", itemId };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function updateFeedPurchase(
+  orgId: string,
+  itemId: string,
+  purchaseId: string,
+  input: {
+    purchasedAt?: string;
+    vendorName?: string;
+    quantity: number;
+    totalCost: number;
+    invoiceRef?: string;
+    notes?: string;
+  },
+): Promise<FeedInventoryActionState> {
+  if (!input.quantity || input.quantity <= 0) return { error: "Enter quantity received" };
+  if (input.totalCost < 0) return { error: "Enter total cost" };
+
+  try {
+    const { supabase, user } = await requireMember(orgId);
+    const { data: purchase, error: purchaseError } = await supabase
+      .from("feed_purchases")
+      .select("id, quantity, unit_cost, feed_stock_adjustment_id")
+      .eq("id", purchaseId)
+      .eq("organization_id", orgId)
+      .eq("feed_item_id", itemId)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (purchaseError) return { error: formatDbError(purchaseError.message) };
+    if (!purchase) return { error: "Purchase not found" };
+
+    const { data: item, error: fetchError } = await supabase
+      .from("feed_items")
+      .select("quantity_on_hand, price_per_unit")
+      .eq("id", itemId)
+      .eq("organization_id", orgId)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (fetchError) return { error: formatDbError(fetchError.message) };
+    if (!item) return { error: "Feedstuff not found" };
+
+    const oldQty = Number(purchase.quantity);
+    const oldUnitCost = Number(purchase.unit_cost);
+    const newUnitCost = input.totalCost / input.quantity;
+    const qtyDelta = input.quantity - oldQty;
+    const currentQty = Number(item.quantity_on_hand);
+    const currentPrice = item.price_per_unit != null ? Number(item.price_per_unit) : null;
+
+    const { qtyBefore, priceBefore } = weightedAverageBeforeReceipt(
+      currentQty,
+      currentPrice,
+      oldQty,
+      oldUnitCost,
+    );
+    const newStockQty = qtyBefore + input.quantity;
+    if (newStockQty < 0) return { error: "Would put inventory below zero" };
+
+    if (qtyDelta !== 0) {
+      const stockResult = await applyFeedDelta(
+        supabase,
+        orgId,
+        user.id,
+        itemId,
+        qtyDelta,
+        "receive",
+        {
+          notes:
+            input.notes?.trim() ||
+            `Purchase corrected (${qtyDelta > 0 ? "+" : ""}${qtyDelta})`,
+          unitCost: newUnitCost,
+        },
+      );
+      if (stockResult.error) return { error: stockResult.error };
+    }
+
+    const newAvgPrice = weightedAverageCost(qtyBefore, priceBefore, input.quantity, newUnitCost);
+    const { error: priceError } = await supabase
+      .from("feed_items")
+      .update({ price_per_unit: newStockQty > 0 ? newAvgPrice : null })
+      .eq("id", itemId)
+      .eq("organization_id", orgId);
+
+    if (priceError) return { error: formatDbError(priceError.message) };
+
+    if (purchase.feed_stock_adjustment_id) {
+      const { data: adj } = await supabase
+        .from("feed_stock_adjustments")
+        .select("previous_quantity, new_quantity, delta")
+        .eq("id", purchase.feed_stock_adjustment_id)
+        .maybeSingle();
+
+      if (adj) {
+        const baseQty = Number(adj.new_quantity) - Number(adj.delta);
+        const vendorNote = input.vendorName?.trim();
+        await supabase
+          .from("feed_stock_adjustments")
+          .update({
+            previous_quantity: baseQty,
+            new_quantity: baseQty + input.quantity,
+            delta: input.quantity,
+            unit_cost: newUnitCost,
+            notes:
+              input.notes?.trim() ||
+              `Purchase${vendorNote ? ` — ${vendorNote}` : ""}`,
+          })
+          .eq("id", purchase.feed_stock_adjustment_id);
+      }
+    }
+
+    const { error: updateError } = await supabase
+      .from("feed_purchases")
+      .update({
+        purchased_at: input.purchasedAt || new Date().toISOString().slice(0, 10),
+        vendor_name: input.vendorName?.trim() || null,
+        quantity: input.quantity,
+        unit_cost: newUnitCost,
+        total_cost: input.totalCost,
+        invoice_ref: input.invoiceRef?.trim() || null,
+        notes: input.notes?.trim() || null,
+      })
+      .eq("id", purchaseId)
+      .eq("organization_id", orgId);
+
+    if (updateError) return { error: formatDbError(updateError.message) };
+
+    revalidateFeedInventory();
+    revalidatePath(`/feed/inventory/${itemId}`);
+    return { success: "Purchase updated", itemId };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function archiveFeedPurchase(
+  orgId: string,
+  itemId: string,
+  purchaseId: string,
+): Promise<FeedInventoryActionState> {
+  try {
+    const { supabase, user } = await requireMember(orgId);
+    const { data: purchase, error: purchaseError } = await supabase
+      .from("feed_purchases")
+      .select("id, quantity, unit_cost")
+      .eq("id", purchaseId)
+      .eq("organization_id", orgId)
+      .eq("feed_item_id", itemId)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (purchaseError) return { error: formatDbError(purchaseError.message) };
+    if (!purchase) return { error: "Purchase not found" };
+
+    const { data: item, error: fetchError } = await supabase
+      .from("feed_items")
+      .select("quantity_on_hand, price_per_unit")
+      .eq("id", itemId)
+      .eq("organization_id", orgId)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (fetchError) return { error: formatDbError(fetchError.message) };
+    if (!item) return { error: "Feedstuff not found" };
+
+    const oldQty = Number(purchase.quantity);
+    const oldUnitCost = Number(purchase.unit_cost);
+    const currentQty = Number(item.quantity_on_hand);
+    const currentPrice = item.price_per_unit != null ? Number(item.price_per_unit) : null;
+    const newStockQty = currentQty - oldQty;
+
+    if (newStockQty < 0) {
+      return { error: "Cannot remove purchase — not enough feed on hand" };
+    }
+
+    const stockResult = await applyFeedDelta(
+      supabase,
+      orgId,
+      user.id,
+      itemId,
+      -oldQty,
+      "adjust",
+      { notes: "Purchase removed" },
+    );
+    if (stockResult.error) return { error: stockResult.error };
+
+    const { qtyBefore, priceBefore } = weightedAverageBeforeReceipt(
+      currentQty,
+      currentPrice,
+      oldQty,
+      oldUnitCost,
+    );
+
+    const { error: priceError } = await supabase
+      .from("feed_items")
+      .update({ price_per_unit: qtyBefore > 0 ? priceBefore : null })
+      .eq("id", itemId)
+      .eq("organization_id", orgId);
+
+    if (priceError) return { error: formatDbError(priceError.message) };
+
+    const { error: archiveError } = await supabase
+      .from("feed_purchases")
+      .update({ is_active: false })
+      .eq("id", purchaseId)
+      .eq("organization_id", orgId);
+
+    if (archiveError) return { error: formatDbError(archiveError.message) };
+
+    revalidateFeedInventory();
+    revalidatePath(`/feed/inventory/${itemId}`);
+    return { success: "Purchase removed", itemId };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Failed" };
   }
