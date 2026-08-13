@@ -4,6 +4,7 @@ import Link from "next/link";
 import { linkButtonClassName } from "@/components/ui/button";
 
 export type QuickAction = {
+  id?: string;
   label: string;
   href?: string;
   onClick?: () => void;
@@ -20,9 +21,11 @@ export function QuickActionGroup({ title, actions }: QuickActionGroupProps) {
 
   return (
     <section>
-      <h2 className="mb-3 text-xs font-bold uppercase tracking-wide text-text-secondary">
-        {title}
-      </h2>
+      {title ? (
+        <h2 className="mb-3 text-xs font-bold uppercase tracking-wide text-text-secondary">
+          {title}
+        </h2>
+      ) : null}
       <div className="grid grid-cols-1 gap-3 min-[400px]:grid-cols-2 lg:grid-cols-3">
         {actions.map((action) => {
           const className = linkButtonClassName({
@@ -32,10 +35,12 @@ export function QuickActionGroup({ title, actions }: QuickActionGroupProps) {
             className: "h-11 min-h-11",
           });
 
+          const key = action.id ?? action.label;
+
           if (action.onClick) {
             return (
               <button
-                key={action.label}
+                key={key}
                 type="button"
                 onClick={action.onClick}
                 className={className}
@@ -46,7 +51,7 @@ export function QuickActionGroup({ title, actions }: QuickActionGroupProps) {
           }
 
           return (
-            <Link key={action.label} href={action.href ?? "#"} className={className}>
+            <Link key={key} href={action.href ?? "#"} className={className}>
               {action.label}
             </Link>
           );

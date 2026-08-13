@@ -30,7 +30,13 @@ import { AlertBanner } from "@/components/dashboard/alert-banner";
 import { DashboardQuickActions } from "@/components/dashboard/dashboard-quick-actions";
 import { listOwners } from "@/lib/owners/queries";
 import { listCattleGroups } from "@/lib/inventory/queries";
-import { getTreePickerOptions } from "@/lib/locations/options";
+import { getRanchOptions, getTreePickerOptions } from "@/lib/locations/options";
+import { listFeedRationOptions } from "@/lib/feed/queries";
+import { getRationUnitPrices } from "@/lib/feed/inventory-queries";
+import { listOrgMembers } from "@/lib/tasks/queries";
+import { listMedicineOptions } from "@/lib/medicine/queries";
+import { listOwnerOptions } from "@/lib/owners/queries";
+import { toFeedGroupOptions, rationCostsToRecord, ownersToSelectOptions } from "@/lib/feed/options";
 import { EnterpriseSummaryCard } from "@/components/dashboard/enterprise-summary-card";
 import { FinancialSnapshotCard } from "@/components/dashboard/financial-snapshot-card";
 import { MonthlyPlCard } from "@/components/dashboard/monthly-pl-card";
@@ -157,6 +163,7 @@ export default async function DashboardPage() {
   const showCalendar = isCalendarEnabled(org);
 
   const canManageOwners = canManageInvoices(role);
+  const userId = session.user.id;
 
   const [
     totalHead,
@@ -174,7 +181,13 @@ export default async function DashboardPage() {
     cowCalfInventory,
     owners,
     cattleGroups,
-    locationTree,
+    pickerLocations,
+    feedGroupOptions,
+    orgMembers,
+    medicineOptions,
+    taskCategories,
+    rationOptions,
+    feedingOwnerOptions,
   ] = await Promise.all([
     getRanchTotalHeadCount(orgId),
     getLocationTreeWithRollups(orgId),
@@ -190,9 +203,19 @@ export default async function DashboardPage() {
     listAuditLog(orgId, 5),
     showDualEnterprise ? getEnterpriseInventorySummary(orgId) : Promise.resolve(null),
     canManageOwners ? listOwners(orgId) : Promise.resolve([]),
-    canManageOwners ? listCattleGroups(orgId) : Promise.resolve([]),
-    canManageOwners ? getTreePickerOptions(orgId) : Promise.resolve([]),
+    listCattleGroups(orgId),
+    getTreePickerOptions(orgId),
+    listCattleGroups(orgId).then(toFeedGroupOptions),
+    listOrgMembers(orgId),
+    listMedicineOptions(orgId),
+    getRanchOptions(orgId, "task_categories"),
+    listFeedRationOptions(orgId),
+    listOwnerOptions(orgId).then(ownersToSelectOptions),
   ]);
+
+  const rationUnitCosts = rationCostsToRecord(
+    await getRationUnitPrices(orgId, rationOptions.map((r) => r.id)),
+  );
 
   const propertyCount = tree.length;
   const lowStock = lowMedicine + lowFeed;
@@ -227,38 +250,9 @@ export default async function DashboardPage() {
         tone: "default" as const,
       };
 
-  const dailyActions = [
-    { label: "Clock In/Out", href: "/time", variant: "outline" as const },
-    { label: "Log Treatment", href: "/health/treatments/new", variant: "outline" as const },
-    { label: "Log Feeding", href: "/feed/log/new", variant: "outline" as const },
-    { label: "Move Cattle", href: "/cattle/move", variant: "outline" as const },
-    { label: "New Task", href: "/jobs/new", variant: "outline" as const },
-    { label: "Rainfall", href: "/weather/rainfall/new", variant: "outline" as const },
-    ...(showCowCalf
-      ? [
-          { label: "Cow-Calf overview", href: "/cow-calf", variant: "outline" as const },
-          { label: "Log Calving", href: "/cow-calf/calving/new", variant: "outline" as const },
-        ]
-      : []),
-    ...(showSeedstock
-      ? [{ label: "Seedstock", href: "/seedstock", variant: "outline" as const }]
-      : []),
-  ];
-
-  const businessActions = [
-    { label: "Record Sale", href: "/sales/new", variant: "outline" as const },
-    ...(showCalendar ? [{ label: "Calendar", href: "/calendar", variant: "outline" as const }] : []),
-    ...(showInvoices
-      ? [
-          { label: "Generate Invoice", href: "/invoices/generate", variant: "outline" as const },
-          { label: "New Invoice", href: "/invoices/new", variant: "outline" as const },
-        ]
-      : []),
-  ];
-
   const lotOptions = cattleGroups.map((g) => ({ id: g.id, name: g.name }));
-  const locationOptions = locationTree.flatMap(function flatten(
-    node: (typeof locationTree)[number],
+  const locationOptions = pickerLocations.flatMap(function flatten(
+    node: (typeof pickerLocations)[number],
   ): Array<{ id: string; label: string }> {
     const self = [{ id: node.id, label: node.name }];
     const kids = (node.children ?? []).flatMap(flatten);
@@ -381,9 +375,20 @@ export default async function DashboardPage() {
 
       <DashboardQuickActions
         orgId={orgId}
-        dailyActions={dailyActions}
-        businessActions={businessActions}
+        currentUserId={userId}
+        showCowCalf={showCowCalf}
+        showSeedstock={showSeedstock}
+        showCalendar={showCalendar}
+        showInvoices={showInvoices}
         showMiscCharge={canManageOwners}
+        locationTree={pickerLocations}
+        groupOptions={feedGroupOptions}
+        memberOptions={orgMembers}
+        medicineOptions={medicineOptions}
+        taskCategoryOptions={taskCategories}
+        rationOptions={rationOptions}
+        rationUnitCosts={rationUnitCosts}
+        feedingOwnerOptions={feedingOwnerOptions}
         ownerOptions={owners}
         lotOptions={lotOptions}
         locationOptions={locationOptions}
