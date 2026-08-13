@@ -8,6 +8,7 @@ import {
   createOwnerMiscCharge,
   updateOwnerMiscCharge,
 } from "@/lib/actions/owners";
+import { quickAddHideLabel } from "@/components/dashboard/quick-add-label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -116,7 +117,7 @@ export function OwnerMiscChargesPanel({
           }}
           disabled={loading}
         >
-          {showForm ? "Cancel" : "Add charge"}
+          {showForm ? quickAddHideLabel("Add Charge") : "Add Charge"}
         </Button>
       </div>
 

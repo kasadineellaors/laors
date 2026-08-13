@@ -5,7 +5,8 @@ import Link from "next/link";
 import type { OwnerRecord } from "@/lib/owners/types";
 import type { OwnerTotalsReport } from "@/lib/reports/owner-totals-types";
 import { fetchOwnerTotalsReport } from "@/lib/actions/reports";
-import { QuickAddSection, type QuickAddItem } from "@/components/dashboard/quick-add-section";
+import { QuickActionGroup } from "@/components/dashboard/quick-action-group";
+import { quickAddHideLabel } from "@/components/dashboard/quick-add-label";
 import { MiscChargeQuickForm } from "@/components/reports/misc-charge-quick-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,12 +83,54 @@ export function OwnerTotalsReportClient({
   const [report, setReport] = useState<OwnerTotalsReport | null>(null);
   const [expandedOwners, setExpandedOwners] = useState<Set<string>>(new Set());
   const [expandedLots, setExpandedLots] = useState<Set<string>>(new Set());
-  const [activeQuickAddId, setActiveQuickAddId] = useState<string | null>(null);
+  const [showMiscForm, setShowMiscForm] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const selectClass =
     "flex h-12 w-full rounded-lg border-2 border-border-neutral bg-surface-white px-4 text-base";
+
+  const miscAddLabel = "Add Miscellaneous Charge";
+
+  const quickActions = useMemo(() => {
+    const qs = new URLSearchParams();
+    if (ownerId) qs.set("owner", ownerId);
+    if (lotId) qs.set("group", lotId);
+    const suffix = qs.toString() ? `?${qs.toString()}` : "";
+    return [
+      { id: "add-cattle", label: "Add Cattle", href: `/cattle/new${suffix}`, variant: "primary" as const },
+      { id: "move", label: "Move Cattle", href: `/cattle/move${lotId ? `?from=${lotId}` : ""}` },
+      {
+        id: "remove",
+        label: "Remove Cattle",
+        href: `/cattle/move${lotId ? `?from=${lotId}&mode=remove` : "?mode=remove"}`,
+      },
+      {
+        id: "treatment",
+        label: "Record Treatment",
+        href: `/health/treatments/new${lotId ? `?group=${lotId}` : ""}`,
+      },
+      { id: "feed", label: "Record Feed", href: `/feed/log/new${lotId ? `?group=${lotId}` : ""}` },
+      {
+        id: "death",
+        label: "Record Death Loss",
+        href: lotId ? `/cattle/groups/${lotId}` : "/cow-calf/loss/new",
+      },
+      { id: "ship", label: "Ship Cattle", href: `/cow-calf/shipping/new${suffix}` },
+      { id: "sell", label: "Sell Cattle", href: `/sales/new${lotId ? `?group=${lotId}` : ""}` },
+      {
+        id: "invoice",
+        label: "Create Invoice",
+        href: `/invoices/generate${ownerId ? `?owner=${ownerId}` : ""}`,
+      },
+      {
+        id: "misc-charge",
+        label: showMiscForm ? quickAddHideLabel(miscAddLabel) : miscAddLabel,
+        variant: showMiscForm ? ("primary" as const) : undefined,
+        onClick: () => setShowMiscForm((v) => !v),
+      },
+    ];
+  }, [ownerId, lotId, showMiscForm]);
 
   async function handleLoad() {
     setLoading(true);
@@ -112,69 +155,6 @@ export function OwnerTotalsReportClient({
     setExpandedLots(new Set());
   }
 
-  const quickAddItems = useMemo((): QuickAddItem[] => {
-    const qs = new URLSearchParams();
-    if (ownerId) qs.set("owner", ownerId);
-    if (lotId) qs.set("group", lotId);
-    const suffix = qs.toString() ? `?${qs.toString()}` : "";
-    return [
-      { type: "link", id: "add-cattle", addLabel: "Add Cattle", href: `/cattle/new${suffix}`, variant: "primary" },
-      { type: "link", id: "move", addLabel: "Move Cattle", href: `/cattle/move${lotId ? `?from=${lotId}` : ""}` },
-      {
-        type: "link",
-        id: "remove",
-        addLabel: "Remove Cattle",
-        href: `/cattle/move${lotId ? `?from=${lotId}&mode=remove` : "?mode=remove"}`,
-      },
-      {
-        type: "link",
-        id: "treatment",
-        addLabel: "Add Treatment",
-        href: `/health/treatments/new${lotId ? `?group=${lotId}` : ""}`,
-      },
-      {
-        type: "link",
-        id: "feed",
-        addLabel: "Add Feed",
-        href: `/feed/log/new${lotId ? `?group=${lotId}` : ""}`,
-      },
-      {
-        type: "link",
-        id: "death",
-        addLabel: "Add Death Loss",
-        href: lotId ? `/cattle/groups/${lotId}` : "/cow-calf/loss/new",
-      },
-      { type: "link", id: "ship", addLabel: "Ship Cattle", href: `/cow-calf/shipping/new${suffix}` },
-      { type: "link", id: "sell", addLabel: "Add Sale", href: `/sales/new${lotId ? `?group=${lotId}` : ""}` },
-      {
-        type: "link",
-        id: "invoice",
-        addLabel: "Create Invoice",
-        href: `/invoices/generate${ownerId ? `?owner=${ownerId}` : ""}`,
-      },
-      {
-        type: "panel",
-        id: "misc-charge",
-        addLabel: "Add Miscellaneous Charge",
-        panel: (
-          <MiscChargeQuickForm
-            orgId={orgId}
-            ownerOptions={ownerOptions}
-            lotOptions={lotOptions}
-            locationOptions={locationOptions}
-            defaultOwnerId={ownerId}
-            defaultLotId={lotId}
-            defaultLocationId={locationId}
-            onSaved={() => {
-              setActiveQuickAddId(null);
-              if (report) void handleLoad();
-            }}
-          />
-        ),
-      },
-    ];
-  }, [ownerId, lotId, locationId, orgId, ownerOptions, lotOptions, locationOptions, report]);
-
   function toggleOwner(id: string) {
     setExpandedOwners((prev) => {
       const next = new Set(prev);
@@ -195,12 +175,22 @@ export function OwnerTotalsReportClient({
 
   return (
     <div className="space-y-6">
-      <QuickAddSection
-        title="Quick Actions"
-        items={quickAddItems}
-        activePanelId={activeQuickAddId}
-        onActivePanelChange={setActiveQuickAddId}
-      />
+      <QuickActionGroup title="Quick Actions" actions={quickActions} />
+      {showMiscForm ? (
+        <MiscChargeQuickForm
+          orgId={orgId}
+          ownerOptions={ownerOptions}
+          lotOptions={lotOptions}
+          locationOptions={locationOptions}
+          defaultOwnerId={ownerId}
+          defaultLotId={lotId}
+          defaultLocationId={locationId}
+          onSaved={() => {
+            setShowMiscForm(false);
+            if (report) void handleLoad();
+          }}
+        />
+      ) : null}
 
       <Card>
         <CardHeader>

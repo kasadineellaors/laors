@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SuggestionInput } from "@/components/ui/suggestion-input";
+import { quickAddHideLabel } from "@/components/dashboard/quick-add-label";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 function money(n: number) {
@@ -150,7 +151,7 @@ export function LotExpensesPanel({
             }}
             disabled={loading}
           >
-            {showForm ? "Cancel" : "Log expense"}
+            {showForm ? quickAddHideLabel("Add Expense") : "Add Expense"}
           </Button>
         ) : null}
 

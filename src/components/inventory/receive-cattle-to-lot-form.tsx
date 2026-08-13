@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { receiveCattleToLot } from "@/lib/actions/inventory";
 import { computeAvgWeightIn, perHeadAvg, shrinkPct } from "@/lib/lots/purchase-weights";
 import type { RanchFieldSuggestions } from "@/lib/ranch/field-suggestions";
+import { quickAddHideLabel } from "@/components/dashboard/quick-add-label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -128,7 +129,7 @@ export function ReceiveCattleToLotForm({
                 setSuccess(null);
               }}
             >
-              Receive to this lot
+              Add Cattle to Lot
             </Button>
             {success ? (
               <p className="mt-2 text-sm font-medium text-status-success" role="status">
@@ -261,7 +262,7 @@ export function ReceiveCattleToLotForm({
                 {loading ? "Saving…" : "Receive cattle"}
               </Button>
               <Button type="button" variant="ghost" onClick={() => setOpen(false)} disabled={loading}>
-                Cancel
+                {quickAddHideLabel("Add Cattle to Lot")}
               </Button>
             </div>
           </form>
