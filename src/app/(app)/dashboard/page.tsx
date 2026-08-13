@@ -157,6 +157,7 @@ export default async function DashboardPage() {
   const showCalendar = isCalendarEnabled(org);
 
   const canManageOwners = canManageInvoices(role);
+  const canRemoveCattle = canWriteInventory(role);
 
   const [
     totalHead,
@@ -241,6 +242,9 @@ export default async function DashboardPage() {
     { label: "Log Treatment", href: "/health/treatments/new", variant: "outline" as const },
     { label: "Log Feeding", href: "/feed/log/new", variant: "outline" as const },
     { label: "Move Cattle", href: "/cattle/move", variant: "outline" as const },
+    ...(canRemoveCattle
+      ? [{ label: "Remove Cattle", href: "/cattle/move?mode=remove", variant: "outline" as const }]
+      : []),
     { label: "New Task", href: "/jobs/new", variant: "outline" as const },
     { label: "Rainfall", href: "/weather/rainfall/new", variant: "outline" as const },
     ...(showCowCalf
@@ -257,6 +261,9 @@ export default async function DashboardPage() {
   const businessActions = [
     { label: "Record Sale", href: "/sales/new", variant: "outline" as const },
     ...(showCalendar ? [{ label: "Calendar", href: "/calendar", variant: "outline" as const }] : []),
+    ...(canManageOwners
+      ? [{ label: "Owner Totals", href: "/reports/owner-totals", variant: "outline" as const }]
+      : []),
     ...(showInvoices
       ? [
           { label: "Generate Invoice", href: "/invoices/generate", variant: "outline" as const },

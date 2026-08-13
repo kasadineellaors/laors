@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { requireOnboardedUser } from "@/lib/auth/session";
 import { canManageInvoices, canManageTeam } from "@/lib/auth/roles";
+import { hasStockerMode } from "@/lib/stocker/constants";
+import type { OperationMode } from "@/types/auth";
 import { ManagePageHeader } from "@/components/setup/manage-page-header";
 import { ManageNavCard } from "@/components/setup/manage-nav-card";
 import { ManageNavRow } from "@/components/setup/manage-nav-row";
@@ -15,6 +17,8 @@ export default async function SetupPage() {
   const isManager = canManageTeam(session.membership?.system_role);
   const canFinance = canManageInvoices(session.membership?.system_role);
   const orgName = session.organization!.name;
+  const modes = (session.organization!.enabled_modes ?? []) as OperationMode[];
+  const showFeedyard = hasStockerMode(modes) && (isManager || canFinance);
 
   return (
     <ManageSubpageShell className="space-y-8">
@@ -76,6 +80,20 @@ export default async function SetupPage() {
             People & Business
           </h2>
           <div className="space-y-3">
+            {showFeedyard ? (
+              <ManageNavCard
+                href="/feedyard"
+                title="Feedyard workspace"
+                description="Custom-fed lots, owner totals, and misc charges for the feedyard operation."
+              />
+            ) : null}
+            {canFinance ? (
+              <ManageNavCard
+                href="/reports"
+                title="Reports"
+                description="Owner totals, head-days, monthly P&L, and enterprise profit views."
+              />
+            ) : null}
             {canFinance ? (
               <ManageNavCard
                 href="/setup/owners"
