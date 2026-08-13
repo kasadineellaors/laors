@@ -3,7 +3,9 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { SelectOption } from "@/lib/locations/options";
+import type { SelectOption, TreePickerOption } from "@/lib/locations/options";
+import { locationTreeHasSelectableSites } from "@/lib/locations/picker";
+import { CascadingLocationField } from "@/components/locations/cascading-location-field";
 import type { OrgMemberOption } from "@/lib/tasks/types";
 import type {
   FeedRationOption,
@@ -14,6 +16,7 @@ import type {
 import { createFeeding, updateFeeding } from "@/lib/actions/feed";
 import {
   convertFeedQuantity,
+  defaultFeedEntryUnit,
   formatFeedUnitLabel,
   getFeedEntryUnitOptions,
   normalizeFeedUnit,
@@ -34,7 +37,7 @@ interface FeedingFormProps {
   orgId: string;
   rationOptions: FeedRationOption[];
   rationUnitCosts?: Record<string, number>;
-  locationOptions: SelectOption[];
+  locationTree: TreePickerOption[];
   groupOptions: SelectOption[];
   ownerOptions: SelectOption[];
   memberOptions: OrgMemberOption[];
@@ -81,7 +84,7 @@ export function FeedingForm({
   orgId,
   rationOptions,
   rationUnitCosts = {},
-  locationOptions,
+  locationTree,
   groupOptions,
   ownerOptions,
   memberOptions,
@@ -94,7 +97,7 @@ export function FeedingForm({
 }: FeedingFormProps) {
   const router = useRouter();
   const isEdit = Boolean(feeding);
-  const requireLocation = locationOptions.length > 0;
+  const requireLocation = locationTreeHasSelectableSites(locationTree);
   const requireOwner = ownerOptions.length > 0;
   const hasGroups = groupOptions.length > 0;
 
@@ -113,8 +116,14 @@ export function FeedingForm({
   const [quantity, setQuantity] = useState(
     feeding != null ? String(feeding.quantity) : prefill?.quantity ?? "",
   );
+  const initialRationUnit =
+    rationOptions.find((r) => r.id === (feeding?.feed_ration_id ?? prefill?.feedRationId ?? rationOptions[0]?.id))
+      ?.unit ?? rationOptions[0]?.unit ?? "ton";
+
   const [entryUnit, setEntryUnit] = useState(
-    feeding?.feed_ration_unit ?? rationOptions[0]?.unit ?? "ton",
+    feeding != null
+      ? feeding.feed_ration_unit
+      : defaultFeedEntryUnit(initialRationUnit),
   );
   const [showMore, setShowMore] = useState(false);
   const [headCount, setHeadCount] = useState(
@@ -447,30 +456,18 @@ export function FeedingForm({
 
         {showLocationField ? (
           <div>
-            <Label htmlFor="location">
+            <Label>
               {hasGroups ? "Location" : "Cattle lot or location"}
             </Label>
-            <select
-              id="location"
+            <CascadingLocationField
+              idPrefix="feeding-location"
+              locationTree={locationTree}
               value={locationId}
-              onChange={(e) => setLocationId(e.target.value)}
-              className={cn(selectClass, fieldErrors.location && "border-status-critical")}
+              onChange={setLocationId}
               required={requireLocation}
-              aria-invalid={Boolean(fieldErrors.location)}
-              aria-describedby={fieldErrors.location ? "location-error" : undefined}
-            >
-              <option value="">Select a cattle lot or location</option>
-              {locationOptions.map((l) => (
-                <option key={l.value} value={l.value}>
-                  {l.label}
-                </option>
-              ))}
-            </select>
-            {fieldErrors.location ? (
-              <p id="location-error" className="mt-1 text-sm text-status-critical" role="alert">
-                {fieldErrors.location}
-              </p>
-            ) : null}
+              error={fieldErrors.location}
+              describedBy={fieldErrors.location ? "location-error" : undefined}
+            />
           </div>
         ) : null}
 
@@ -518,15 +515,16 @@ export function FeedingForm({
               const nextRationUnit = nextRation?.unit?.trim() || "unit";
               const nextEntryOptions = getFeedEntryUnitOptions(nextRationUnit);
               setFeedRationId(nextRationId);
-              setEntryUnit((current) =>
-                nextEntryOptions.includes(current) ? current : nextRationUnit,
-              );
+              setEntryUnit((current) => {
+                if (nextEntryOptions.includes(current)) return current;
+                return defaultFeedEntryUnit(nextRationUnit);
+              });
               void refreshPreview(
                 nextRationId,
                 quantity,
                 fedAt,
                 effectiveHeadCount,
-                nextEntryOptions.includes(entryUnit) ? entryUnit : nextRationUnit,
+                nextEntryOptions.includes(entryUnit) ? entryUnit : defaultFeedEntryUnit(nextRationUnit),
                 nextRationUnit,
               );
             }}
@@ -607,9 +605,9 @@ export function FeedingForm({
           </div>
           {quantityInRationUnit != null &&
           normalizeFeedUnit(entryUnit) !== normalizeFeedUnit(rationUnit) ? (
-            <p className="mt-1 text-xs text-text-secondary">
-              = {quantityInRationUnit.toLocaleString()} {formatFeedUnitLabel(rationUnit)} stored
-              on ration
+            <p className="mt-1 text-sm font-medium text-navy">
+              = {quantityInRationUnit.toLocaleString()} {formatFeedUnitLabel(rationUnit)} on ration
+              (inventory deducts from this amount)
             </p>
           ) : null}
           {fieldErrors.quantity ? (

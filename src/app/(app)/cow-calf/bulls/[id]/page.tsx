@@ -30,9 +30,7 @@ export default async function BullDetailPage({
   if (!bull) notFound();
 
   const [locations, groups] = await Promise.all([
-    getTreePickerOptions(orgId).then((nodes) =>
-      nodes.map((n) => ({ value: n.id, label: n.breadcrumb })),
-    ),
+    getTreePickerOptions(orgId),
     listCattleGroups(orgId).then((gs) =>
       gs.map((g) => ({ value: g.id, label: `${g.name} (${g.total_head} hd)` })),
     ),
@@ -49,7 +47,7 @@ export default async function BullDetailPage({
       <BullDetailClient
         orgId={orgId}
         bull={bull}
-        locationOptions={locations}
+        locationTree={locations}
         groupOptions={groups}
         canManage={canManage}
       />

@@ -1,9 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import { linkButtonClassName } from "@/components/ui/button";
 
 export type QuickAction = {
   label: string;
-  href: string;
+  href?: string;
+  onClick?: () => void;
   variant?: "primary" | "outline" | "secondary";
 };
 
@@ -21,20 +24,33 @@ export function QuickActionGroup({ title, actions }: QuickActionGroupProps) {
         {title}
       </h2>
       <div className="grid grid-cols-1 gap-3 min-[400px]:grid-cols-2 lg:grid-cols-3">
-        {actions.map((action) => (
-          <Link
-            key={action.label}
-            href={action.href}
-            className={linkButtonClassName({
-              variant: action.variant ?? "outline",
-              size: "md",
-              fullWidth: true,
-              className: "h-11 min-h-11",
-            })}
-          >
-            {action.label}
-          </Link>
-        ))}
+        {actions.map((action) => {
+          const className = linkButtonClassName({
+            variant: action.variant ?? "outline",
+            size: "md",
+            fullWidth: true,
+            className: "h-11 min-h-11",
+          });
+
+          if (action.onClick) {
+            return (
+              <button
+                key={action.label}
+                type="button"
+                onClick={action.onClick}
+                className={className}
+              >
+                {action.label}
+              </button>
+            );
+          }
+
+          return (
+            <Link key={action.label} href={action.href ?? "#"} className={className}>
+              {action.label}
+            </Link>
+          );
+        })}
       </div>
     </section>
   );

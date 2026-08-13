@@ -10,12 +10,17 @@ export const metadata: Metadata = {
   title: "Generate Invoice — LAORS",
 };
 
-export default async function GenerateInvoicePage() {
+export default async function GenerateInvoicePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ owner?: string }>;
+}) {
   const session = await requireOnboardedUser();
   if (!canManageInvoices(session.membership?.system_role)) {
     redirect("/invoices");
   }
 
+  const { owner } = await searchParams;
   const orgId = session.organization!.id;
   const ownerOptions = await listBillableOwners(orgId);
 
@@ -30,7 +35,11 @@ export default async function GenerateInvoicePage() {
           Category totals for yardage, treatments, feed, processing, misc, and dead count
         </p>
       </div>
-      <GenerateInvoiceClient orgId={orgId} ownerOptions={ownerOptions} />
+      <GenerateInvoiceClient
+        orgId={orgId}
+        ownerOptions={ownerOptions}
+        initialOwnerId={owner}
+      />
     </div>
   );
 }

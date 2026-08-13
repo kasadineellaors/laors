@@ -32,9 +32,7 @@ export default async function CowCalfFeedDetailPage({
   if (!feeding || feeding.feeding_context !== "cow_calf") notFound();
 
   const [locations, groups, owners, members, rationOptions] = await Promise.all([
-    getTreePickerOptions(orgId).then((nodes) =>
-      nodes.map((n) => ({ value: n.id, label: n.breadcrumb })),
-    ),
+    getTreePickerOptions(orgId),
     listCattleGroups(orgId).then(toFeedGroupOptions),
     listOwnerOptions(orgId).then(ownersToSelectOptions),
     listOrgMembers(orgId),
@@ -56,7 +54,7 @@ export default async function CowCalfFeedDetailPage({
           feeding={feeding}
           rationOptions={rationOptions}
           rationUnitCosts={rationUnitCosts}
-          locationOptions={locations}
+          locationTree={locations}
           groupOptions={groups}
           ownerOptions={owners}
           memberOptions={members}

@@ -2,8 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import type { Database } from "@/types/database";
-import type { InvoiceLineInput, InvoiceStatus } from "@/lib/invoices/types";
+import type { Database, Json } from "@/types/database";
+import type { InvoiceLineInput, InvoiceStatus, BillingSnapshot } from "@/lib/invoices/types";
 import { buildBillingPreview } from "@/lib/invoices/billing";
 import { getOwner } from "@/lib/owners/queries";
 import { getSale } from "@/lib/sales/queries";
@@ -20,9 +20,13 @@ export type InvoiceActionState = {
   invoiceId?: string;
 };
 
-const DB_HINT = "Run supabase/RUN_PHASE5.sql (and RUN_PHASE7.sql for billing) in Supabase SQL Editor, then retry.";
+const DB_HINT =
+  "Run supabase/RUN_PHASE33.sql (owners) and RUN_PHASE47.sql (invoice owner link) in Supabase SQL Editor, then retry.";
 
 function formatDbError(message: string): string {
+  if (message.includes("invoices_customer_id_fkey")) {
+    return `${message} — Owners live in the owners table now. Run supabase/RUN_PHASE47.sql in Supabase SQL Editor (or deploy the latest app build).`;
+  }
   if (
     message.includes("invoices") ||
     message.includes("invoice_lines") ||
@@ -137,6 +141,7 @@ export async function createInvoice(
     notes?: string;
     salesRecordId?: string;
     lines: InvoiceLineInput[];
+    billingSnapshot?: BillingSnapshot;
   },
 ): Promise<InvoiceActionState> {
   const customerName = input.customerName.trim();
@@ -160,7 +165,7 @@ export async function createInvoice(
         customer_name: customerName,
         customer_email: input.customerEmail?.trim() || null,
         customer_address: input.customerAddress?.trim() || null,
-        customer_id: ownerId,
+        customer_id: null,
         owner_id: ownerId,
         invoice_date: input.invoiceDate || new Date().toISOString().slice(0, 10),
         due_date: input.dueDate || null,
@@ -169,6 +174,7 @@ export async function createInvoice(
         sales_record_id: input.salesRecordId || null,
         notes: input.notes?.trim() || null,
         created_by: user.id,
+        billing_snapshot: (input.billingSnapshot ?? null) as Json | null,
       })
       .select("id")
       .single();
@@ -251,6 +257,7 @@ export async function createInvoiceFromBilling(
     invoiceDate: input.periodEnd,
     notes: `Billing period ${input.periodStart} through ${input.periodEnd}`,
     lines,
+    billingSnapshot: previewResult.billingSnapshot,
   });
 
   if (result.invoiceId && previewResult.treatmentIds.length > 0) {
@@ -400,8 +407,8 @@ export async function updateInvoice(
 
     const updates: InvoiceUpdate = {};
     if (input.customerId !== undefined) {
-      updates.customer_id = input.customerId;
       updates.owner_id = input.customerId;
+      updates.customer_id = null;
     }
     if (input.customerName !== undefined) updates.customer_name = input.customerName.trim();
     if (input.customerEmail !== undefined) updates.customer_email = input.customerEmail?.trim() || null;

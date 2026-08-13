@@ -21,9 +21,7 @@ export default async function NewSeedstockAnimalPage() {
 
   const orgId = session.organization!.id;
   const [locationOptions, groupOptions] = await Promise.all([
-    getTreePickerOptions(orgId).then((nodes) =>
-      nodes.map((n) => ({ value: n.id, label: n.breadcrumb })),
-    ),
+    getTreePickerOptions(orgId),
     listCattleGroups(orgId).then((gs) =>
       gs.map((g) => ({ value: g.id, label: `${g.name} (${g.total_head} hd)` })),
     ),
@@ -39,7 +37,7 @@ export default async function NewSeedstockAnimalPage() {
       </div>
       <SeedstockAnimalForm
         orgId={orgId}
-        locationOptions={locationOptions}
+        locationTree={locationOptions}
         groupOptions={groupOptions}
       />
     </div>

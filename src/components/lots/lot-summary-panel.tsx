@@ -3,7 +3,13 @@
 import Link from "next/link";
 import type { CattleGroupSummary } from "@/lib/inventory/types";
 import type { LotOperationalSummary } from "@/lib/lots/types";
-import { ENTERPRISE_LABELS, LOT_STATUS_LABELS } from "@/lib/lots/types";
+import { LOT_STATUS_LABELS, type LotStatus } from "@/lib/lots/types";
+import { formatAdgLbs } from "@/lib/inventory/adg";
+import {
+  getLotDisplayTitle,
+  getLotLocationLabel,
+  getLotOwnerName,
+} from "@/lib/inventory/lot-display";
 import { Button } from "@/components/ui/button";
 
 function money(n: number) {
@@ -18,6 +24,37 @@ interface LotSummaryPanelProps {
   closing?: boolean;
 }
 
+function LotStatusBadge({ status }: { status: LotStatus }) {
+  const label = LOT_STATUS_LABELS[status] ?? status;
+
+  if (status === "closed") {
+    return (
+      <span className="inline-flex items-center rounded-md bg-tan/20 px-2 py-0.5 text-sm font-medium text-text-secondary">
+        {label}
+      </span>
+    );
+  }
+
+  if (status === "hospital") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-md bg-status-warning-bg px-2 py-0.5 text-sm font-medium text-status-warning">
+        <span aria-hidden>⚠</span>
+        {label}
+      </span>
+    );
+  }
+
+  if (status === "ready_to_sell") {
+    return (
+      <span className="inline-flex items-center rounded-md bg-status-info-bg px-2 py-0.5 text-sm font-medium text-status-info">
+        {label}
+      </span>
+    );
+  }
+
+  return <span className="text-sm font-medium text-text-secondary">{label}</span>;
+}
+
 export function LotSummaryPanel({
   group,
   summary,
@@ -25,11 +62,10 @@ export function LotSummaryPanel({
   onCloseLot,
   closing,
 }: LotSummaryPanelProps) {
-  const lotLabel = group.lot_number || group.name;
-  const status = LOT_STATUS_LABELS[group.lot_status as keyof typeof LOT_STATUS_LABELS] ?? group.lot_status;
-  const enterprise =
-    ENTERPRISE_LABELS[group.enterprise_type as keyof typeof ENTERPRISE_LABELS] ??
-    group.enterprise_type;
+  const status = group.lot_status as LotStatus;
+  const lotTitle = getLotDisplayTitle(group);
+  const owner = getLotOwnerName(group);
+  const location = getLotLocationLabel(group);
 
   const projectedMargin = summary.sale_revenue - summary.total_invested;
 
@@ -37,12 +73,20 @@ export function LotSummaryPanel({
     <div className="space-y-4 rounded-xl border border-border-neutral bg-surface-white p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-brown">Lot</p>
-          <h2 className="text-[1.75rem] font-bold leading-tight text-navy sm:text-[2rem]">{lotLabel}</h2>
-          <p className="text-sm text-text-secondary">
-            {enterprise} · {status}
-            {group.seller_name ? ` · ${group.seller_name}` : ""}
-          </p>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <p className="text-[1.75rem] font-bold leading-tight text-navy sm:text-[2rem]">
+              {lotTitle}
+            </p>
+            <LotStatusBadge status={status} />
+          </div>
+          {owner ? (
+            <p className="mt-1 text-base font-semibold text-brown">{owner}</p>
+          ) : (
+            <p className="mt-1 text-sm text-text-secondary">No owner assigned</p>
+          )}
+          {location !== "No location assigned" ? (
+            <p className="mt-0.5 text-sm text-text-secondary">{location}</p>
+          ) : null}
         </div>
         {canManage && group.lot_status !== "closed" && onCloseLot ? (
           <Button variant="secondary" size="lg" onClick={onCloseLot} disabled={closing}>
@@ -55,18 +99,54 @@ export function LotSummaryPanel({
         <Stat label="On feed now" value={`${group.total_head} head`} />
         <Stat
           label="Starting head"
-          value={group.starting_head != null ? String(group.starting_head) : "—"}
+          value={
+            group.starting_head != null && group.starting_head > 0
+              ? String(group.starting_head)
+              : group.total_head > 0
+                ? String(group.total_head)
+                : "—"
+          }
         />
         <Stat label="Days on feed" value={String(summary.days_on_feed)} />
+        <Stat
+          label="ADG"
+          value={formatAdgLbs(summary.current_adg_lbs)}
+          highlight={
+            summary.current_adg_lbs != null && summary.current_adg_lbs < 0
+              ? "negative"
+              : summary.current_adg_lbs != null && summary.current_adg_lbs > 0
+                ? "positive"
+                : undefined
+          }
+        />
         <Stat
           label="Avg weight in"
           value={
             group.avg_weight_lbs != null ? `${Math.round(group.avg_weight_lbs)} lb` : "—"
           }
         />
+        <Stat
+          label="Current avg wt"
+          value={
+            group.current_avg_weight_lbs != null
+              ? `${Math.round(group.current_avg_weight_lbs)} lb`
+              : group.avg_weight_lbs != null
+                ? `${Math.round(group.avg_weight_lbs)} lb`
+                : "—"
+          }
+        />
         <Stat label="Total invested" value={money(summary.total_invested)} />
         <Stat label="Cost / head" value={money(summary.estimated_cost_per_head)} />
         <Stat label="Sale revenue" value={money(summary.sale_revenue)} />
+        <Stat
+          label="Death loss"
+          value={
+            summary.deaths > 0
+              ? `${summary.deaths} hd · ${money(summary.death_value_lost)}`
+              : "—"
+          }
+          highlight={summary.deaths > 0 ? "negative" : undefined}
+        />
         <Stat
           label="Projected margin"
           value={money(projectedMargin)}

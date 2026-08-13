@@ -22,9 +22,7 @@ export default async function NewCattleGroupPage() {
   const orgId = session.organization!.id;
 
   const [locationOptions, ownerOptions, lotLabelOptions, fieldSuggestions] = await Promise.all([
-    getTreePickerOptions(orgId).then((nodes) =>
-      nodes.map((n) => ({ value: n.id, label: n.breadcrumb })),
-    ),
+    getTreePickerOptions(orgId),
     listOwnerOptions(orgId).then((rows) =>
       rows.map((o) => ({
         value: o.id,
@@ -40,7 +38,7 @@ export default async function NewCattleGroupPage() {
       <AppPageHeader title="Receive lot" backHref="/cattle" backLabel="Lots" />
       <CreateGroupForm
         orgId={orgId}
-        locationOptions={locationOptions}
+        locationTree={locationOptions}
         ownerOptions={ownerOptions}
         lotLabelOptions={lotLabelOptions}
         fieldSuggestions={{

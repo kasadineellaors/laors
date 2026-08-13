@@ -5,6 +5,7 @@ import { canManageTeam } from "@/lib/auth/roles";
 import { isCalendarEnabled } from "@/lib/org/settings";
 import { CalendarPreferencesForm } from "@/components/calendar/calendar-preferences-form";
 import { OperationModesForm } from "@/components/setup/operation-modes-form";
+import { RanchDetailsForm } from "@/components/setup/ranch-details-form";
 import { ManageSubpageHeader } from "@/components/setup/manage-subpage-header";
 import { ManageSubpageShell } from "@/components/setup/manage-subpage-shell";
 
@@ -19,6 +20,7 @@ export default async function SetupPreferencesPage() {
   }
 
   const orgId = session.organization!.id;
+  const org = session.organization!;
   const calendarEnabled = isCalendarEnabled(session.organization);
 
   return (
@@ -26,6 +28,16 @@ export default async function SetupPreferencesPage() {
       <ManageSubpageHeader
         title="Ranch Settings"
         subtitle="Manage ranch details, preferences, and account settings."
+      />
+      <RanchDetailsForm
+        orgId={orgId}
+        initialName={org.name}
+        initialAddressLine1={org.address_line1}
+        initialAddressLine2={org.address_line2}
+        initialCity={org.city}
+        initialState={org.state}
+        initialZip={org.zip}
+        initialPhone={org.phone}
       />
       <OperationModesForm
         orgId={orgId}

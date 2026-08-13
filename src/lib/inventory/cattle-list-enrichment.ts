@@ -7,6 +7,7 @@ export interface CattleListEnrichment {
   withdrawalActiveByGroup: Map<string, boolean>;
   headsSoldByGroup: Map<string, number>;
   deathsByGroup: Map<string, number>;
+  deathValueByGroup: Map<string, number>;
 }
 
 export async function fetchCattleListEnrichment(
@@ -20,6 +21,7 @@ export async function fetchCattleListEnrichment(
     withdrawalActiveByGroup: new Map(),
     headsSoldByGroup: new Map(),
     deathsByGroup: new Map(),
+    deathValueByGroup: new Map(),
   };
 
   if (!groupIds.length) return empty;
@@ -61,7 +63,7 @@ export async function fetchCattleListEnrichment(
       .in("cattle_group_id", groupIds),
     supabase
       .from("mortality_records")
-      .select("cattle_group_id, head_count")
+      .select("cattle_group_id, head_count, value_lost")
       .eq("organization_id", orgId)
       .eq("is_active", true)
       .in("cattle_group_id", groupIds),
@@ -103,12 +105,19 @@ export async function fetchCattleListEnrichment(
   }
 
   const deathsByGroup = new Map<string, number>();
+  const deathValueByGroup = new Map<string, number>();
   for (const row of deathsResult.data ?? []) {
     if (!row.cattle_group_id) continue;
     deathsByGroup.set(
       row.cattle_group_id,
       (deathsByGroup.get(row.cattle_group_id) ?? 0) + (row.head_count ?? 0),
     );
+    if (row.value_lost != null) {
+      deathValueByGroup.set(
+        row.cattle_group_id,
+        (deathValueByGroup.get(row.cattle_group_id) ?? 0) + Number(row.value_lost),
+      );
+    }
   }
 
   return {
@@ -117,6 +126,7 @@ export async function fetchCattleListEnrichment(
     withdrawalActiveByGroup,
     headsSoldByGroup,
     deathsByGroup,
+    deathValueByGroup,
   };
 }
 

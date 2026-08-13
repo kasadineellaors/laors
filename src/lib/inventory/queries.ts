@@ -175,6 +175,7 @@ export async function listCattleGroups(
     const lotStatus = g.lot_status ?? "active";
     const headsSold = enrichment.headsSoldByGroup.get(g.id) ?? 0;
     const deaths = enrichment.deathsByGroup.get(g.id) ?? 0;
+    const deathValueLost = enrichment.deathValueByGroup.get(g.id) ?? 0;
 
     return {
       id: g.id,
@@ -197,6 +198,8 @@ export async function listCattleGroups(
       feedings_today: enrichment.feedingsTodayByGroup.get(g.id) ?? 0,
       withdrawal_active: enrichment.withdrawalActiveByGroup.get(g.id) ?? false,
       head_discrepancy: computeHeadDiscrepancy(startingHead, total, headsSold, deaths, lotStatus),
+      mortality_deaths: deaths,
+      mortality_value_lost: Math.round(deathValueLost * 100) / 100,
       lot_number: g.lot_number ?? null,
       enterprise_type: g.enterprise_type ?? "stocker",
       lot_status: lotStatus,
@@ -312,6 +315,14 @@ export async function listRecentMovements(
     total_head: m.total_head,
     is_partial: m.is_partial,
     notes: m.notes,
+    out_weight_lbs:
+      (m as { out_weight_lbs?: number | null }).out_weight_lbs != null
+        ? Number((m as { out_weight_lbs?: number | null }).out_weight_lbs)
+        : null,
+    source_group_id: m.source_group_id,
+    destination_group_id: m.destination_group_id,
+    source_location_id: m.source_location_id,
+    destination_location_id: m.destination_location_id,
     source_group_name: groupNames.get(m.source_group_id) ?? "Unknown",
     destination_group_name: groupNames.get(m.destination_group_id) ?? "Unknown",
     source_location_name: m.source_location_id

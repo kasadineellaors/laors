@@ -87,6 +87,8 @@ export interface LotOperationalSummary {
   avg_sale_weight_lbs: number | null;
   total_gain_lbs: number | null;
   adg_lbs: number | null;
+  /** Live ADG from current lot weight vs weight in. */
+  current_adg_lbs: number | null;
   feed_cost_per_lb_gain: number | null;
 }
 

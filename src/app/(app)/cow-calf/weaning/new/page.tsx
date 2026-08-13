@@ -20,9 +20,7 @@ export default async function NewWeaningPage({
   const orgId = session.organization!.id;
 
   const [locations, herds, calves] = await Promise.all([
-    getTreePickerOptions(orgId).then((nodes) =>
-      nodes.map((n) => ({ value: n.id, label: n.breadcrumb })),
-    ),
+    getTreePickerOptions(orgId),
     listCowCalfHerdOptions(orgId),
     listCalvesReadyToWean(orgId, herd),
   ]);
@@ -38,7 +36,7 @@ export default async function NewWeaningPage({
       <CowCalfWeaningForm
         orgId={orgId}
         herdOptions={herds}
-        locationOptions={locations}
+        locationTree={locations}
         calfOptions={calves}
         defaultHerdId={herd}
       />

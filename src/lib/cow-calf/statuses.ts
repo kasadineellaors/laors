@@ -59,6 +59,7 @@ export const COW_CALF_NAV_ITEMS = [
   { href: "/cow-calf/processing", label: "Processing" },
   { href: "/cow-calf/weaning", label: "Weaning" },
   { href: "/cow-calf/sales", label: "Sales" },
+  { href: "/cow-calf/shipping", label: "Shipping" },
   { href: "/cow-calf/loss", label: "Loss" },
   { href: "/cow-calf/reports", label: "Reports" },
 ] as const;

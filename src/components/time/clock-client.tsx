@@ -4,8 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { ClockStatus, TimeEntryRecord } from "@/lib/time/types";
-import { clockIn, clockOut } from "@/lib/actions/time";
+import { clockIn, clockOut, updateTimeEntryNotes } from "@/lib/actions/time";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface ClockClientProps {
@@ -41,6 +42,9 @@ export function ClockClient({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [editingNotesId, setEditingNotesId] = useState<string | null>(null);
+  const [notesDraft, setNotesDraft] = useState("");
+  const [notesLoading, setNotesLoading] = useState(false);
 
   async function handleToggle() {
     setLoading(true);
@@ -49,6 +53,22 @@ export function ClockClient({
     setLoading(false);
     if (result.error) setError(result.error);
     else router.refresh();
+  }
+
+  function startEditNotes(entry: TimeEntryRecord) {
+    setEditingNotesId(entry.id);
+    setNotesDraft(entry.notes ?? "");
+  }
+
+  async function saveNotes(entryId: string) {
+    setNotesLoading(true);
+    const result = await updateTimeEntryNotes(orgId, entryId, notesDraft);
+    setNotesLoading(false);
+    if (result.error) setError(result.error);
+    else {
+      setEditingNotesId(null);
+      router.refresh();
+    }
   }
 
   return (
@@ -113,6 +133,48 @@ export function ClockClient({
                   </p>
                 ) : (
                   <p className="text-xs font-semibold text-brown">Open shift</p>
+                )}
+                {editingNotesId === entry.id ? (
+                  <div className="mt-2 flex gap-2">
+                    <Input
+                      value={notesDraft}
+                      onChange={(e) => setNotesDraft(e.target.value)}
+                      placeholder="Shift notes"
+                      className="h-9 text-xs"
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => saveNotes(entry.id)}
+                      disabled={notesLoading}
+                    >
+                      Save
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setEditingNotesId(null)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="mt-1 flex items-center justify-between gap-2">
+                    {entry.notes ? (
+                      <p className="text-xs text-text-secondary">{entry.notes}</p>
+                    ) : (
+                      <p className="text-xs text-text-secondary italic">No notes</p>
+                    )}
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => startEditNotes(entry)}
+                    >
+                      {entry.notes ? "Edit notes" : "Add notes"}
+                    </Button>
+                  </div>
                 )}
               </li>
             ))}

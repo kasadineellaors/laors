@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { BullRecord } from "@/lib/cow-calf/types";
-import type { SelectOption } from "@/lib/locations/options";
+import type { SelectOption, TreePickerOption } from "@/lib/locations/options";
 import { ANIMAL_STATUS_LABELS } from "@/lib/cow-calf/constants";
 import { archiveBull } from "@/lib/actions/bulls";
 import { BullForm } from "@/components/cow-calf/bull-form";
@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 interface BullDetailClientProps {
   orgId: string;
   bull: BullRecord;
-  locationOptions: SelectOption[];
+  locationTree: TreePickerOption[];
   groupOptions: SelectOption[];
   canManage: boolean;
 }
@@ -20,7 +20,7 @@ interface BullDetailClientProps {
 export function BullDetailClient({
   orgId,
   bull,
-  locationOptions,
+  locationTree,
   groupOptions,
   canManage,
 }: BullDetailClientProps) {
@@ -44,7 +44,7 @@ export function BullDetailClient({
       <BullForm
         orgId={orgId}
         bull={bull}
-        locationOptions={locationOptions}
+        locationTree={locationTree}
         groupOptions={groupOptions}
         onSuccess={() => {
           setEditing(false);

@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { SelectOption } from "@/lib/locations/options";
+import type { SelectOption, TreePickerOption } from "@/lib/locations/options";
+import { CascadingLocationField } from "@/components/locations/cascading-location-field";
 import { createExposure } from "@/lib/actions/exposure";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +17,7 @@ interface AnimalOption {
 
 interface ExposureFormProps {
   orgId: string;
-  locationOptions: SelectOption[];
+  locationTree: TreePickerOption[];
   damOptions: AnimalOption[];
   sireOptions: AnimalOption[];
   defaultDamId?: string;
@@ -27,7 +28,7 @@ const selectClass =
 
 export function ExposureForm({
   orgId,
-  locationOptions,
+  locationTree,
   damOptions,
   sireOptions,
   defaultDamId,
@@ -105,12 +106,13 @@ export function ExposureForm({
       </div>
       <div>
         <Label>Location</Label>
-        <select className={selectClass} value={locationId} onChange={(e) => setLocationId(e.target.value)}>
-          <option value="">—</option>
-          {locationOptions.map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
-          ))}
-        </select>
+        <CascadingLocationField
+          idPrefix="seedstock-exposure-location"
+          locationTree={locationTree}
+          value={locationId}
+          onChange={setLocationId}
+          optional
+        />
       </div>
       <div>
         <Label>Notes</Label>

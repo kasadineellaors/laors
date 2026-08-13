@@ -27,9 +27,7 @@ export default async function NewSeedstockBreedingPage({
 
   const orgId = session.organization!.id;
   const [locations, sires, dams] = await Promise.all([
-    getTreePickerOptions(orgId).then((nodes) =>
-      nodes.map((n) => ({ value: n.id, label: n.breadcrumb })),
-    ),
+    getTreePickerOptions(orgId),
     listSeedstockSireOptions(orgId),
     listSeedstockDamOptions(orgId),
   ]);
@@ -44,7 +42,7 @@ export default async function NewSeedstockBreedingPage({
       </div>
       <SeedstockBreedingForm
         orgId={orgId}
-        locationOptions={locations}
+        locationTree={locations}
         sireOptions={sires}
         damOptions={dams}
         defaultDamId={damId}

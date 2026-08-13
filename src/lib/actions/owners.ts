@@ -71,6 +71,7 @@ export async function createOwner(
     ownershipType?: string;
     isOwnershipGroup?: boolean;
     yardageRatePerHeadDay?: string;
+    pastureRatePerHeadDay?: string;
     medicineMarkupPercent?: string;
     feedMarkupPercent?: string;
     notes?: string;
@@ -86,6 +87,10 @@ export async function createOwner(
   const yardage = parseOptionalRate(input.yardageRatePerHeadDay);
   if (yardage === undefined && input.yardageRatePerHeadDay?.trim()) {
     return { error: "Enter a valid yardage rate" };
+  }
+  const pasture = parseOptionalRate(input.pastureRatePerHeadDay);
+  if (pasture === undefined && input.pastureRatePerHeadDay?.trim()) {
+    return { error: "Enter a valid pasture rate" };
   }
   const markup = parseOptionalRate(input.medicineMarkupPercent);
   if (markup === undefined && input.medicineMarkupPercent?.trim()) {
@@ -121,6 +126,7 @@ export async function createOwner(
         ownership_type: input.ownershipType?.trim() || null,
         is_ownership_group: Boolean(input.isOwnershipGroup),
         yardage_rate_per_head_day: yardage ?? null,
+        pasture_rate_per_head_day: pasture ?? null,
         medicine_markup_percent: markup ?? null,
         feed_markup_percent: feedMarkup ?? null,
         notes: input.notes?.trim() || null,
@@ -161,6 +167,7 @@ export async function updateOwner(
     ownershipType?: string;
     isOwnershipGroup?: boolean;
     yardageRatePerHeadDay?: string;
+    pastureRatePerHeadDay?: string;
     medicineMarkupPercent?: string;
     feedMarkupPercent?: string;
     notes?: string;
@@ -190,6 +197,13 @@ export async function updateOwner(
         return { error: "Enter a valid yardage rate" };
       }
       updates.yardage_rate_per_head_day = yardage ?? null;
+    }
+    if (input.pastureRatePerHeadDay !== undefined) {
+      const pasture = parseOptionalRate(input.pastureRatePerHeadDay);
+      if (pasture === undefined && input.pastureRatePerHeadDay.trim()) {
+        return { error: "Enter a valid pasture rate" };
+      }
+      updates.pasture_rate_per_head_day = pasture ?? null;
     }
     if (input.medicineMarkupPercent !== undefined) {
       const markup = parseOptionalRate(input.medicineMarkupPercent);
@@ -275,6 +289,57 @@ export async function createOwnerMiscCharge(
   input: {
     ownerId: string;
     cattleGroupId?: string;
+    locationId?: string;
+    chargeDate?: string;
+    description: string;
+    amount: string;
+    quantity?: string;
+    unitCost?: string;
+    notes?: string;
+  },
+): Promise<OwnerActionState> {
+  const description = input.description.trim();
+  if (!description) return { error: "Description is required" };
+  const amount = parseFloat(input.amount);
+  if (Number.isNaN(amount) || amount < 0) return { error: "Enter a valid amount" };
+
+  const quantity = input.quantity?.trim() ? parseFloat(input.quantity) : null;
+  if (input.quantity?.trim() && (quantity == null || Number.isNaN(quantity) || quantity < 0)) {
+    return { error: "Enter a valid quantity" };
+  }
+  const unitCost = input.unitCost?.trim() ? parseFloat(input.unitCost) : null;
+  if (input.unitCost?.trim() && (unitCost == null || Number.isNaN(unitCost) || unitCost < 0)) {
+    return { error: "Enter a valid unit cost" };
+  }
+
+  try {
+    const supabase = await requireManager(orgId);
+    const { error } = await supabase.from("owner_misc_charges").insert({
+      organization_id: orgId,
+      owner_id: input.ownerId,
+      cattle_group_id: input.cattleGroupId || null,
+      location_id: input.locationId || null,
+      charge_date: input.chargeDate || new Date().toISOString().slice(0, 10),
+      description,
+      amount,
+      quantity,
+      unit_cost: unitCost,
+      notes: input.notes?.trim() || null,
+    });
+    if (error) return { error: formatDbError(error.message) };
+    revalidatePath("/invoices");
+    revalidatePath("/reports/owner-totals");
+    revalidateOwners();
+    return { success: "Misc charge logged" };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function updateOwnerMiscCharge(
+  orgId: string,
+  chargeId: string,
+  input: {
     chargeDate?: string;
     description: string;
     amount: string;
@@ -288,19 +353,33 @@ export async function createOwnerMiscCharge(
 
   try {
     const supabase = await requireManager(orgId);
-    const { error } = await supabase.from("owner_misc_charges").insert({
-      organization_id: orgId,
-      owner_id: input.ownerId,
-      cattle_group_id: input.cattleGroupId || null,
-      charge_date: input.chargeDate || new Date().toISOString().slice(0, 10),
-      description,
-      amount,
-      notes: input.notes?.trim() || null,
-    });
+    const { data: existing } = await supabase
+      .from("owner_misc_charges")
+      .select("invoiced_at")
+      .eq("id", chargeId)
+      .eq("organization_id", orgId)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (!existing) return { error: "Misc charge not found" };
+    if (existing.invoiced_at) return { error: "Already invoiced — cannot edit this charge" };
+
+    const { error } = await supabase
+      .from("owner_misc_charges")
+      .update({
+        charge_date: input.chargeDate || new Date().toISOString().slice(0, 10),
+        description,
+        amount,
+        notes: input.notes?.trim() || null,
+      })
+      .eq("id", chargeId)
+      .eq("organization_id", orgId);
+
     if (error) return { error: formatDbError(error.message) };
     revalidatePath("/invoices");
+    revalidatePath("/reports/owner-totals");
     revalidateOwners();
-    return { success: "Misc charge logged" };
+    return { success: "Misc charge updated" };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Failed" };
   }

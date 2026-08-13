@@ -29,9 +29,7 @@ export default async function NewFeedingPage({
   const params = await searchParams;
 
   const [locations, groups, ownerOptions, members, rationOptions] = await Promise.all([
-    getTreePickerOptions(orgId).then((nodes) =>
-      nodes.map((n) => ({ value: n.id, label: n.breadcrumb })),
-    ),
+    getTreePickerOptions(orgId),
     listCattleGroups(orgId).then(toFeedGroupOptions),
     listOwnerOptions(orgId).then(ownersToSelectOptions),
     listOrgMembers(orgId),
@@ -80,7 +78,7 @@ export default async function NewFeedingPage({
         orgId={orgId}
         rationOptions={rationOptions}
         rationUnitCosts={rationUnitCosts}
-        locationOptions={locations}
+        locationTree={locations}
         groupOptions={groups}
         ownerOptions={ownerOptions}
         memberOptions={members}

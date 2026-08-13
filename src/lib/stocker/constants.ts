@@ -23,3 +23,7 @@ export const DEFAULT_LOT_ENTERPRISE_TYPE = "stocker" as const;
 export function isStockerLotEnterpriseType(enterpriseType: string | null | undefined): boolean {
   return (enterpriseType ?? DEFAULT_LOT_ENTERPRISE_TYPE) === DEFAULT_LOT_ENTERPRISE_TYPE;
 }
+
+export function hasStockerMode(modes: string[]): boolean {
+  return modes.includes("stocker");
+}

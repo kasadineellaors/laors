@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { CustomerOption } from "@/lib/customers/types";
-import type { SelectOption } from "@/lib/locations/options";
+import type { SelectOption, TreePickerOption } from "@/lib/locations/options";
 import type { SaleRecord } from "@/lib/sales/types";
 import { SEEDSTOCK_SALE_TYPE_LABELS } from "@/lib/seedstock/constants";
 import { archiveSale } from "@/lib/actions/sales";
@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 interface SaleDetailClientProps {
   orgId: string;
   sale: SaleRecord;
-  locationOptions: SelectOption[];
+  locationTree: TreePickerOption[];
   categoryOptions: SelectOption[];
   customerOptions?: CustomerOption[];
   buyerSuggestions?: string[];
@@ -40,7 +40,7 @@ function formatMoney(amount: number | null) {
 export function SaleDetailClient({
   orgId,
   sale,
-  locationOptions,
+  locationTree,
   categoryOptions,
   customerOptions = [],
   buyerSuggestions = [],
@@ -81,7 +81,7 @@ export function SaleDetailClient({
         <SaleForm
           orgId={orgId}
           sale={sale}
-          locationOptions={locationOptions}
+          locationTree={locationTree}
           groupOptions={[]}
           categoryOptions={categoryOptions}
           customerOptions={customerOptions}

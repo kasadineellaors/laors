@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { getRationUnitPriceAtDate } from "@/lib/feed/inventory-queries";
+import { feedItemQtyPerOneRationUnit } from "@/lib/feed/units";
 
 export interface FeedStockShortage {
   itemId: string;
@@ -34,9 +35,19 @@ export async function checkFeedingStock(
   }
 
   const supabase = await createClient();
+
+  const { data: ration } = await supabase
+    .from("feed_rations")
+    .select("unit")
+    .eq("organization_id", orgId)
+    .eq("id", rationId)
+    .maybeSingle();
+
+  const rationUnit = ration?.unit?.trim() || "unit";
+
   const { data: ingredients } = await supabase
     .from("feed_ration_ingredients")
-    .select("feed_item_id, quantity_per_ration_unit")
+    .select("feed_item_id, quantity_per_ration_unit, inclusion_percent")
     .eq("organization_id", orgId)
     .eq("feed_ration_id", rationId);
 
@@ -55,9 +66,16 @@ export async function checkFeedingStock(
   const shortages: FeedStockShortage[] = [];
 
   for (const ing of ingredients) {
-    const needed = quantity * Number(ing.quantity_per_ration_unit);
     const item = itemById.get(ing.feed_item_id);
     if (!item) continue;
+    const perRationUnit = feedItemQtyPerOneRationUnit(
+      Number(ing.quantity_per_ration_unit),
+      ing.inclusion_percent != null ? Number(ing.inclusion_percent) : null,
+      rationUnit,
+      item.unit?.trim() || "unit",
+    );
+    if (perRationUnit == null) continue;
+    const needed = quantity * perRationUnit;
     const onHand = Number(item.quantity_on_hand);
     if (needed > onHand) {
       shortages.push({
@@ -110,9 +128,20 @@ export async function getRationAvailability(
   if (!rationIds.length) return [];
 
   const supabase = await createClient();
+
+  const { data: rations } = await supabase
+    .from("feed_rations")
+    .select("id, unit")
+    .eq("organization_id", orgId)
+    .in("id", rationIds);
+
+  const rationUnitById = new Map(
+    (rations ?? []).map((r) => [r.id, r.unit?.trim() || "unit"]),
+  );
+
   const { data: ingredients } = await supabase
     .from("feed_ration_ingredients")
-    .select("feed_ration_id, feed_item_id, quantity_per_ration_unit")
+    .select("feed_ration_id, feed_item_id, quantity_per_ration_unit, inclusion_percent")
     .eq("organization_id", orgId)
     .in("feed_ration_id", rationIds);
 
@@ -127,7 +156,7 @@ export async function getRationAvailability(
   const itemIds = [...new Set(ingredients.map((i) => i.feed_item_id))];
   const { data: items } = await supabase
     .from("feed_items")
-    .select("id, name, quantity_on_hand")
+    .select("id, name, unit, quantity_on_hand")
     .eq("organization_id", orgId)
     .in("id", itemIds);
 
@@ -148,14 +177,19 @@ export async function getRationAvailability(
     let maxQty = Number.POSITIVE_INFINITY;
     let limitingItem: string | null = null;
     for (const ing of recipe) {
-      const perUnit = Number(ing.quantity_per_ration_unit);
-      if (perUnit <= 0) continue;
       const item = itemById.get(ing.feed_item_id);
       if (!item) {
         maxQty = 0;
         limitingItem = "Missing ingredient";
         break;
       }
+      const perUnit = feedItemQtyPerOneRationUnit(
+        Number(ing.quantity_per_ration_unit),
+        ing.inclusion_percent != null ? Number(ing.inclusion_percent) : null,
+        rationUnitById.get(rationId) ?? "unit",
+        item.unit?.trim() || "unit",
+      );
+      if (perUnit == null || perUnit <= 0) continue;
       const possible = Number(item.quantity_on_hand) / perUnit;
       if (possible < maxQty) {
         maxQty = possible;

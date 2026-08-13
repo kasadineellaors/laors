@@ -1,9 +1,16 @@
 "use client";
 
-import { useState } from "react";
 import type { FeedItemOption } from "@/lib/feed/inventory-types";
 import type { FeedRationIngredient } from "@/lib/feed/inventory-types";
 import { inclusionToQuantity } from "@/lib/feed/costing";
+import {
+  convertFeedQuantity,
+  defaultFeedEntryUnit,
+  formatFeedUnitLabel,
+  getFeedEntryUnitOptions,
+  isWeightFeedUnit,
+  normalizeFeedUnit,
+} from "@/lib/feed/units";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +19,8 @@ export type IngredientLine = {
   feedItemId: string;
   quantityPerRationUnit: string;
   inclusionPercent: string;
+  /** Unit the rancher typed the amount in (amount mode only). */
+  amountEntryUnit: string;
 };
 
 export type IngredientBuildMode = "amount" | "percent";
@@ -31,6 +40,7 @@ export function linesFromIngredients(ingredients: FeedRationIngredient[]): Ingre
     quantityPerRationUnit: String(i.quantity_per_ration_unit),
     inclusionPercent:
       i.inclusion_percent != null ? String(i.inclusion_percent) : "",
+    amountEntryUnit: i.feed_item_unit?.trim() || "unit",
   }));
 }
 
@@ -42,6 +52,7 @@ export function detectIngredientMode(ingredients: FeedRationIngredient[]): Ingre
 export function parseIngredientLines(
   lines: IngredientLine[],
   mode: IngredientBuildMode,
+  feedItems: FeedItemOption[],
 ): Array<{
   feedItemId: string;
   quantityPerRationUnit: number;
@@ -50,6 +61,9 @@ export function parseIngredientLines(
   return lines
     .filter((l) => l.feedItemId)
     .map((l) => {
+      const item = feedItems.find((f) => f.id === l.feedItemId);
+      const feedItemUnit = item?.unit?.trim() || "unit";
+
       if (mode === "percent") {
         const pct = parseFloat(l.inclusionPercent);
         if (Number.isNaN(pct) || pct <= 0) return null;
@@ -61,9 +75,17 @@ export function parseIngredientLines(
       }
       const qty = parseFloat(l.quantityPerRationUnit);
       if (Number.isNaN(qty) || qty <= 0) return null;
+
+      const entryUnit = l.amountEntryUnit?.trim() || feedItemUnit;
+      const storedQty =
+        normalizeFeedUnit(entryUnit) === normalizeFeedUnit(feedItemUnit)
+          ? qty
+          : convertFeedQuantity(qty, entryUnit, feedItemUnit);
+      if (storedQty == null || storedQty <= 0) return null;
+
       return {
         feedItemId: l.feedItemId,
-        quantityPerRationUnit: qty,
+        quantityPerRationUnit: storedQty,
         inclusionPercent: null,
       };
     })
@@ -109,9 +131,19 @@ export function RationIngredientBuilder({
   }
 
   function addLine() {
+    const firstItem = feedItems[0];
     onChange([
       ...lines,
-      { feedItemId: feedItems[0]?.id ?? "", quantityPerRationUnit: "", inclusionPercent: "" },
+      {
+        feedItemId: firstItem?.id ?? "",
+        quantityPerRationUnit: "",
+        inclusionPercent: "",
+        amountEntryUnit: firstItem
+          ? isWeightFeedUnit(firstItem.unit)
+            ? defaultFeedEntryUnit(rationUnit)
+            : firstItem.unit
+          : defaultFeedEntryUnit(rationUnit),
+      },
     ]);
   }
 
@@ -178,18 +210,36 @@ export function RationIngredientBuilder({
 
       {lines.map((line, index) => {
         const item = feedItems.find((f) => f.id === line.feedItemId);
+        const amountUnitOptions = item
+          ? getFeedEntryUnitOptions(item.unit)
+          : getFeedEntryUnitOptions(rationUnit);
         return (
           <div
             key={index}
             className={`grid items-end gap-2 ${
-              mode === "percent" ? "grid-cols-[1fr_100px_auto]" : "grid-cols-[1fr_120px_auto]"
+              mode === "percent"
+                ? "grid-cols-[1fr_100px_auto]"
+                : "grid-cols-[1fr_minmax(5rem,6rem)_minmax(4.5rem,5rem)_auto]"
             }`}
           >
             <div>
               <Label className="sr-only">Feedstuff</Label>
               <select
                 value={line.feedItemId}
-                onChange={(e) => updateLine(index, { feedItemId: e.target.value })}
+                onChange={(e) => {
+                  const nextItem = feedItems.find((f) => f.id === e.target.value);
+                  updateLine(index, {
+                    feedItemId: e.target.value,
+                    amountEntryUnit: nextItem
+                      ? isWeightFeedUnit(nextItem.unit)
+                        ? line.amountEntryUnit &&
+                          getFeedEntryUnitOptions(nextItem.unit).includes(line.amountEntryUnit)
+                          ? line.amountEntryUnit
+                          : defaultFeedEntryUnit(rationUnit)
+                        : nextItem.unit
+                      : line.amountEntryUnit,
+                  });
+                }}
                 className={selectClass}
               >
                 {feedItems.map((f) => (
@@ -228,9 +278,30 @@ export function RationIngredientBuilder({
                 />
               )}
               <p className="mt-0.5 text-xs text-text-secondary">
-                {mode === "percent" ? "% of ration" : (item?.unit ?? "units")}
+                {mode === "percent"
+                  ? "% of ration"
+                  : item
+                    ? `stored as ${item.unit}`
+                    : "units"}
               </p>
             </div>
+            {mode === "amount" ? (
+              <div>
+                <Label className="sr-only">Unit</Label>
+                <select
+                  value={line.amountEntryUnit}
+                  onChange={(e) => updateLine(index, { amountEntryUnit: e.target.value })}
+                  className={`${selectClass} min-w-0 px-2 text-sm`}
+                  aria-label={`Unit for ${item?.name ?? "feedstuff"} amount`}
+                >
+                  {amountUnitOptions.map((unit) => (
+                    <option key={unit} value={unit}>
+                      {formatFeedUnitLabel(unit)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
             <Button type="button" variant="secondary" onClick={() => removeLine(index)}>
               Remove
             </Button>

@@ -1,5 +1,8 @@
+import { createClient } from "@/lib/supabase/server";
 import { listFeedItems } from "@/lib/feed/inventory-queries";
 import { listCattleGroups } from "@/lib/inventory/queries";
+import { buildLotAdgSnapshot, computeOperationAdgLbs } from "@/lib/inventory/adg";
+import { daysOnFeed, getLotReceivedDate } from "@/lib/inventory/lot-display";
 import { ENTERPRISE_LABELS, LOT_STATUS_LABELS, type EnterpriseType, type LotStatus } from "@/lib/lots/types";
 import { getOperationPlSummary } from "@/lib/reports/operations-pl";
 import { currentMonthKey } from "@/lib/reports/period";
@@ -34,6 +37,14 @@ export type LowFeedAlert = {
   unit: string;
 };
 
+export type LotAdgRow = {
+  id: string;
+  label: string;
+  head: number;
+  adg_lbs: number;
+  days_on_feed: number;
+};
+
 export type DashboardCommandCenter = {
   month_label: string;
   active_lots: number;
@@ -47,6 +58,15 @@ export type DashboardCommandCenter = {
   lots_received_this_month: number;
   low_feed_items: LowFeedAlert[];
   attention_lots: AttentionLot[];
+  deaths_this_month: number;
+  /** Cumulative deaths on open lots ÷ placed head (starting head). */
+  death_loss_pct: number;
+  death_loss_deaths: number;
+  death_loss_placed_head: number;
+  /** Head-weighted ADG across open lots with weight + days on feed. */
+  operation_adg_lbs: number | null;
+  operation_adg_lot_count: number;
+  lot_adg_rows: LotAdgRow[];
 };
 
 export async function getDashboardCommandCenter(
@@ -105,6 +125,54 @@ export async function getDashboardCommandCenter(
       unit: item.unit,
     }));
 
+  const openGroupIds = openGroups.map((g) => g.id);
+  let deathLossDeaths = 0;
+  if (openGroupIds.length > 0) {
+    const supabase = await createClient();
+    const { data: deathRows } = await supabase
+      .from("mortality_records")
+      .select("head_count")
+      .eq("organization_id", orgId)
+      .eq("is_active", true)
+      .in("cattle_group_id", openGroupIds);
+    deathLossDeaths = (deathRows ?? []).reduce((s, d) => s + (d.head_count ?? 0), 0);
+  }
+
+  const placedHead = openGroups.reduce((sum, g) => {
+    const starting = g.starting_head ?? 0;
+    if (starting > 0) return sum + starting;
+    return sum + g.total_head;
+  }, 0);
+
+  const death_loss_pct =
+    placedHead > 0 ? Math.round((deathLossDeaths / placedHead) * 1000) / 10 : 0;
+
+  const lotAdgRows: LotAdgRow[] = [];
+  const adgForOperation: { adgLbs: number; head: number }[] = [];
+
+  for (const group of openGroups) {
+    if (group.total_head <= 0) continue;
+    const days = daysOnFeed(getLotReceivedDate(group));
+    if (days == null || days <= 0) continue;
+    const snapshot = buildLotAdgSnapshot(group, days);
+    if (snapshot.adgLbs == null) continue;
+    lotAdgRows.push({
+      id: group.id,
+      label: group.lot_number || group.name,
+      head: group.total_head,
+      adg_lbs: Math.round(snapshot.adgLbs * 10) / 10,
+      days_on_feed: days,
+    });
+    adgForOperation.push({ adgLbs: snapshot.adgLbs, head: group.total_head });
+  }
+
+  lotAdgRows.sort((a, b) => b.adg_lbs - a.adg_lbs);
+
+  const operation_adg_lbs = (() => {
+    const value = computeOperationAdgLbs(adgForOperation);
+    return value != null ? Math.round(value * 10) / 10 : null;
+  })();
+
   return {
     month_label: monthlyPl.monthLabel,
     active_lots: openGroups.length,
@@ -118,5 +186,12 @@ export async function getDashboardCommandCenter(
     lots_received_this_month: monthlyPl.lotsReceived,
     low_feed_items,
     attention_lots,
+    deaths_this_month: monthlyPl.deaths,
+    death_loss_pct,
+    death_loss_deaths: deathLossDeaths,
+    death_loss_placed_head: placedHead,
+    operation_adg_lbs,
+    operation_adg_lot_count: lotAdgRows.length,
+    lot_adg_rows: lotAdgRows,
   };
 }

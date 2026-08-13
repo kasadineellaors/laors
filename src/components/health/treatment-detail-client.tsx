@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import type { SelectOption } from "@/lib/locations/options";
+import type { SelectOption, TreePickerOption } from "@/lib/locations/options";
 import type { OrgMemberOption } from "@/lib/tasks/types";
 import type { MedicineOption } from "@/lib/medicine/types";
 import type { TreatmentRecord } from "@/lib/health/types";
@@ -22,7 +22,7 @@ interface TreatmentDetailClientProps {
   orgId: string;
   treatment: TreatmentRecord;
   currentUserId?: string;
-  locationOptions: SelectOption[];
+  locationTree: TreePickerOption[];
   groupOptions: SelectOption[];
   memberOptions: OrgMemberOption[];
   medicineOptions: MedicineOption[];
@@ -40,7 +40,7 @@ export function TreatmentDetailClient({
   orgId,
   treatment,
   currentUserId,
-  locationOptions,
+  locationTree,
   groupOptions,
   memberOptions,
   medicineOptions,
@@ -69,7 +69,7 @@ export function TreatmentDetailClient({
           orgId={orgId}
           currentUserId={currentUserId}
           treatment={treatment}
-          locationOptions={locationOptions}
+          locationTree={locationTree}
           groupOptions={groupOptions}
           memberOptions={memberOptions}
           medicineOptions={medicineOptions}

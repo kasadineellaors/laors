@@ -37,16 +37,46 @@ export function isWeightFeedUnit(unit: string): boolean {
   return normalizeFeedUnit(unit) in POUNDS_PER;
 }
 
+/** Default entry unit when logging feed — ranchers usually think in pounds. */
+export function defaultFeedEntryUnit(rationUnit: string): string {
+  const normalizedRation = normalizeFeedUnit(rationUnit);
+  if (isWeightFeedUnit(normalizedRation)) return "lb";
+  return rationUnit.trim() || "unit";
+}
+
 /** Units a rancher can enter when logging feed for this ration. */
 export function getFeedEntryUnitOptions(rationUnit: string): string[] {
   const normalizedRation = normalizeFeedUnit(rationUnit);
   if (isWeightFeedUnit(normalizedRation)) {
     const options = ["lb", "ton", "cwt"];
     if (normalizedRation === "kg") options.push("kg");
-    const unique = [normalizedRation, ...options.filter((u) => u !== normalizedRation)];
-    return [...new Set(unique)];
+    if (!options.includes(normalizedRation)) options.push(normalizedRation);
+    return [...new Set(options)];
   }
   return [rationUnit.trim() || "unit"];
+}
+
+/**
+ * Feed item quantity (in the feed item's native unit) consumed per 1 ration unit.
+ * Amount mode: quantity_per_ration_unit is already in feed item units.
+ * Percent mode: inclusion is a weight fraction of the ration, converted to feed item units.
+ */
+export function feedItemQtyPerOneRationUnit(
+  quantityPerRationUnit: number,
+  inclusionPercent: number | null | undefined,
+  rationUnit: string,
+  feedItemUnit: string,
+): number | null {
+  if (!Number.isFinite(quantityPerRationUnit) || quantityPerRationUnit <= 0) return null;
+
+  if (inclusionPercent != null) {
+    const fraction = inclusionPercent / 100;
+    const oneRationInItemUnits = convertFeedQuantity(1, rationUnit, feedItemUnit);
+    if (oneRationInItemUnits == null) return null;
+    return Math.round(fraction * oneRationInItemUnits * 10000) / 10000;
+  }
+
+  return quantityPerRationUnit;
 }
 
 export function convertFeedQuantity(

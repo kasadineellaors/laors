@@ -23,9 +23,7 @@ export default async function NewCalendarEventPage({
   const { date } = await searchParams;
 
   const [locations, groups] = await Promise.all([
-    getTreePickerOptions(orgId).then((nodes) =>
-      nodes.map((n) => ({ value: n.id, label: n.breadcrumb })),
-    ),
+    getTreePickerOptions(orgId),
     listCattleGroups(orgId).then((gs) =>
       gs.map((g) => ({
         value: g.id,
@@ -48,7 +46,7 @@ export default async function NewCalendarEventPage({
       </div>
       <CalendarEventForm
         orgId={orgId}
-        locationOptions={locations}
+        locationTree={locations}
         groupOptions={groups}
         defaultDate={defaultDate}
       />

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { CalvingRecord } from "@/lib/cow-calf/types";
-import type { SelectOption } from "@/lib/locations/options";
+import type { SelectOption, TreePickerOption } from "@/lib/locations/options";
 import type { WeaningRecord } from "@/lib/seedstock/weaning-types";
 import {
   ASSISTANCE_TYPE_LABELS,
@@ -24,7 +24,7 @@ interface SeedstockCalvingDetailClientProps {
   orgId: string;
   record: CalvingRecord;
   weaningRecords: WeaningRecord[];
-  locationOptions: SelectOption[];
+  locationTree: TreePickerOption[];
   damOptions: AnimalOption[];
   sireOptions: AnimalOption[];
   canManage: boolean;
@@ -34,7 +34,7 @@ export function SeedstockCalvingDetailClient({
   orgId,
   record,
   weaningRecords,
-  locationOptions,
+  locationTree,
   damOptions,
   sireOptions,
   canManage,
@@ -67,7 +67,7 @@ export function SeedstockCalvingDetailClient({
     <div className="space-y-8">
       <SeedstockCalvingForm
         orgId={orgId}
-        locationOptions={locationOptions}
+        locationTree={locationTree}
         damOptions={damOptions}
         sireOptions={sireOptions}
         record={record}

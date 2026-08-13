@@ -3,6 +3,7 @@ import type { Database } from "@/types/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getRationUnitPrices } from "@/lib/feed/inventory-queries";
 import { sumLotExpenses } from "@/lib/expenses/queries";
+import { computeLotAdgLbs } from "@/lib/inventory/adg";
 import type {
   LotOperationalSummary,
   MortalityRecord,
@@ -17,6 +18,7 @@ export async function getLotOperationalSummary(
   openedAt: string | null,
   currentHead: number,
   avgWeightInLbs: number | null = null,
+  currentAvgWeightLbs: number | null = null,
   supabaseClient?: SupabaseClient<Database>,
 ): Promise<LotOperationalSummary> {
   const supabase = supabaseClient ?? (await createClient());
@@ -148,6 +150,16 @@ export async function getLotOperationalSummary(
   let adgLbs: number | null = null;
   let feedCostPerLbGain: number | null = null;
 
+  const liveWeight =
+    currentAvgWeightLbs != null && currentAvgWeightLbs > 0
+      ? currentAvgWeightLbs
+      : avgWeightInLbs;
+  const currentAdgLbs = computeLotAdgLbs({
+    weightInLbs: avgWeightInLbs,
+    currentWeightLbs: liveWeight,
+    daysOnFeed,
+  });
+
   if (
     avgSaleWeightLbs != null &&
     avgWeightInLbs != null &&
@@ -180,6 +192,7 @@ export async function getLotOperationalSummary(
     avg_sale_weight_lbs: avgSaleWeightLbs,
     total_gain_lbs: totalGainLbs,
     adg_lbs: adgLbs,
+    current_adg_lbs: currentAdgLbs,
     feed_cost_per_lb_gain: feedCostPerLbGain,
   };
 }

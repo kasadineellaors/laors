@@ -155,9 +155,16 @@ export function InvoiceForm({ orgId, invoice, customerOptions = [], onSuccess }:
                   ? selectedCustomer.email
                   : "No email — add one in Customers to send invoices"}
                 {" · "}
-                {selectedCustomer.yardage_rate_per_head_day != null
-                  ? `Yardage $${selectedCustomer.yardage_rate_per_head_day}/hd/day`
-                  : "No yardage rate"}
+                {[
+                  selectedCustomer.yardage_rate_per_head_day != null
+                    ? `Yardage $${selectedCustomer.yardage_rate_per_head_day}/hd/day`
+                    : null,
+                  selectedCustomer.pasture_rate_per_head_day != null
+                    ? `Pasture $${selectedCustomer.pasture_rate_per_head_day}/hd/day`
+                    : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ") || "No yardage or pasture rate"}
               </p>
             ) : null}
           </div>

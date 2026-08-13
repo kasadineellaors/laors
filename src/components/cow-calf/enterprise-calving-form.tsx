@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { SelectOption } from "@/lib/locations/options";
+import type { SelectOption, TreePickerOption } from "@/lib/locations/options";
+import { CascadingLocationField } from "@/components/locations/cascading-location-field";
 import type { AssistanceType, CalfSex, CalvingOutcome, LossCause } from "@/lib/cow-calf/types";
 import {
   ASSISTANCE_TYPE_LABELS,
@@ -52,7 +53,7 @@ function emptyCalf(): CalfDraft {
 
 interface EnterpriseCalvingFormProps {
   orgId: string;
-  locationOptions: SelectOption[];
+  locationTree: TreePickerOption[];
   herdOptions: SelectOption[];
   damOptions: DamOption[];
   bullOptions: BullOption[];
@@ -61,7 +62,7 @@ interface EnterpriseCalvingFormProps {
 
 export function EnterpriseCalvingForm({
   orgId,
-  locationOptions,
+  locationTree,
   herdOptions,
   damOptions,
   bullOptions,
@@ -198,12 +199,13 @@ export function EnterpriseCalvingForm({
 
         <div>
           <Label>Location</Label>
-          <select className={selectClass} value={locationId} onChange={(e) => setLocationId(e.target.value)}>
-            <option value="">— Optional —</option>
-            {locationOptions.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
+          <CascadingLocationField
+            idPrefix="enterprise-calving-location"
+            locationTree={locationTree}
+            value={locationId}
+            onChange={setLocationId}
+            optional
+          />
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">

@@ -5,14 +5,20 @@ import { listOwnerOptions } from "@/lib/owners/queries";
 import { canWriteInventory } from "@/lib/auth/roles";
 import { getCattleGroup } from "@/lib/inventory/queries";
 import {
+  needsLotRollupRepair,
+  resolveLotMetrics,
+} from "@/lib/inventory/lot-display";
+import {
   getLotOperationalSummary,
   listMortalityRecords,
   listProcessingEvents,
 } from "@/lib/lots/queries";
 import { listLotPurchases } from "@/lib/lots/purchase-queries";
+import { syncLotPurchaseRollups } from "@/lib/lots/sync-purchase-rollups";
 import { listLotExpenses } from "@/lib/expenses/queries";
 import { getRanchFieldSuggestions } from "@/lib/ranch/field-suggestions";
 import { getRanchOptions } from "@/lib/locations/options";
+import { createClient } from "@/lib/supabase/server";
 import { GroupDetailClient } from "@/components/inventory/group-detail-client";
 
 export const metadata: Metadata = {
@@ -28,8 +34,19 @@ export default async function CattleGroupPage({
   const session = await requireOnboardedUser();
   const orgId = session.organization!.id;
 
-  const group = await getCattleGroup(orgId, id);
+  let group = await getCattleGroup(orgId, id);
   if (!group) notFound();
+
+  const lotPurchases = await listLotPurchases(orgId, id);
+
+  if (needsLotRollupRepair(group, lotPurchases)) {
+    const supabase = await createClient();
+    await syncLotPurchaseRollups(supabase, orgId, id);
+    group = (await getCattleGroup(orgId, id)) ?? group;
+  }
+
+  const metrics = resolveLotMetrics(group, lotPurchases);
+  const displayGroup = { ...group, ...metrics };
 
   const [
     adjustmentReasons,
@@ -39,7 +56,6 @@ export default async function CattleGroupPage({
     processingEvents,
     mortalityRecords,
     lotExpenses,
-    lotPurchases,
     fieldSuggestions,
   ] = await Promise.all([
     getRanchOptions(orgId, "adjustment_reasons"),
@@ -53,15 +69,15 @@ export default async function CattleGroupPage({
     getLotOperationalSummary(
       orgId,
       id,
-      group.landed_cost,
-      group.opened_at ?? group.arrival_date ?? group.purchase_date,
-      group.total_head,
-      group.avg_weight_lbs,
+      displayGroup.landed_cost,
+      displayGroup.opened_at ?? displayGroup.arrival_date ?? displayGroup.purchase_date,
+      displayGroup.total_head,
+      metrics.avg_weight_lbs,
+      metrics.current_avg_weight_lbs,
     ),
     listProcessingEvents(orgId, id),
     listMortalityRecords(orgId, id),
     listLotExpenses(orgId, id),
-    listLotPurchases(orgId, id),
     getRanchFieldSuggestions(orgId),
   ]);
 
@@ -70,7 +86,7 @@ export default async function CattleGroupPage({
   return (
     <GroupDetailClient
       orgId={orgId}
-      group={group}
+      group={displayGroup}
       lotSummary={lotSummary}
       processingEvents={processingEvents}
       mortalityRecords={mortalityRecords}

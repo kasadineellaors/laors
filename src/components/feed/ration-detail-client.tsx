@@ -72,7 +72,7 @@ export function RationDetailClient({
 
       <div className="rounded-xl border border-border-neutral bg-surface-white px-4 py-5">
         <h1 className="text-[1.75rem] font-bold leading-tight text-navy sm:text-[2rem]">{ration.name}</h1>
-        <p className="mt-1 text-text-secondary capitalize">Fed in {ration.unit}</p>
+        <p className="mt-1 text-text-secondary capitalize">Mixed in {ration.unit}</p>
 
         <dl className="mt-6 space-y-3 text-sm">
           <div>

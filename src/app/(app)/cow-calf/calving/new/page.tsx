@@ -29,9 +29,7 @@ export default async function NewCalvingPage({
   const orgId = session.organization!.id;
 
   const [locations, herds, dams, bulls] = await Promise.all([
-    getTreePickerOptions(orgId).then((nodes) =>
-      nodes.map((n) => ({ value: n.id, label: n.breadcrumb })),
-    ),
+    getTreePickerOptions(orgId),
     listCowCalfHerdOptions(orgId),
     listCowCalfDamOptions(orgId, herd),
     listActiveBullOptions(orgId),
@@ -52,7 +50,7 @@ export default async function NewCalvingPage({
       </div>
       <EnterpriseCalvingForm
         orgId={orgId}
-        locationOptions={locations}
+        locationTree={locations}
         herdOptions={herds}
         damOptions={dams}
         bullOptions={bulls}

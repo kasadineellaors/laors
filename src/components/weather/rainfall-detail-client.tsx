@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import type { SelectOption } from "@/lib/locations/options";
+import type { SelectOption, TreePickerOption } from "@/lib/locations/options";
 import type { RainfallRecord } from "@/lib/weather/types";
 import { archiveRainfallRecord } from "@/lib/actions/weather";
 import { RainfallForm } from "@/components/weather/rainfall-form";
@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 interface RainfallDetailClientProps {
   orgId: string;
   record: RainfallRecord;
-  locationOptions: SelectOption[];
+  locationTree: TreePickerOption[];
 }
 
 function formatDate(iso: string) {
@@ -27,7 +27,7 @@ function formatDate(iso: string) {
 export function RainfallDetailClient({
   orgId,
   record,
-  locationOptions,
+  locationTree,
 }: RainfallDetailClientProps) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
@@ -52,7 +52,7 @@ export function RainfallDetailClient({
         <RainfallForm
           orgId={orgId}
           record={record}
-          locationOptions={locationOptions}
+          locationTree={locationTree}
           onSuccess={() => {
             setEditing(false);
             router.refresh();

@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { requireOnboardedUser } from "@/lib/auth/session";
 import { canWriteInventory } from "@/lib/auth/roles";
 import { hasCowCalfMode } from "@/lib/cow-calf/constants";
-import { hasStockerMode } from "@/lib/enterprise/ui";
 import { listArchivedCattleGroups, listCattleGroups } from "@/lib/inventory/queries";
 import { getRanchTotalHeadCount } from "@/lib/locations/rollups";
 import { CattleGroupsList } from "@/components/inventory/cattle-groups-list";
@@ -20,7 +19,6 @@ export default async function CattlePage() {
   const orgId = session.organization!.id;
   const modes = (session.organization!.enabled_modes ?? []) as OperationMode[];
   const showCowCalf = hasCowCalfMode(modes);
-  const showStocker = hasStockerMode(modes);
   const canManageCattle = canWriteInventory(session.membership?.system_role);
 
   const [groups, archivedGroups, totalHead] = await Promise.all([
@@ -41,7 +39,6 @@ export default async function CattlePage() {
         totalHead={totalHead}
         canManageCattle={canManageCattle}
         showCowCalf={showCowCalf}
-        showStocker={showStocker}
       />
 
       <CattleSummaryMetrics

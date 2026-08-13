@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils/cn";
-import { InputHTMLAttributes, forwardRef, type ChangeEvent } from "react";
+import { InputHTMLAttributes, forwardRef, type ChangeEvent, type WheelEvent } from "react";
 import { DateInput } from "./date-input";
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -9,7 +9,7 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ className, wrapperClassName, error, type = "text", value, onChange, ...props }, ref) => {
+  ({ className, wrapperClassName, error, type = "text", value, onChange, onWheel, ...props }, ref) => {
     if (type === "date") {
       return (
         <DateInput
@@ -28,6 +28,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       );
     }
 
+    const isNumber = type === "number";
+
     return (
       <div className={cn("w-full", wrapperClassName)}>
         <input
@@ -35,6 +37,14 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           type={type}
           value={value}
           onChange={onChange}
+          onWheel={
+            isNumber
+              ? (event: WheelEvent<HTMLInputElement>) => {
+                  event.preventDefault();
+                  onWheel?.(event);
+                }
+              : onWheel
+          }
           className={cn(
             "flex h-11 w-full rounded-[var(--radius-button)] border border-border-neutral bg-surface-white px-4 text-base text-text-primary",
             "placeholder:text-text-secondary",

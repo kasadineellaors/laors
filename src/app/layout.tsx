@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Source_Sans_3 } from "next/font/google";
+import { PreventNumberInputScroll } from "@/components/ui/prevent-number-input-scroll";
 import "./globals.css";
 
 const sourceSans = Source_Sans_3({
@@ -37,7 +38,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${sourceSans.variable} h-full`}>
-      <body className="min-h-full font-sans antialiased">{children}</body>
+      <body className="min-h-full font-sans antialiased">
+        <PreventNumberInputScroll />
+        {children}
+      </body>
     </html>
   );
 }

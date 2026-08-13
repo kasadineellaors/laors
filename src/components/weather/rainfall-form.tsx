@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { SelectOption } from "@/lib/locations/options";
+import type { TreePickerOption } from "@/lib/locations/options";
+import { CascadingLocationField } from "@/components/locations/cascading-location-field";
 import type { RainfallRecord } from "@/lib/weather/types";
 import { createRainfallRecord, updateRainfallRecord } from "@/lib/actions/weather";
 import { Button } from "@/components/ui/button";
@@ -12,12 +13,12 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 
 interface RainfallFormProps {
   orgId: string;
-  locationOptions: SelectOption[];
+  locationTree: TreePickerOption[];
   record?: RainfallRecord;
   onSuccess?: () => void;
 }
 
-export function RainfallForm({ orgId, locationOptions, record, onSuccess }: RainfallFormProps) {
+export function RainfallForm({ orgId, locationTree, record, onSuccess }: RainfallFormProps) {
   const router = useRouter();
   const isEdit = Boolean(record);
 
@@ -104,22 +105,16 @@ export function RainfallForm({ orgId, locationOptions, record, onSuccess }: Rain
             />
           </div>
         </div>
-        {locationOptions.length > 0 ? (
+        {locationTree.length > 0 ? (
           <div>
-            <Label htmlFor="location">Location (optional)</Label>
-            <select
-              id="location"
+            <Label>Location (optional)</Label>
+            <CascadingLocationField
+              idPrefix="rainfall-location"
+              locationTree={locationTree}
               value={locationId}
-              onChange={(e) => setLocationId(e.target.value)}
-              className={selectClass}
-            >
-              <option value="">Ranch-wide</option>
-              {locationOptions.map((l) => (
-                <option key={l.value} value={l.value}>
-                  {l.label}
-                </option>
-              ))}
-            </select>
+              onChange={setLocationId}
+              optional
+            />
           </div>
         ) : null}
         <div>

@@ -50,6 +50,7 @@ export async function getLotCloseoutPrintData(
     group.opened_at ?? group.arrival_date ?? group.purchase_date,
     group.total_head,
     group.avg_weight_lbs,
+    group.current_avg_weight_lbs,
     supabase,
   );
 

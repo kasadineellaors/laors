@@ -13,6 +13,8 @@ function mapOwner(row: Record<string, unknown>): OwnerRecord {
     is_ownership_group: Boolean(row.is_ownership_group),
     yardage_rate_per_head_day:
       row.yardage_rate_per_head_day != null ? Number(row.yardage_rate_per_head_day) : null,
+    pasture_rate_per_head_day:
+      row.pasture_rate_per_head_day != null ? Number(row.pasture_rate_per_head_day) : null,
     medicine_markup_percent:
       row.medicine_markup_percent != null ? Number(row.medicine_markup_percent) : null,
     feed_markup_percent:
@@ -102,6 +104,7 @@ export async function listOwnerOptions(orgId: string): Promise<OwnerOption[]> {
     address: o.address,
     is_ownership_group: o.is_ownership_group,
     yardage_rate_per_head_day: o.yardage_rate_per_head_day,
+    pasture_rate_per_head_day: o.pasture_rate_per_head_day,
     medicine_markup_percent: o.medicine_markup_percent,
     feed_markup_percent: o.feed_markup_percent,
   }));

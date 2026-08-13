@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { SelectOption } from "@/lib/locations/options";
+import type { SelectOption, TreePickerOption } from "@/lib/locations/options";
+import { CascadingLocationField } from "@/components/locations/cascading-location-field";
 import type { SeedstockAnimalRecord, SeedstockAnimalType } from "@/lib/seedstock/types";
 import { createSeedstockAnimal, updateSeedstockAnimal } from "@/lib/actions/seedstock-animals";
 import { ANIMAL_STATUS_LABELS, SEEDSTOCK_TYPE_LABELS } from "@/lib/seedstock/constants";
@@ -13,7 +14,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 
 interface SeedstockAnimalFormProps {
   orgId: string;
-  locationOptions: SelectOption[];
+  locationTree: TreePickerOption[];
   groupOptions: SelectOption[];
   animal?: SeedstockAnimalRecord;
   onSuccess?: () => void;
@@ -24,7 +25,7 @@ const selectClass =
 
 export function SeedstockAnimalForm({
   orgId,
-  locationOptions,
+  locationTree,
   groupOptions,
   animal,
   onSuccess,
@@ -241,20 +242,14 @@ export function SeedstockAnimalForm({
         </div>
 
         <div>
-          <Label htmlFor="location">Location</Label>
-          <select
-            id="location"
+          <Label>Location</Label>
+          <CascadingLocationField
+            idPrefix="seedstock-animal-location"
+            locationTree={locationTree}
             value={locationId}
-            onChange={(e) => setLocationId(e.target.value)}
-            className={selectClass}
-          >
-            <option value="">— Optional —</option>
-            {locationOptions.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
+            onChange={setLocationId}
+            optional
+          />
         </div>
 
         <div>

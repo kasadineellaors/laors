@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import type { InvoiceLineRecord, InvoiceRecord, InvoiceStatus, InvoiceSummary } from "./types";
+import type { InvoiceLineRecord, InvoiceRecord, InvoiceStatus, InvoiceSummary, BillingSnapshot } from "./types";
 import type { InvoiceOrgInfo, InvoicePrintData } from "./print-types";
 
 export async function listInvoices(orgId: string, limit = 50): Promise<InvoiceRecord[]> {
@@ -131,7 +131,15 @@ async function enrichInvoices(
     sales_record_id: (r.sales_record_id as string | null) ?? null,
     created_by_name: r.created_by ? profileNames.get(r.created_by as string) ?? null : null,
     lines: linesByInvoice.get(r.id as string) ?? [],
+    billing_snapshot: parseBillingSnapshot(r.billing_snapshot),
     created_at: r.created_at as string,
     updated_at: r.updated_at as string,
   }));
+}
+
+function parseBillingSnapshot(raw: unknown): BillingSnapshot | null {
+  if (!raw || typeof raw !== "object") return null;
+  const snap = raw as BillingSnapshot;
+  if (snap.version !== 1) return null;
+  return snap;
 }

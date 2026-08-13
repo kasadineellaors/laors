@@ -14,6 +14,7 @@ export default async function SetupPage() {
   const session = await requireOnboardedUser();
   const isManager = canManageTeam(session.membership?.system_role);
   const canFinance = canManageInvoices(session.membership?.system_role);
+  const orgName = session.organization!.name;
 
   return (
     <ManageSubpageShell className="space-y-8">
@@ -27,6 +28,13 @@ export default async function SetupPage() {
           Ranch Setup
         </h2>
         <div className="space-y-3">
+          {isManager ? (
+            <ManageNavCard
+              href="/setup/preferences"
+              title="Ranch Settings"
+              description={`${orgName} — edit ranch name, address, phone, and preferences.`}
+            />
+          ) : null}
           <ManageNavCard
             href="/setup/locations"
             title="Properties & Locations"
@@ -113,13 +121,6 @@ export default async function SetupPage() {
             title="Export Records"
             description="Download cattle, treatment, feed, sales, and financial records."
           />
-          {isManager ? (
-            <ManageNavRow
-              href="/setup/preferences"
-              title="Ranch Settings"
-              description="Manage ranch details, preferences, and account settings."
-            />
-          ) : null}
         </div>
       </section>
     </ManageSubpageShell>

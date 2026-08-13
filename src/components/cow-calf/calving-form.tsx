@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { SelectOption } from "@/lib/locations/options";
+import type { SelectOption, TreePickerOption } from "@/lib/locations/options";
+import { CascadingLocationField } from "@/components/locations/cascading-location-field";
 import type { ClassificationOption, CalvingRecord, CalfSex, CalvingOutcome } from "@/lib/cow-calf/types";
 import { suggestCalfClassificationId } from "@/lib/cow-calf/classifications";
 import { createCalving, updateCalving } from "@/lib/actions/calving";
@@ -14,7 +15,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 
 interface CalvingFormProps {
   orgId: string;
-  locationOptions: SelectOption[];
+  locationTree: TreePickerOption[];
   groupOptions: SelectOption[];
   classificationOptions: ClassificationOption[];
   canAddToInventory?: boolean;
@@ -24,7 +25,7 @@ interface CalvingFormProps {
 
 export function CalvingForm({
   orgId,
-  locationOptions,
+  locationTree,
   groupOptions,
   classificationOptions,
   canAddToInventory = false,
@@ -131,20 +132,14 @@ export function CalvingForm({
         </div>
 
         <div>
-          <Label htmlFor="location">Location</Label>
-          <select
-            id="location"
+          <Label>Location</Label>
+          <CascadingLocationField
+            idPrefix="calving-location"
+            locationTree={locationTree}
             value={locationId}
-            onChange={(e) => setLocationId(e.target.value)}
-            className="touch-target w-full rounded-lg border border-border-neutral bg-surface-white px-3 py-2"
-          >
-            <option value="">— Optional —</option>
-            {locationOptions.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
+            onChange={setLocationId}
+            optional
+          />
         </div>
 
         {!isEdit ? (

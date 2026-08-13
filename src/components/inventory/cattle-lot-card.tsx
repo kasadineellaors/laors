@@ -2,10 +2,11 @@ import Link from "next/link";
 import type { CattleGroupSummary } from "@/lib/inventory/types";
 import {
   buildLotSupportingDetails,
+  getLotDisplayTitle,
   getLotLocationLabel,
   getLotOwnerName,
 } from "@/lib/inventory/lot-display";
-import { ENTERPRISE_LABELS, LOT_STATUS_LABELS, type LotStatus } from "@/lib/lots/types";
+import { LOT_STATUS_LABELS, type LotStatus } from "@/lib/lots/types";
 import { cn } from "@/lib/utils/cn";
 
 interface CattleLotCardProps {
@@ -47,10 +48,7 @@ function StatusBadge({ group }: { group: CattleGroupSummary }) {
 }
 
 export function CattleLotCard({ group }: CattleLotCardProps) {
-  const lotLabel = group.lot_number || group.name;
-  const enterprise =
-    ENTERPRISE_LABELS[group.enterprise_type as keyof typeof ENTERPRISE_LABELS] ??
-    group.enterprise_type;
+  const lotLabel = getLotDisplayTitle(group);
   const owner = getLotOwnerName(group);
   const location = getLotLocationLabel(group);
   const details = buildLotSupportingDetails(group);
@@ -70,17 +68,17 @@ export function CattleLotCard({ group }: CattleLotCardProps) {
           <h2 className="text-lg font-bold text-navy">{lotLabel}</h2>
 
           <p className="mt-1 text-sm text-text-primary">
-            <span className="font-medium">{enterprise}</span>
-            <span className="text-text-secondary"> • </span>
+            {owner ? (
+              <span className="font-semibold text-brown">{owner}</span>
+            ) : (
+              <span className="text-text-secondary">No owner assigned</span>
+            )}
+            <span className="text-text-secondary"> · </span>
             <StatusBadge group={group} />
           </p>
 
-          <p className="mt-1 text-sm text-text-secondary">{location}</p>
-
-          {owner ? (
-            <p className="mt-1 text-sm text-text-secondary">
-              Owner: <span className="text-text-primary">{owner}</span>
-            </p>
+          {location !== "No location assigned" ? (
+            <p className="mt-1 text-sm text-text-secondary">{location}</p>
           ) : null}
 
           <div className="mt-2 flex flex-wrap gap-2">
@@ -97,6 +95,18 @@ export function CattleLotCard({ group }: CattleLotCardProps) {
               >
                 <span aria-hidden>≠</span>
                 Head count mismatch
+              </span>
+            ) : null}
+            {group.mortality_deaths > 0 ? (
+              <span className="inline-flex items-center gap-1 rounded-md bg-status-critical-bg px-2 py-0.5 text-xs font-medium text-status-critical">
+                {group.mortality_deaths} dead
+                {group.mortality_value_lost > 0
+                  ? ` · ${group.mortality_value_lost.toLocaleString(undefined, {
+                      style: "currency",
+                      currency: "USD",
+                      maximumFractionDigits: 0,
+                    })}`
+                  : ""}
               </span>
             ) : null}
           </div>

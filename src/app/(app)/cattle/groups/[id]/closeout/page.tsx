@@ -9,7 +9,8 @@ import {
   listProcessingEvents,
 } from "@/lib/lots/queries";
 import { shrinkPct } from "@/lib/lots/purchase-weights";
-import { ENTERPRISE_LABELS, LOT_STATUS_LABELS } from "@/lib/lots/types";
+import { getLotDisplayTitle, getLotOwnerName } from "@/lib/inventory/lot-display";
+import { LOT_STATUS_LABELS } from "@/lib/lots/types";
 import { getAppUrl } from "@/lib/auth/app-url";
 import { getCustomer } from "@/lib/customers/queries";
 import { isInvoiceEmailConfigured } from "@/lib/email/resend";
@@ -46,6 +47,7 @@ export default async function LotCloseoutPage({
       group.opened_at ?? group.arrival_date ?? group.purchase_date,
       group.total_head,
       group.avg_weight_lbs,
+      group.current_avg_weight_lbs,
     ),
     listProcessingEvents(orgId, id),
     listMortalityRecords(orgId, id),
@@ -91,9 +93,8 @@ export default async function LotCloseoutPage({
       ? summary.estimated_feed_cost / startingHead / summary.days_on_feed
       : null;
 
-  const enterprise =
-    ENTERPRISE_LABELS[group.enterprise_type as keyof typeof ENTERPRISE_LABELS] ??
-    group.enterprise_type;
+  const lotTitle = getLotDisplayTitle(group);
+  const owner = getLotOwnerName(group);
   const status =
     LOT_STATUS_LABELS[group.lot_status as keyof typeof LOT_STATUS_LABELS] ?? group.lot_status;
 
@@ -109,7 +110,8 @@ export default async function LotCloseoutPage({
           </Link>
           <h1 className="mt-2 text-[1.75rem] font-bold leading-tight text-navy sm:text-[2rem]">Lot closeout</h1>
           <p className="text-text-secondary">
-            {group.lot_number || group.name} · {enterprise} · {status}
+            {lotTitle}
+            {owner ? ` · ${owner}` : ""} · {status}
           </p>
         </div>
         <a href={`/api/cattle/groups/${id}/closeout/pdf`} download>

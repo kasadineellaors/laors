@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { SelectOption } from "@/lib/locations/options";
+import type { SelectOption, TreePickerOption } from "@/lib/locations/options";
+import { CascadingLocationField } from "@/components/locations/cascading-location-field";
 import type { OrgMemberOption, TaskPriority, TaskRecord } from "@/lib/tasks/types";
 import { createTask, updateTask } from "@/lib/actions/tasks";
 import { addDaysIso, endOfWeekIso, todayIso } from "@/lib/tasks/display";
@@ -15,7 +16,7 @@ import { cn } from "@/lib/utils/cn";
 interface TaskFormProps {
   orgId: string;
   categoryOptions: SelectOption[];
-  locationOptions: SelectOption[];
+  locationTree: TreePickerOption[];
   groupOptions: SelectOption[];
   memberOptions: OrgMemberOption[];
   currentUserId?: string;
@@ -38,7 +39,7 @@ function metaNumber(meta: Record<string, string | number | null> | undefined, ke
 export function TaskForm({
   orgId,
   categoryOptions,
-  locationOptions,
+  locationTree,
   groupOptions,
   memberOptions,
   currentUserId,
@@ -196,22 +197,16 @@ export function TaskForm({
           </div>
         ) : null}
 
-        {locationOptions.length > 0 ? (
+        {locationTree.length > 0 ? (
           <div>
-            <Label htmlFor="location">Location (optional)</Label>
-            <select
-              id="location"
+            <Label>Location (optional)</Label>
+            <CascadingLocationField
+              idPrefix="task-location"
+              locationTree={locationTree}
               value={locationId}
-              onChange={(e) => setLocationId(e.target.value)}
-              className={selectClass}
-            >
-              <option value="">Ranch-wide</option>
-              {locationOptions.map((l) => (
-                <option key={l.value} value={l.value}>
-                  {l.label}
-                </option>
-              ))}
-            </select>
+              onChange={setLocationId}
+              optional
+            />
           </div>
         ) : null}
 

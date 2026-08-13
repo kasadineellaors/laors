@@ -12,9 +12,7 @@ export default async function NewRainfallPage() {
   const session = await requireOnboardedUser();
   const orgId = session.organization!.id;
 
-  const locations = await getTreePickerOptions(orgId).then((nodes) =>
-    nodes.map((n) => ({ value: n.id, label: n.breadcrumb })),
-  );
+  const locations = await getTreePickerOptions(orgId);
 
   return (
     <div className="space-y-6">
@@ -24,7 +22,7 @@ export default async function NewRainfallPage() {
         </Link>
         <h1 className="mt-1 text-[1.75rem] font-bold leading-tight text-navy sm:text-[2rem]">Log rainfall</h1>
       </div>
-      <RainfallForm orgId={orgId} locationOptions={locations} />
+      <RainfallForm orgId={orgId} locationTree={locations} />
     </div>
   );
 }

@@ -27,9 +27,7 @@ export default async function TreatmentDetailPage({
   if (!treatment) notFound();
 
   const [locations, groups, members, medicineOptions] = await Promise.all([
-    getTreePickerOptions(orgId).then((nodes) =>
-      nodes.map((n) => ({ value: n.id, label: n.breadcrumb })),
-    ),
+    getTreePickerOptions(orgId),
     listCattleGroups(orgId).then(toFeedGroupOptions),
     listOrgMembers(orgId),
     listMedicineOptions(orgId),
@@ -40,7 +38,7 @@ export default async function TreatmentDetailPage({
       orgId={orgId}
       currentUserId={userId}
       treatment={treatment}
-      locationOptions={locations}
+      locationTree={locations}
       groupOptions={groups}
       memberOptions={members}
       medicineOptions={medicineOptions}

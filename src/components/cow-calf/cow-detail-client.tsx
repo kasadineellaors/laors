@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CowRecord } from "@/lib/cow-calf/types";
-import type { SelectOption } from "@/lib/locations/options";
+import type { SelectOption, TreePickerOption } from "@/lib/locations/options";
 import { ANIMAL_STATUS_LABELS, COW_TYPE_LABELS } from "@/lib/cow-calf/constants";
 import { archiveCow } from "@/lib/actions/cows";
 import { CowForm } from "@/components/cow-calf/cow-form";
@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 interface CowDetailClientProps {
   orgId: string;
   cow: CowRecord;
-  locationOptions: SelectOption[];
+  locationTree: TreePickerOption[];
   groupOptions: SelectOption[];
   canManage: boolean;
 }
@@ -20,7 +20,7 @@ interface CowDetailClientProps {
 export function CowDetailClient({
   orgId,
   cow,
-  locationOptions,
+  locationTree,
   groupOptions,
   canManage,
 }: CowDetailClientProps) {
@@ -44,7 +44,7 @@ export function CowDetailClient({
       <CowForm
         orgId={orgId}
         cow={cow}
-        locationOptions={locationOptions}
+        locationTree={locationTree}
         groupOptions={groupOptions}
         onSuccess={() => {
           setEditing(false);

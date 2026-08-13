@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { requireOnboardedUser } from "@/lib/auth/session";
 import { canManageInvoices } from "@/lib/auth/roles";
-import { getOwnerGroupMembers, listOwners } from "@/lib/owners/queries";
+import { getOwnerGroupMembers, listOwnerMiscCharges, listOwners } from "@/lib/owners/queries";
 import { isInvoiceEmailConfigured } from "@/lib/email/resend";
 import { getAppUrl } from "@/lib/auth/app-url";
 import { listCustomerPortalAccess } from "@/lib/portal/access";
@@ -28,9 +28,16 @@ export default async function OwnersSetupPage() {
   ]);
 
   const groupMembers: Record<string, Awaited<ReturnType<typeof getOwnerGroupMembers>>> = {};
-  for (const owner of owners.filter((o) => o.is_ownership_group)) {
-    groupMembers[owner.id] = await getOwnerGroupMembers(orgId, owner.id);
-  }
+  const miscChargesByOwner: Record<string, Awaited<ReturnType<typeof listOwnerMiscCharges>>> = {};
+  const billableOwners = owners.filter((o) => !o.is_ownership_group);
+  await Promise.all([
+    ...owners.filter((o) => o.is_ownership_group).map(async (owner) => {
+      groupMembers[owner.id] = await getOwnerGroupMembers(orgId, owner.id);
+    }),
+    ...billableOwners.map(async (owner) => {
+      miscChargesByOwner[owner.id] = await listOwnerMiscCharges(orgId, owner.id);
+    }),
+  ]);
 
   const portalUrls = Object.fromEntries(
     Object.entries(portalAccess).map(([ownerId, access]) => [
@@ -49,6 +56,7 @@ export default async function OwnersSetupPage() {
         orgId={orgId}
         owners={owners}
         groupMembers={groupMembers}
+        miscChargesByOwner={miscChargesByOwner}
         portalUrls={portalUrls}
         emailConfigured={isInvoiceEmailConfigured()}
       />

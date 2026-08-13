@@ -54,9 +54,7 @@ export default async function SeedstockAnimalDetailPage({
   const canManage = canWriteInventory(session.membership?.system_role);
   const [locationOptions, groupOptions] = canManage
     ? await Promise.all([
-        getTreePickerOptions(orgId).then((nodes) =>
-          nodes.map((n) => ({ value: n.id, label: n.breadcrumb })),
-        ),
+        getTreePickerOptions(orgId),
         listCattleGroups(orgId).then((gs) =>
           gs.map((g) => ({ value: g.id, label: `${g.name} (${g.total_head} hd)` })),
         ),
@@ -71,7 +69,7 @@ export default async function SeedstockAnimalDetailPage({
       salesRecords={salesRecords}
       fertility={fertility}
       lifetime={lifetime}
-      locationOptions={locationOptions}
+      locationTree={locationOptions}
       groupOptions={groupOptions}
       canManage={canManage}
     />

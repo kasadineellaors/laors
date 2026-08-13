@@ -16,30 +16,33 @@ export const metadata: Metadata = {
 export default async function MoveCattlePage({
   searchParams,
 }: {
-  searchParams: Promise<{ from?: string }>;
+  searchParams: Promise<{ from?: string; mode?: string }>;
 }) {
-  const { from } = await searchParams;
+  const { from, mode } = await searchParams;
   const session = await requireOnboardedUser();
   if (!canWriteInventory(session.membership?.system_role)) {
     redirect("/cattle");
   }
   const orgId = session.organization!.id;
 
-  const [groups, locationOptions, movementReasons] = await Promise.all([
+  const [groups, locationTree, movementReasons] = await Promise.all([
     listCattleGroups(orgId),
-    getTreePickerOptions(orgId).then((nodes) =>
-      nodes.map((n) => ({ value: n.id, label: n.breadcrumb })),
-    ),
+    getTreePickerOptions(orgId),
     getRanchOptions(orgId, "movement_reasons"),
   ]);
 
   const activeGroups = groups.filter((g) => g.total_head > 0);
+  const initialMode = mode === "remove" ? "remove" : "move";
 
   return (
     <AppPageShell narrow>
       <AppPageHeader
-        title="Move cattle"
-        subtitle="By pen and group — partial or full"
+        title={initialMode === "remove" ? "Remove cattle" : "Move cattle"}
+        subtitle={
+          initialMode === "remove"
+            ? "Deduct head when cattle leave without a pen move"
+            : "By pen and group — partial or full"
+        }
         backHref="/cattle"
         backLabel="Lots"
       />
@@ -55,9 +58,10 @@ export default async function MoveCattlePage({
         <MoveCattleForm
           orgId={orgId}
           groups={activeGroups}
-          locationOptions={locationOptions}
+          locationTree={locationTree}
           movementReasonOptions={movementReasons}
           initialSourceGroupId={from}
+          initialMode={initialMode}
         />
       )}
     </AppPageShell>

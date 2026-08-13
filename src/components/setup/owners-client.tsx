@@ -2,9 +2,12 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { OwnerGroupMember, OwnerRecord } from "@/lib/owners/types";
-import { archiveOwner, createOwner, createOwnerMiscCharge, updateOwner } from "@/lib/actions/owners";
+import type { OwnerGroupMember, OwnerMiscCharge, OwnerRecord } from "@/lib/owners/types";
+import { archiveOwner, createOwner, updateOwner } from "@/lib/actions/owners";
+import { EMPTY_PHYSICAL_ADDRESS, formatPhysicalAddress } from "@/lib/addresses/format";
 import { CustomerPortalPanel } from "@/components/setup/customer-portal-panel";
+import { OwnerMiscChargesPanel } from "@/components/setup/owner-misc-charges-panel";
+import { PhysicalAddressFields } from "@/components/setup/physical-address-fields";
 import { SetupEditableRow } from "@/components/setup/setup-editable-row";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +18,7 @@ interface OwnersClientProps {
   orgId: string;
   owners: OwnerRecord[];
   groupMembers: Record<string, OwnerGroupMember[]>;
+  miscChargesByOwner: Record<string, OwnerMiscCharge[]>;
   portalUrls: Record<string, string>;
   emailConfigured: boolean;
 }
@@ -28,6 +32,7 @@ export function OwnersClient({
   orgId,
   owners,
   groupMembers,
+  miscChargesByOwner,
   portalUrls,
   emailConfigured,
 }: OwnersClientProps) {
@@ -40,8 +45,9 @@ export function OwnersClient({
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
+  const [physicalAddress, setPhysicalAddress] = useState(EMPTY_PHYSICAL_ADDRESS);
   const [yardageRate, setYardageRate] = useState("");
+  const [pastureRate, setPastureRate] = useState("");
   const [markupPercent, setMarkupPercent] = useState("");
   const [feedMarkupPercent, setFeedMarkupPercent] = useState("");
   const [isOwnershipGroup, setIsOwnershipGroup] = useState(false);
@@ -60,9 +66,10 @@ export function OwnersClient({
       name,
       email: email || undefined,
       phone: phone || undefined,
-      address: address || undefined,
+      address: formatPhysicalAddress(physicalAddress) || undefined,
       isOwnershipGroup,
       yardageRatePerHeadDay: isOwnershipGroup ? undefined : yardageRate || undefined,
+      pastureRatePerHeadDay: isOwnershipGroup ? undefined : pastureRate || undefined,
       medicineMarkupPercent: isOwnershipGroup ? undefined : markupPercent || undefined,
       feedMarkupPercent: isOwnershipGroup ? undefined : feedMarkupPercent || undefined,
       members: isOwnershipGroup ? members : undefined,
@@ -73,8 +80,9 @@ export function OwnersClient({
       setName("");
       setEmail("");
       setPhone("");
-      setAddress("");
+      setPhysicalAddress(EMPTY_PHYSICAL_ADDRESS);
       setYardageRate("");
+      setPastureRate("");
       setMarkupPercent("");
       setFeedMarkupPercent("");
       setIsOwnershipGroup(false);
@@ -109,7 +117,12 @@ export function OwnersClient({
                     { key: "name", label: "Name", value: owner.name },
                     { key: "email", label: "Email", value: owner.email ?? "" },
                     { key: "phone", label: "Phone", value: owner.phone ?? "" },
-                    { key: "address", label: "Address", value: owner.address ?? "" },
+                    {
+                      key: "address",
+                      label: "Physical address",
+                      value: owner.address ?? "",
+                      type: "address",
+                    },
                     ...(owner.is_ownership_group
                       ? []
                       : [
@@ -118,6 +131,12 @@ export function OwnersClient({
                             label: "Yardage ($/head/day)",
                             value: formatRate(owner.yardage_rate_per_head_day),
                             placeholder: "0.75",
+                          },
+                          {
+                            key: "pastureRate",
+                            label: "Pasture ($/head/day)",
+                            value: formatRate(owner.pasture_rate_per_head_day),
+                            placeholder: "0.50",
                           },
                           {
                             key: "markupPercent",
@@ -141,6 +160,7 @@ export function OwnersClient({
                       phone: values.phone || undefined,
                       address: values.address || undefined,
                       yardageRatePerHeadDay: values.yardageRate ?? undefined,
+                      pastureRatePerHeadDay: values.pastureRate ?? undefined,
                       medicineMarkupPercent: values.markupPercent ?? undefined,
                       feedMarkupPercent: values.feedMarkupPercent ?? undefined,
                       notes: values.notes || undefined,
@@ -172,7 +192,12 @@ export function OwnersClient({
                       initialPortalUrl={portalUrls[owner.id] ?? null}
                       emailConfigured={emailConfigured}
                     />
-                    <MiscChargeForm orgId={orgId} ownerId={owner.id} ownerName={owner.name} />
+                    <OwnerMiscChargesPanel
+                      orgId={orgId}
+                      ownerId={owner.id}
+                      ownerName={owner.name}
+                      charges={miscChargesByOwner[owner.id] ?? []}
+                    />
                   </>
                 ) : null}
               </li>
@@ -200,24 +225,47 @@ export function OwnersClient({
             <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
           {!isOwnershipGroup ? (
-            <>
+            <div className="space-y-3 rounded-lg border border-border-neutral bg-tan/10 p-4">
+              <p className="text-sm font-medium text-navy">Contact & mailing address</p>
               <div>
                 <Label htmlFor="email">Email</Label>
                 <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
               </div>
+              <div>
+                <Label htmlFor="phone">Phone</Label>
+                <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
+              </div>
+              <div>
+                <p className="mb-2 text-sm font-medium text-navy">Physical address</p>
+                <PhysicalAddressFields
+                  idPrefix="owner-address"
+                  value={physicalAddress}
+                  onChange={setPhysicalAddress}
+                />
+              </div>
+            </div>
+          ) : null}
+          {!isOwnershipGroup ? (
+            <>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label htmlFor="yardage">Yardage ($/head/day)</Label>
                   <Input id="yardage" type="number" min={0} step="0.0001" value={yardageRate} onChange={(e) => setYardageRate(e.target.value)} />
                 </div>
                 <div>
+                  <Label htmlFor="pasture">Pasture ($/head/day)</Label>
+                  <Input id="pasture" type="number" min={0} step="0.0001" value={pastureRate} onChange={(e) => setPastureRate(e.target.value)} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
                   <Label htmlFor="markup">Medicine markup (%)</Label>
                   <Input id="markup" type="number" min={0} step="0.01" value={markupPercent} onChange={(e) => setMarkupPercent(e.target.value)} />
                 </div>
-              </div>
-              <div>
-                <Label htmlFor="feedMarkup">Feed markup (%)</Label>
-                <Input id="feedMarkup" type="number" min={0} step="0.01" value={feedMarkupPercent} onChange={(e) => setFeedMarkupPercent(e.target.value)} />
+                <div>
+                  <Label htmlFor="feedMarkup">Feed markup (%)</Label>
+                  <Input id="feedMarkup" type="number" min={0} step="0.01" value={feedMarkupPercent} onChange={(e) => setFeedMarkupPercent(e.target.value)} />
+                </div>
               </div>
             </>
           ) : (
@@ -276,62 +324,5 @@ export function OwnersClient({
         </form>
       </Card>
     </>
-  );
-}
-
-function MiscChargeForm({
-  orgId,
-  ownerId,
-  ownerName,
-}: {
-  orgId: string;
-  ownerId: string;
-  ownerName: string;
-}) {
-  const router = useRouter();
-  const [description, setDescription] = useState("");
-  const [amount, setAmount] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    const result = await createOwnerMiscCharge(orgId, {
-      ownerId,
-      description,
-      amount,
-    });
-    setLoading(false);
-    if (!result.error) {
-      setDescription("");
-      setAmount("");
-      router.refresh();
-    }
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="rounded-lg border border-dashed border-border-neutral px-3 py-3 text-sm">
-      <p className="font-semibold text-navy">Log misc charge — {ownerName}</p>
-      <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_100px_auto]">
-        <Input
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Description"
-          required
-        />
-        <Input
-          type="number"
-          min={0}
-          step="0.01"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          placeholder="$"
-          required
-        />
-        <Button type="submit" size="sm" disabled={loading}>
-          Log
-        </Button>
-      </div>
-    </form>
   );
 }

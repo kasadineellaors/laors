@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import type { ActionState } from "@/lib/actions/onboarding";
+import { parsePhysicalAddress, formatPhysicalAddress } from "@/lib/addresses/format";
+import { PhysicalAddressFields } from "@/components/setup/physical-address-fields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +15,8 @@ export interface EditableField {
   value: string;
   placeholder?: string;
   maxLength?: number;
+  type?: "text" | "select" | "textarea" | "address";
+  options?: { value: string; label: string }[];
 }
 
 interface SetupEditableRowProps {
@@ -34,11 +38,25 @@ export function SetupEditableRow({
   const [values, setValues] = useState(() =>
     Object.fromEntries(fields.map((f) => [f.key, f.value])),
   );
+  const [addressValues, setAddressValues] = useState(() =>
+    Object.fromEntries(
+      fields
+        .filter((f) => f.type === "address")
+        .map((f) => [f.key, parsePhysicalAddress(f.value)]),
+    ),
+  );
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   function reset() {
     setValues(Object.fromEntries(fields.map((f) => [f.key, f.value])));
+    setAddressValues(
+      Object.fromEntries(
+        fields
+          .filter((f) => f.type === "address")
+          .map((f) => [f.key, parsePhysicalAddress(f.value)]),
+      ),
+    );
     setEditing(false);
     setError(null);
   }
@@ -47,7 +65,13 @@ export function SetupEditableRow({
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const result = await onSave(values);
+    const payload = { ...values };
+    for (const field of fields) {
+      if (field.type === "address") {
+        payload[field.key] = formatPhysicalAddress(addressValues[field.key]) ?? "";
+      }
+    }
+    const result = await onSave(payload);
     setLoading(false);
     if (result.error) {
       setError(result.error);
@@ -73,13 +97,26 @@ export function SetupEditableRow({
       <li className="flex items-start justify-between gap-3 rounded-lg border border-border-neutral bg-tan/15 px-4 py-3">
         <div className="min-w-0 flex-1">
           <p className="font-semibold text-navy">{primaryField?.value}</p>
-          {fields.slice(1).map((f) =>
-            f.value ? (
-              <p key={f.key} className="text-xs text-text-secondary">
-                {f.label}: {f.value}
+          {fields.slice(1).map((f) => {
+            const displayValue =
+              f.type === "address"
+                ? formatPhysicalAddress(parsePhysicalAddress(f.value))
+                : f.value;
+            return displayValue ? (
+              <p
+                key={f.key}
+                className={cn(
+                  "text-xs text-text-secondary",
+                  (f.type === "textarea" || f.type === "address") && "whitespace-pre-line",
+                )}
+              >
+                {f.label}:{" "}
+                {f.type === "select" && f.options
+                  ? (f.options.find((o) => o.value === f.value)?.label ?? f.value)
+                  : displayValue}
               </p>
-            ) : null,
-          )}
+            ) : null;
+          })}
           {error ? <p className="mt-1 text-xs text-status-critical">{error}</p> : null}
         </div>
         <div className="flex shrink-0 items-center gap-2">
@@ -100,14 +137,49 @@ export function SetupEditableRow({
         {fields.map((f) => (
           <div key={f.key}>
             <Label htmlFor={f.key}>{f.label}</Label>
-            <Input
-              id={f.key}
-              value={values[f.key] ?? ""}
-              onChange={(e) => setValues((prev) => ({ ...prev, [f.key]: e.target.value }))}
-              placeholder={f.placeholder}
-              maxLength={f.maxLength}
-              required={f.key === primaryField?.key}
-            />
+            {f.type === "select" && f.options ? (
+              <select
+                id={f.key}
+                value={values[f.key] ?? ""}
+                onChange={(e) => setValues((prev) => ({ ...prev, [f.key]: e.target.value }))}
+                className="flex h-12 w-full rounded-lg border-2 border-border-neutral bg-surface-white px-4 text-base"
+              >
+                {f.options.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            ) : f.type === "address" ? (
+              <PhysicalAddressFields
+                idPrefix={f.key}
+                value={addressValues[f.key]}
+                onChange={(next) =>
+                  setAddressValues((prev) => ({
+                    ...prev,
+                    [f.key]: next,
+                  }))
+                }
+              />
+            ) : f.type === "textarea" ? (
+              <textarea
+                id={f.key}
+                value={values[f.key] ?? ""}
+                onChange={(e) => setValues((prev) => ({ ...prev, [f.key]: e.target.value }))}
+                placeholder={f.placeholder}
+                rows={3}
+                className="flex min-h-[5rem] w-full rounded-lg border-2 border-border-neutral bg-surface-white px-4 py-3 text-base"
+              />
+            ) : (
+              <Input
+                id={f.key}
+                value={values[f.key] ?? ""}
+                onChange={(e) => setValues((prev) => ({ ...prev, [f.key]: e.target.value }))}
+                placeholder={f.placeholder}
+                maxLength={f.maxLength}
+                required={f.key === primaryField?.key}
+              />
+            )}
           </div>
         ))}
         {error ? <p className="text-sm text-status-critical">{error}</p> : null}

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import type { SelectOption } from "@/lib/locations/options";
+import type { SelectOption, TreePickerOption } from "@/lib/locations/options";
 import type { BreedingRecord } from "@/lib/cow-calf/breeding-types";
 import type { SaleRecord } from "@/lib/sales/types";
 import type { SeedstockAnimalRecord } from "@/lib/seedstock/types";
@@ -26,7 +26,7 @@ interface SeedstockAnimalDetailClientProps {
   salesRecords: SaleRecord[];
   fertility?: FertilityScoreResult | null;
   lifetime?: MaternalLifetimeValue | null;
-  locationOptions: SelectOption[];
+  locationTree: TreePickerOption[];
   groupOptions: SelectOption[];
   canManage: boolean;
 }
@@ -50,7 +50,7 @@ export function SeedstockAnimalDetailClient({
   salesRecords,
   fertility = null,
   lifetime = null,
-  locationOptions,
+  locationTree,
   groupOptions,
   canManage,
 }: SeedstockAnimalDetailClientProps) {
@@ -79,7 +79,7 @@ export function SeedstockAnimalDetailClient({
       <SeedstockAnimalForm
         orgId={orgId}
         animal={animal}
-        locationOptions={locationOptions}
+        locationTree={locationTree}
         groupOptions={groupOptions}
         onSuccess={() => {
           setEditing(false);

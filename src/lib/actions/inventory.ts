@@ -5,6 +5,10 @@ import { revalidatePath } from "next/cache";
 import { syncLotStatusAfterHeadChange } from "@/lib/lots/sync-status";
 import { redirect } from "next/navigation";
 import {
+  adjustLotWeightOnHeadRemoval,
+  adjustLotWeightOnHeadRestored,
+} from "@/lib/inventory/adjust-lot-weight";
+import {
   buildMoveLinesForTotal,
   getDefaultHeadClassificationId,
 } from "@/lib/inventory/default-classification";
@@ -12,10 +16,17 @@ import { computeAvgWeightIn } from "@/lib/lots/purchase-weights";
 import { listGroupsAtLocation } from "@/lib/inventory/queries";
 import { logAuditEvent } from "@/lib/audit/log";
 import { insertLotPurchase } from "@/lib/actions/lot-purchases";
+import type { ShippingReason } from "@/lib/cow-calf/shipping-constants";
 import type { ActionState } from "./onboarding";
 
 const DB_PHASE2_HINT =
   "Run supabase/RUN_PHASE2.sql in Supabase SQL Editor, then retry.";
+const DB_PHASE45_HINT =
+  "Run supabase/RUN_PHASE45.sql in Supabase SQL Editor for move editing, then retry.";
+const DB_PHASE46_HINT =
+  "Run supabase/RUN_PHASE46.sql in Supabase SQL Editor for live weight on moves, then retry.";
+const DB_PHASE48_HINT =
+  "Run supabase/RUN_PHASE48.sql in Supabase SQL Editor for cattle removal records, then retry.";
 
 async function requireOrgAccess(orgId: string) {
   const supabase = await createClient();
@@ -116,6 +127,12 @@ export async function applySaleHeadDelta(
 
     if (newCount < 0) {
       return { error: `Not enough head in group (have ${previous}, sale is ${-headDelta})` };
+    }
+
+    if (headDelta < 0) {
+      await adjustLotWeightOnHeadRemoval(supabase, groupId, previous, -headDelta);
+    } else {
+      await adjustLotWeightOnHeadRestored(supabase, groupId, previous, headDelta);
     }
 
     await supabase.from("group_inventory_counts").delete().eq("cattle_group_id", groupId);
@@ -229,6 +246,16 @@ export async function applyClassificationHeadDelta(
 }
 
 function formatDbError(message: string): string {
+  if (message.includes("update_cattle_move")) {
+    return `${message} — ${DB_PHASE45_HINT}`;
+  }
+  if (
+    message.includes("_transfer_move_weight") ||
+    message.includes("_effective_group_avg_weight") ||
+    message.includes("_apply_lot_weight")
+  ) {
+    return `${message} — ${DB_PHASE46_HINT}`;
+  }
   if (
     message.includes("execute_cattle_move") ||
     message.includes("void_cattle_move") ||
@@ -268,6 +295,7 @@ export async function createCattleGroup(
     const { supabase, user } = await requireOrgAccess(orgId);
     const trimmed = input.name.trim();
     if (!trimmed) return { error: "Group name is required" };
+    if (!input.locationId) return { error: "Select a pen or pasture" };
     if (input.headCount <= 0) return { error: "Enter a head count greater than zero" };
 
     const defaultClassId = await getDefaultHeadClassificationId(orgId);
@@ -314,6 +342,13 @@ export async function createCattleGroup(
 
     if (groupError || !group) {
       return { error: groupError?.message ?? "Failed to create group" };
+    }
+
+    if (avgWeight != null) {
+      await supabase
+        .from("cattle_groups")
+        .update({ current_avg_weight_lbs: avgWeight })
+        .eq("id", group.id);
     }
 
     const { error } = await supabase.from("group_inventory_counts").insert({
@@ -401,6 +436,7 @@ export async function updateCattleGroup(
       seller_name?: string | null;
       source_name?: string | null;
       avg_weight_lbs?: number | null;
+      current_avg_weight_lbs?: number | null;
     } = {};
     if (data.name !== undefined) updates.name = data.name.trim();
     if (data.notes !== undefined) updates.notes = data.notes?.trim() || null;
@@ -465,6 +501,9 @@ export async function updateCattleGroup(
             ? data.receivedWeightLbs
             : existing?.received_weight_lbs,
       });
+      if (updates.avg_weight_lbs != null) {
+        updates.current_avg_weight_lbs = updates.avg_weight_lbs;
+      }
     }
 
     const { error } = await supabase
@@ -683,6 +722,8 @@ export async function executeCattleMove(
     movementReasonId?: string;
     notes?: string;
     headToMove: number;
+    movedAt?: string;
+    outWeightLbs?: number;
   },
 ): Promise<ActionState & { movementId?: string }> {
   if (input.headToMove <= 0) return { error: "Enter how many head to move" };
@@ -699,6 +740,10 @@ export async function executeCattleMove(
       movement_reason_id: input.movementReasonId ?? "",
       notes: input.notes ?? "",
       lines,
+      ...(input.movedAt ? { moved_at: `${input.movedAt}T12:00:00` } : {}),
+      ...(input.outWeightLbs != null && input.outWeightLbs > 0
+        ? { out_weight_lbs: input.outWeightLbs }
+        : {}),
     };
 
     const { data: movementId, error } = await supabase.rpc("execute_cattle_move", {
@@ -708,6 +753,73 @@ export async function executeCattleMove(
     if (error) return { error: formatDbError(error.message) };
     revalidateInventory();
     return { success: "Move recorded", movementId: movementId as string };
+  } catch (e) {
+    return { error: formatDbError(e instanceof Error ? e.message : "Failed") };
+  }
+}
+
+/** Deduct head when cattle leave the ranch without a pen move (owner pickup, etc.). */
+export async function recordCattleRemoval(
+  orgId: string,
+  input: {
+    sourceGroupId: string;
+    headCount: number;
+    removedAt?: string;
+    outWeightLbs?: number;
+    reason?: ShippingReason;
+    notes?: string;
+    destinationName?: string;
+  },
+): Promise<ActionState> {
+  if (input.headCount <= 0) return { error: "Enter how many head to remove" };
+
+  try {
+    const { supabase, user } = await requireOrgAccess(orgId);
+
+    const { data: group, error: groupError } = await supabase
+      .from("cattle_groups")
+      .select("id, location_id")
+      .eq("id", input.sourceGroupId)
+      .eq("organization_id", orgId)
+      .maybeSingle();
+
+    if (groupError || !group) return { error: groupError?.message ?? "Lot not found" };
+
+    const reason: ShippingReason = input.reason ?? "return_to_owner";
+
+    const { error: shipError } = await supabase.from("cattle_shipping_records").insert({
+      organization_id: orgId,
+      cattle_group_id: input.sourceGroupId,
+      shipped_at: input.removedAt ?? new Date().toISOString().slice(0, 10),
+      direction: "out",
+      head_count: input.headCount,
+      weight_lbs: input.outWeightLbs ?? null,
+      source_location_id: group.location_id ?? null,
+      destination_location_id: null,
+      source_name: null,
+      destination_name: input.destinationName?.trim() || "Removed from ranch",
+      reason,
+      notes: input.notes?.trim() || null,
+      inventory_adjusted: true,
+      created_by: user.id,
+    });
+
+    if (shipError) {
+      return { error: `${formatDbError(shipError.message)} — ${DB_PHASE48_HINT}` };
+    }
+
+    const delta = await applySaleHeadDelta(
+      orgId,
+      input.sourceGroupId,
+      -input.headCount,
+      `Removed from ranch — ${reason}`,
+    );
+    if (delta.error) return { error: delta.error };
+
+    revalidateInventory();
+    revalidatePath("/reports/owner-totals");
+    revalidatePath("/feedyard");
+    return { success: "Cattle removed from inventory" };
   } catch (e) {
     return { error: formatDbError(e instanceof Error ? e.message : "Failed") };
   }
@@ -727,20 +839,91 @@ export async function voidCattleMove(orgId: string, movementId: string): Promise
   }
 }
 
+export async function updateCattleMove(
+  orgId: string,
+  movementId: string,
+  input: {
+    destinationLocationId: string;
+    destinationGroupId?: string;
+    movementReasonId?: string | null;
+    notes?: string;
+    headToMove: number;
+    movedAt?: string;
+    outWeightLbs?: number | null;
+  },
+): Promise<ActionState> {
+  if (input.headToMove <= 0) return { error: "Enter how many head to move" };
+  if (!input.destinationLocationId) return { error: "Select a destination" };
+
+  try {
+    const { supabase } = await requireOrgAccess(orgId);
+
+    const { data: movement, error: loadError } = await supabase
+      .from("cattle_movements")
+      .select("id, source_group_id, status")
+      .eq("id", movementId)
+      .eq("organization_id", orgId)
+      .maybeSingle();
+
+    if (loadError) return { error: formatDbError(loadError.message) };
+    if (!movement) return { error: "Move not found" };
+    if (movement.status !== "completed") return { error: "Only completed moves can be edited" };
+
+    const lines = await buildMoveLinesForTotal(
+      orgId,
+      movement.source_group_id,
+      input.headToMove,
+    );
+    if (!lines.length) return { error: "No head available to move" };
+
+    const payload = {
+      destination_location_id: input.destinationLocationId,
+      destination_group_id: input.destinationGroupId ?? "",
+      movement_reason_id: input.movementReasonId ?? "",
+      notes: input.notes ?? "",
+      lines,
+      ...(input.movedAt ? { moved_at: `${input.movedAt}T12:00:00` } : {}),
+      ...(input.outWeightLbs != null && input.outWeightLbs > 0
+        ? { out_weight_lbs: input.outWeightLbs }
+        : { out_weight_lbs: "" }),
+    };
+
+    const { error } = await supabase.rpc("update_cattle_move", {
+      p_movement_id: movementId,
+      p_payload: payload,
+    });
+
+    if (error) return { error: formatDbError(error.message) };
+    revalidateInventory();
+    return { success: "Move updated" };
+  } catch (e) {
+    return { error: formatDbError(e instanceof Error ? e.message : "Failed") };
+  }
+}
+
 export async function updateMovementNotes(
   orgId: string,
   movementId: string,
   notes: string,
   movementReasonId?: string | null,
+  outWeightLbs?: number | null,
 ): Promise<ActionState> {
   try {
     const { supabase } = await requireOrgAccess(orgId);
+    const updates: {
+      notes: string | null;
+      movement_reason_id: string | null;
+      out_weight_lbs?: number | null;
+    } = {
+      notes: notes.trim() || null,
+      movement_reason_id: movementReasonId ?? null,
+    };
+    if (outWeightLbs !== undefined) {
+      updates.out_weight_lbs = outWeightLbs != null && outWeightLbs > 0 ? outWeightLbs : null;
+    }
     const { error } = await supabase
       .from("cattle_movements")
-      .update({
-        notes: notes.trim() || null,
-        movement_reason_id: movementReasonId ?? null,
-      })
+      .update(updates)
       .eq("id", movementId)
       .eq("organization_id", orgId)
       .eq("status", "completed");

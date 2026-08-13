@@ -46,6 +46,7 @@ export async function createLocationType(
   name: string,
   tier: "property" | "location",
   pluralName?: string,
+  billingRateMode?: "pasture" | "yardage",
 ): Promise<ActionState> {
   try {
     const supabase = await requireOrgAccess(orgId);
@@ -54,6 +55,9 @@ export async function createLocationType(
       name: name.trim(),
       plural_name: pluralName?.trim() || `${name.trim()}s`,
       tier,
+      ...(tier === "location"
+        ? { billing_rate_mode: billingRateMode ?? "yardage" }
+        : {}),
     });
     if (error) return { error: error.message };
     revalidateSetup();
@@ -68,6 +72,7 @@ export async function updateLocationType(
   id: string,
   name: string,
   pluralName?: string,
+  billingRateMode?: "pasture" | "yardage" | null,
 ): Promise<ActionState> {
   try {
     const supabase = await requireOrgAccess(orgId);
@@ -76,6 +81,7 @@ export async function updateLocationType(
       .update({
         name: name.trim(),
         plural_name: pluralName?.trim() || `${name.trim()}s`,
+        ...(billingRateMode !== undefined ? { billing_rate_mode: billingRateMode } : {}),
       })
       .eq("id", id)
       .eq("organization_id", orgId);
@@ -199,6 +205,7 @@ export async function updateLocation(
     acres?: number | null;
     capacityHead?: number | null;
     notes?: string | null;
+    billingRateMode?: "inherit" | "pasture" | "yardage";
   },
 ): Promise<ActionState> {
   try {
@@ -210,6 +217,9 @@ export async function updateLocation(
         acres: data.acres ?? null,
         capacity_head: data.capacityHead ?? null,
         notes: data.notes?.trim() || null,
+        ...(data.billingRateMode !== undefined
+          ? { billing_rate_mode: data.billingRateMode }
+          : {}),
       })
       .eq("id", locationId)
       .eq("organization_id", orgId);

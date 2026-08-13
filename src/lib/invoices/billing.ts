@@ -1,15 +1,19 @@
 import { createClient } from "@/lib/supabase/server";
 import { getOwner, getOwnerGroupMemberships } from "@/lib/owners/queries";
 import { computeGroupHeadDays } from "@/lib/invoices/head-days";
+import { loadOrgBillingModes } from "@/lib/invoices/billing-locations";
 import {
   getRationUnitPricesAtDates,
   rationPriceLookupKey,
 } from "@/lib/feed/inventory-queries";
+import { convertFeedQuantity, formatFeedUnitLabel } from "@/lib/feed/units";
+import { formatHeadDays, formatMoney, formatTons } from "@/lib/invoices/format-billing";
 import { medicineBillableUnitPrice } from "@/lib/medicine/costing";
 import type {
   BillingCategory,
   BillingLinePreview,
   BillingPreview,
+  BillingSnapshot,
   GroupHeadDaysBreakdown,
 } from "./types";
 
@@ -88,18 +92,117 @@ interface TreatmentBillingRow {
   quantity_used: number | null;
 }
 
+interface FeedRationRollup {
+  rationId: string;
+  rationName: string;
+  unit: string;
+  tons: number;
+  nativeQuantity: number;
+  totalCost: number;
+  deliveryCount: number;
+}
+
+function getFeedRollup(
+  map: Map<string, FeedRationRollup>,
+  rationId: string,
+  rationName: string,
+  unit: string,
+): FeedRationRollup {
+  let rollup = map.get(rationId);
+  if (!rollup) {
+    rollup = {
+      rationId,
+      rationName,
+      unit,
+      tons: 0,
+      nativeQuantity: 0,
+      totalCost: 0,
+      deliveryCount: 0,
+    };
+    map.set(rationId, rollup);
+  }
+  return rollup;
+}
+
+function pushFeedRationLines(
+  lines: BillingLinePreview[],
+  rollups: FeedRationRollup[],
+  periodLabel: string,
+) {
+  const sorted = [...rollups].sort((a, b) => a.rationName.localeCompare(b.rationName));
+
+  for (const rollup of sorted) {
+    if (rollup.totalCost <= 0) continue;
+
+    const totalLabel = formatMoney(rollup.totalCost);
+    const deliveryLabel = `${rollup.deliveryCount} deliver${rollup.deliveryCount === 1 ? "y" : "ies"}`;
+
+    if (rollup.tons > 0) {
+      const tons = Math.round(rollup.tons * 1000) / 1000;
+      const pricePerTon = roundMoney(rollup.totalCost / tons);
+      lines.push(
+        categoryLine(
+          "feed",
+          `Feed — ${rollup.rationName} — ${formatTons(tons)} tons`,
+          tons,
+          pricePerTon,
+          `${deliveryLabel} · ${formatTons(tons)} tons × ${formatMoney(pricePerTon)}/ton = ${totalLabel}`,
+        ),
+      );
+      continue;
+    }
+
+    const qty = Math.round(rollup.nativeQuantity * 100) / 100;
+    if (qty <= 0) {
+      lines.push(
+        categoryLine(
+          "feed",
+          `Feed — ${rollup.rationName} — ${periodLabel}`,
+          1,
+          rollup.totalCost,
+          `${deliveryLabel} · ${totalLabel} total`,
+        ),
+      );
+      continue;
+    }
+
+    const unitLabel = formatFeedUnitLabel(rollup.unit);
+    const unitPrice = roundMoney(rollup.totalCost / qty);
+    lines.push(
+      categoryLine(
+        "feed",
+        `Feed — ${rollup.rationName} — ${formatHeadDays(qty)} ${unitLabel}`,
+        qty,
+        unitPrice,
+        `${deliveryLabel} · ${formatHeadDays(qty)} ${unitLabel} × ${formatMoney(unitPrice)}/${unitLabel} = ${totalLabel}`,
+      ),
+    );
+  }
+}
+
 function categoryLine(
   category: BillingCategory,
   description: string,
-  amount: number,
-  quantity = 1,
+  quantity: number,
+  unitPrice: number,
+  detail?: string,
 ): BillingLinePreview {
   return {
     description,
     quantity,
-    unitPrice: amount,
+    unitPrice,
     category,
-    source: category === "yardage" ? "yardage" : category === "treatments" ? "treatment" : category === "feed" ? "feeding" : "misc",
+    detail,
+    source:
+      category === "yardage"
+        ? "yardage"
+        : category === "pasture"
+          ? "pasture"
+          : category === "treatments"
+            ? "treatment"
+            : category === "feed"
+              ? "feeding"
+              : "misc",
   };
 }
 
@@ -133,11 +236,13 @@ export async function buildBillingPreview(
   const miscChargeIds: string[] = [];
 
   let yardageTotal = 0;
+  let pastureTotal = 0;
   let treatmentsTotal = 0;
   let feedTotal = 0;
   let processingTotal = 0;
   let miscTotal = 0;
   let deadCount = 0;
+  const feedByRation = new Map<string, FeedRationRollup>();
 
   const headDaysBreakdown: GroupHeadDaysBreakdown[] = [];
   let totalHeadDays = 0;
@@ -147,6 +252,26 @@ export async function buildBillingPreview(
   }
 
   const yardageRate = owner.yardage_rate_per_head_day;
+  const pastureRate = owner.pasture_rate_per_head_day;
+
+  const billingModes = await loadOrgBillingModes(orgId);
+  const groupLocationById = new Map<string, string | null>();
+
+  if (groupIds.length > 0) {
+    const { data: groupRows } = await supabase
+      .from("cattle_groups")
+      .select("id, location_id")
+      .eq("organization_id", orgId)
+      .in("id", groupIds);
+
+    for (const g of groupRows ?? []) {
+      groupLocationById.set(g.id, g.location_id);
+    }
+  }
+
+  let pastureHeadDays = 0;
+  let yardageHeadDays = 0;
+
   for (const lot of lotShares) {
     const head = await computeGroupHeadDays(
       orgId,
@@ -157,25 +282,52 @@ export async function buildBillingPreview(
     );
     const scaledHeadDays = roundMoney(head.headDays * lot.share);
     totalHeadDays += scaledHeadDays;
+
+    const locationId = groupLocationById.get(lot.groupId) ?? null;
+    const billing = billingModes.resolveForLocationId(locationId);
+    const scaledPasture =
+      billing.mode === "pasture" ? scaledHeadDays : 0;
+    const scaledYardage =
+      billing.mode === "yardage" ? scaledHeadDays : 0;
+
+    pastureHeadDays += scaledPasture;
+    yardageHeadDays += scaledYardage;
+
+    if (!locationId) {
+      warnings.push(`${lot.groupName}: no pen assigned — billed as yardage.`);
+    }
+
     headDaysBreakdown.push({
       groupId: lot.groupId,
       groupName: lot.groupName,
       headDays: scaledHeadDays,
+      pastureHeadDays: scaledPasture,
+      yardageHeadDays: scaledYardage,
       avgHead: roundMoney(head.avgHead * lot.share),
       headAtStart: head.headAtStart,
       headAtEnd: head.headAtEnd,
+      billingMode: billing.mode,
+      locationId: billing.locationId,
+      locationName: billing.locationName,
+      ownerShare: lot.share,
     });
 
-    if (yardageRate != null && yardageRate > 0 && scaledHeadDays > 0) {
-      yardageTotal += roundMoney(scaledHeadDays * yardageRate);
+    if (billing.mode === "pasture" && pastureRate != null && pastureRate > 0 && scaledPasture > 0) {
+      pastureTotal += roundMoney(scaledPasture * pastureRate);
+    }
+    if (billing.mode === "yardage" && yardageRate != null && yardageRate > 0 && scaledYardage > 0) {
+      yardageTotal += roundMoney(scaledYardage * yardageRate);
     }
   }
 
   const totalHead =
     dayCount > 0 ? Math.round((totalHeadDays / dayCount) * 100) / 100 : 0;
 
-  if (yardageRate == null && totalHeadDays > 0) {
+  if (yardageHeadDays > 0 && yardageRate == null) {
     warnings.push("No yardage rate on owner — set one in Setup → Owners.");
+  }
+  if (pastureHeadDays > 0 && pastureRate == null) {
+    warnings.push("No pasture rate on owner — set one in Setup → Owners.");
   }
 
   if (groupIds.length > 0) {
@@ -269,13 +421,17 @@ export async function buildBillingPreview(
 
     const rationIds = [...new Set(feedings.map((f) => f.feed_ration_id).filter(Boolean))];
     const { data: rations } = rationIds.length
-      ? await supabase.from("feed_rations").select("id, price_per_unit").in("id", rationIds)
+      ? await supabase.from("feed_rations").select("id, name, price_per_unit, unit").in("id", rationIds)
       : { data: [] };
     const rationPrices = new Map(
       (rations ?? []).map((r) => [
         r.id,
         r.price_per_unit != null ? Number(r.price_per_unit) : null,
       ]),
+    );
+    const rationUnits = new Map((rations ?? []).map((r) => [r.id, r.unit ?? "lb"]));
+    const rationNames = new Map(
+      (rations ?? []).map((r) => [r.id, (r.name as string | null)?.trim() || "Feed ration"]),
     );
 
     const missingPriceLookups = feedings
@@ -286,16 +442,34 @@ export async function buildBillingPreview(
     const feedMarkupFactor = 1 + feedMarkup / 100;
 
     for (const f of feedings) {
+      if (!f.feed_ration_id || !f.cattle_group_id) continue;
       const snapshot = f.unit_cost_snapshot != null ? Number(f.unit_cost_snapshot) : null;
       const pricePerUnit =
         snapshot ??
         historicalPrices.get(rationPriceLookupKey(f.feed_ration_id, f.fed_at)) ??
         rationPrices.get(f.feed_ration_id) ??
         null;
-      if (pricePerUnit == null || !f.cattle_group_id) continue;
+      if (pricePerUnit == null) continue;
+
       const share = shareByGroup.get(f.cattle_group_id) ?? 1;
-      feedTotal += roundMoney(Number(f.quantity) * pricePerUnit * feedMarkupFactor * share);
+      const rationId = f.feed_ration_id;
+      const rationUnit = rationUnits.get(rationId) ?? "lb";
+      const rationName = rationNames.get(rationId) ?? "Feed ration";
+      const rollup = getFeedRollup(feedByRation, rationId, rationName, rationUnit);
+      const qty = Number(f.quantity) * share;
+      const cost = roundMoney(qty * pricePerUnit * feedMarkupFactor);
+
+      feedTotal += cost;
+      rollup.totalCost += cost;
+      rollup.deliveryCount += 1;
       feedingRecordIds.push(f.id);
+
+      const tons = convertFeedQuantity(qty, rationUnit, "ton");
+      if (tons != null) {
+        rollup.tons += tons;
+      } else {
+        rollup.nativeQuantity += qty;
+      }
     }
 
     const procRes = await supabase
@@ -358,27 +532,76 @@ export async function buildBillingPreview(
   }
 
   const lines: BillingLinePreview[] = [];
+  const feedRollups = [...feedByRation.values()];
+  const feedTons =
+    feedRollups.reduce((sum, r) => sum + r.tons, 0) > 0
+      ? Math.round(feedRollups.reduce((sum, r) => sum + r.tons, 0) * 1000) / 1000
+      : null;
+  const feedDeliveryCount = feedRollups.reduce((sum, r) => sum + r.deliveryCount, 0);
 
-  if (yardageTotal > 0) {
+  if (yardageTotal > 0 && yardageRate != null && yardageRate > 0) {
+    const qty = roundMoney(yardageHeadDays);
+    const effectiveRate = qty > 0 ? roundMoney(yardageTotal / qty) : yardageRate;
     lines.push(
-      categoryLine("yardage", `Yardage — ${periodLabel}`, yardageTotal),
+      categoryLine(
+        "yardage",
+        `Yardage — ${periodLabel}`,
+        qty,
+        effectiveRate,
+        `${formatHeadDays(qty)} head-days × ${formatMoney(yardageRate)}/day`,
+      ),
+    );
+  }
+  if (pastureTotal > 0 && pastureRate != null && pastureRate > 0) {
+    const qty = roundMoney(pastureHeadDays);
+    const effectiveRate = qty > 0 ? roundMoney(pastureTotal / qty) : pastureRate;
+    lines.push(
+      categoryLine(
+        "pasture",
+        `Pasture — ${periodLabel}`,
+        qty,
+        effectiveRate,
+        `${formatHeadDays(qty)} head-days × ${formatMoney(pastureRate)}/day`,
+      ),
     );
   }
   if (treatmentsTotal > 0) {
+    const count = treatmentIds.length;
     lines.push(
-      categoryLine("treatments", `Treatments — ${periodLabel}`, treatmentsTotal),
+      categoryLine(
+        "treatments",
+        `Treatments — ${periodLabel}`,
+        1,
+        treatmentsTotal,
+        `${count} treatment${count === 1 ? "" : "s"} · ${formatMoney(treatmentsTotal)}`,
+      ),
     );
   }
   if (feedTotal > 0) {
-    lines.push(categoryLine("feed", `Feed — ${periodLabel}`, feedTotal));
+    pushFeedRationLines(lines, feedRollups, periodLabel);
   }
   if (processingTotal > 0) {
+    const count = processingEventIds.length;
     lines.push(
-      categoryLine("processing", `Processing — ${periodLabel}`, processingTotal),
+      categoryLine(
+        "processing",
+        `Processing — ${periodLabel}`,
+        1,
+        processingTotal,
+        `${count} processing event${count === 1 ? "" : "s"} · ${formatMoney(processingTotal)}`,
+      ),
     );
   }
   if (miscTotal > 0) {
-    lines.push(categoryLine("misc", `Misc — ${periodLabel}`, miscTotal));
+    lines.push(
+      categoryLine(
+        "misc",
+        `Misc charges — ${periodLabel}`,
+        1,
+        miscTotal,
+        formatMoney(miscTotal),
+      ),
+    );
   }
   if (deadCount > 0) {
     lines.push({
@@ -398,6 +621,48 @@ export async function buildBillingPreview(
     lines.reduce((s, l) => s + roundMoney(l.quantity * l.unitPrice), 0),
   );
 
+  const billingSnapshot: BillingSnapshot = {
+    version: 1,
+    generatedAt: new Date().toISOString(),
+    periodStart,
+    periodEnd,
+    ownerId,
+    pastureHeadDays: roundMoney(pastureHeadDays),
+    yardageHeadDays: roundMoney(yardageHeadDays),
+    rates: {
+      pasturePerHeadDay: pastureRate,
+      yardagePerHeadDay: yardageRate,
+    },
+    feedSummary:
+      feedRollups.length > 0
+        ? {
+            totalTons: feedTons ?? 0,
+            deliveryCount: feedDeliveryCount,
+            totalCost: roundMoney(feedTotal),
+            rations: feedRollups.map((r) => ({
+              rationId: r.rationId,
+              rationName: r.rationName,
+              tons: r.tons > 0 ? Math.round(r.tons * 1000) / 1000 : null,
+              nativeQuantity: Math.round(r.nativeQuantity * 100) / 100,
+              unit: r.unit,
+              deliveryCount: r.deliveryCount,
+              totalCost: roundMoney(r.totalCost),
+            })),
+          }
+        : undefined,
+    groups: headDaysBreakdown.map((g) => ({
+      groupId: g.groupId,
+      groupName: g.groupName,
+      share: g.ownerShare,
+      headDays: g.headDays,
+      pastureHeadDays: g.pastureHeadDays,
+      yardageHeadDays: g.yardageHeadDays,
+      billingMode: g.billingMode,
+      locationId: g.locationId,
+      locationName: g.locationName,
+    })),
+  };
+
   return {
     ownerId,
     ownerName: owner.name,
@@ -412,7 +677,12 @@ export async function buildBillingPreview(
     dayCount,
     totalHead,
     totalHeadDays,
+    pastureHeadDays: roundMoney(pastureHeadDays),
+    yardageHeadDays: roundMoney(yardageHeadDays),
+    pastureRate,
+    yardageRate,
     headDaysBreakdown,
+    billingSnapshot,
     lines,
     warnings,
     subtotal,
@@ -421,6 +691,8 @@ export async function buildBillingPreview(
     processingEventIds,
     mortalityRecordIds,
     miscChargeIds,
+    feedTons,
+    feedDeliveryCount,
   };
 }
 

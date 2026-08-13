@@ -14,6 +14,7 @@ import {
   type IngredientLine,
   type IngredientBuildMode,
 } from "@/components/feed/ration-ingredient-builder";
+import { defaultFeedEntryUnit, isWeightFeedUnit } from "@/lib/feed/units";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -52,7 +53,16 @@ export function RationForm({
     ingredients.length > 0
       ? linesFromIngredients(ingredients)
       : feedItems.length > 0
-        ? [{ feedItemId: feedItems[0].id, quantityPerRationUnit: "", inclusionPercent: "" }]
+        ? [
+            {
+              feedItemId: feedItems[0].id,
+              quantityPerRationUnit: "",
+              inclusionPercent: "",
+              amountEntryUnit: isWeightFeedUnit(feedItems[0].unit)
+                ? defaultFeedEntryUnit(unit)
+                : feedItems[0].unit,
+            },
+          ]
         : [],
   );
   const [ingredientMode, setIngredientMode] = useState<IngredientBuildMode>(
@@ -73,7 +83,11 @@ export function RationForm({
       return;
     }
 
-    const parsedIngredients = parseIngredientLines(ingredientLines, ingredientMode);
+    const parsedIngredients = parseIngredientLines(
+      ingredientLines,
+      ingredientMode,
+      feedItems,
+    );
     if (ingredientMode === "percent") {
       const total = parsedIngredients.reduce((s, i) => s + (i.inclusionPercent ?? 0), 0);
       if (parsedIngredients.length > 0 && Math.abs(total - 100) >= 0.01) {
@@ -136,7 +150,7 @@ export function RationForm({
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label htmlFor="unit">Fed in units of</Label>
+            <Label htmlFor="unit">Mixed in units of</Label>
             <select
               id="unit"
               value={unit}

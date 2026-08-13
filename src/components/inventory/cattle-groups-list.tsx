@@ -10,7 +10,7 @@ import {
   getLotReceivedDate,
 } from "@/lib/inventory/lot-display";
 import { ENTERPRISE_LABELS } from "@/lib/lots/types";
-import { Button } from "@/components/ui/button";
+import { Button, linkButtonClassName } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CattleLotCard } from "@/components/inventory/cattle-lot-card";
 import { ArchivedToggleSection } from "@/components/ui/archived-toggle-section";
@@ -175,8 +175,8 @@ export function CattleGroupsList({
           feed, health, sales, and billing.
         </p>
         {canManageCattle ? (
-          <Link href="/cattle/new" className="mt-6">
-            <Button size="md">+ Receive Cattle</Button>
+          <Link href="/cattle/new" className={cn("mt-6", linkButtonClassName({ size: "md" }))}>
+            + Receive Cattle
           </Link>
         ) : null}
       </div>
@@ -387,8 +387,8 @@ export function CattleGroupsList({
               </Button>
             ) : null}
             {emptyMessage.showReceive ? (
-              <Link href="/cattle/new">
-                <Button size="md">+ Receive Cattle</Button>
+              <Link href="/cattle/new" className={linkButtonClassName({ size: "md" })}>
+                + Receive Cattle
               </Link>
             ) : null}
           </div>

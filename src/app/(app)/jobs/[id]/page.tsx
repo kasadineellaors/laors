@@ -24,9 +24,7 @@ export default async function TaskDetailPage({
   const [task, categories, locations, groups, members] = await Promise.all([
     getTask(orgId, id),
     getRanchOptions(orgId, "task_categories"),
-    getTreePickerOptions(orgId).then((nodes) =>
-      nodes.map((n) => ({ value: n.id, label: n.breadcrumb })),
-    ),
+    getTreePickerOptions(orgId),
     listCattleGroups(orgId).then(toFeedGroupOptions),
     listOrgMembers(orgId),
   ]);
@@ -39,7 +37,7 @@ export default async function TaskDetailPage({
       currentUserId={userId}
       task={task}
       categoryOptions={categories}
-      locationOptions={locations}
+      locationTree={locations}
       groupOptions={groups}
       memberOptions={members}
     />

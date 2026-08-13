@@ -28,9 +28,7 @@ export default async function NewBreedingPage({
 
   const orgId = session.organization!.id;
   const [locations, herds, bulls, dams] = await Promise.all([
-    getTreePickerOptions(orgId).then((nodes) =>
-      nodes.map((n) => ({ value: n.id, label: n.breadcrumb })),
-    ),
+    getTreePickerOptions(orgId),
     listCowCalfHerdOptions(orgId),
     listActiveBullOptions(orgId),
     listCowCalfDamOptions(orgId, herd),
@@ -51,7 +49,7 @@ export default async function NewBreedingPage({
       </div>
       <BreedingForm
         orgId={orgId}
-        locationOptions={locations}
+        locationTree={locations}
         herdOptions={herds}
         bullOptions={bulls}
         damOptions={dams}

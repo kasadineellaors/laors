@@ -2,6 +2,7 @@ export type InvoiceStatus = "draft" | "sent" | "paid" | "cancelled";
 
 export type BillingCategory =
   | "yardage"
+  | "pasture"
   | "treatments"
   | "feed"
   | "processing"
@@ -34,6 +35,7 @@ export interface InvoiceRecord {
   sales_record_id: string | null;
   created_by_name: string | null;
   lines: InvoiceLineRecord[];
+  billing_snapshot: BillingSnapshot | null;
   created_at: string;
   updated_at: string;
 }
@@ -50,7 +52,7 @@ export interface InvoiceSummary {
   unpaidTotal: number;
 }
 
-export type BillingLineSource = "yardage" | "treatment" | "feeding" | "misc";
+export type BillingLineSource = "yardage" | "pasture" | "treatment" | "feeding" | "misc";
 
 export interface BillingLinePreview {
   description: string;
@@ -58,6 +60,8 @@ export interface BillingLinePreview {
   unitPrice: number;
   category?: BillingCategory;
   source: BillingLineSource;
+  /** Human-readable math shown in preview and portal */
+  detail?: string;
   treatmentId?: string;
   feedingRecordId?: string;
 }
@@ -66,9 +70,54 @@ export interface GroupHeadDaysBreakdown {
   groupId: string;
   groupName: string;
   headDays: number;
+  pastureHeadDays: number;
+  yardageHeadDays: number;
   avgHead: number;
   headAtStart: number;
   headAtEnd: number;
+  billingMode: "pasture" | "yardage";
+  locationId: string | null;
+  locationName: string | null;
+  ownerShare: number;
+}
+
+export interface BillingSnapshot {
+  version: 1;
+  generatedAt: string;
+  periodStart: string;
+  periodEnd: string;
+  ownerId: string;
+  pastureHeadDays: number;
+  yardageHeadDays: number;
+  rates: {
+    pasturePerHeadDay: number | null;
+    yardagePerHeadDay: number | null;
+  };
+  feedSummary?: {
+    totalTons: number;
+    deliveryCount: number;
+    totalCost?: number;
+    rations?: Array<{
+      rationId: string;
+      rationName: string;
+      tons: number | null;
+      nativeQuantity: number;
+      unit: string;
+      deliveryCount: number;
+      totalCost: number;
+    }>;
+  };
+  groups: Array<{
+    groupId: string;
+    groupName: string;
+    share: number;
+    headDays: number;
+    pastureHeadDays: number;
+    yardageHeadDays: number;
+    billingMode: "pasture" | "yardage";
+    locationId: string | null;
+    locationName: string | null;
+  }>;
 }
 
 export interface BillingPreview {
@@ -89,7 +138,12 @@ export interface BillingPreview {
   dayCount: number;
   totalHead: number;
   totalHeadDays: number;
+  pastureHeadDays: number;
+  yardageHeadDays: number;
+  pastureRate: number | null;
+  yardageRate: number | null;
   headDaysBreakdown: GroupHeadDaysBreakdown[];
+  billingSnapshot: BillingSnapshot;
   lines: BillingLinePreview[];
   warnings: string[];
   subtotal: number;
@@ -98,4 +152,6 @@ export interface BillingPreview {
   processingEventIds: string[];
   mortalityRecordIds: string[];
   miscChargeIds: string[];
+  feedTons: number | null;
+  feedDeliveryCount: number;
 }

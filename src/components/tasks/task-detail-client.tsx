@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import type { SelectOption } from "@/lib/locations/options";
+import type { SelectOption, TreePickerOption } from "@/lib/locations/options";
 import type { OrgMemberOption, TaskRecord } from "@/lib/tasks/types";
 import { archiveTask, completeTask, updateTask } from "@/lib/actions/tasks";
 import {
@@ -23,7 +23,7 @@ interface TaskDetailClientProps {
   currentUserId?: string;
   task: TaskRecord;
   categoryOptions: SelectOption[];
-  locationOptions: SelectOption[];
+  locationTree: TreePickerOption[];
   groupOptions: SelectOption[];
   memberOptions: OrgMemberOption[];
 }
@@ -33,7 +33,7 @@ export function TaskDetailClient({
   currentUserId,
   task,
   categoryOptions,
-  locationOptions,
+  locationTree,
   groupOptions,
   memberOptions,
 }: TaskDetailClientProps) {
@@ -86,7 +86,7 @@ export function TaskDetailClient({
           currentUserId={currentUserId}
           task={task}
           categoryOptions={categoryOptions}
-          locationOptions={locationOptions}
+          locationTree={locationTree}
           groupOptions={groupOptions}
           memberOptions={memberOptions}
           onSuccess={() => {

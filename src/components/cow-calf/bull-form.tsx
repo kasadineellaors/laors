@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { SelectOption } from "@/lib/locations/options";
+import type { SelectOption, TreePickerOption } from "@/lib/locations/options";
+import { CascadingLocationField } from "@/components/locations/cascading-location-field";
 import type { BullRecord } from "@/lib/cow-calf/types";
 import { createBull, updateBull } from "@/lib/actions/bulls";
 import { ANIMAL_STATUS_LABELS } from "@/lib/cow-calf/constants";
@@ -13,7 +14,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 
 interface BullFormProps {
   orgId: string;
-  locationOptions: SelectOption[];
+  locationTree: TreePickerOption[];
   groupOptions: SelectOption[];
   bull?: BullRecord;
   onSuccess?: () => void;
@@ -21,7 +22,7 @@ interface BullFormProps {
 
 export function BullForm({
   orgId,
-  locationOptions,
+  locationTree,
   groupOptions,
   bull,
   onSuccess,
@@ -101,20 +102,14 @@ export function BullForm({
         </div>
 
         <div>
-          <Label htmlFor="location">Location</Label>
-          <select
-            id="location"
+          <Label>Location</Label>
+          <CascadingLocationField
+            idPrefix="bull-location"
+            locationTree={locationTree}
             value={locationId}
-            onChange={(e) => setLocationId(e.target.value)}
-            className="touch-target w-full rounded-lg border border-border-neutral bg-surface-white px-3 py-2"
-          >
-            <option value="">— Optional —</option>
-            {locationOptions.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
+            onChange={setLocationId}
+            optional
+          />
         </div>
 
         <div>

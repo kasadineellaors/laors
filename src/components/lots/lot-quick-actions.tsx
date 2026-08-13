@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createProcessingEvent, recordMortality } from "@/lib/actions/lots";
@@ -29,6 +30,7 @@ export function LotQuickActions({ orgId, groupId }: LotQuickActionsProps) {
 
   const [diedAt, setDiedAt] = useState(new Date().toISOString().slice(0, 10));
   const [deathHead, setDeathHead] = useState("1");
+  const [deathWeight, setDeathWeight] = useState("");
   const [cause, setCause] = useState("");
 
   const selectClass =
@@ -71,6 +73,7 @@ export function LotQuickActions({ orgId, groupId }: LotQuickActionsProps) {
     const result = await recordMortality(orgId, groupId, {
       diedAt,
       headCount: heads,
+      weightLbs: deathWeight.trim() ? parseFloat(deathWeight) : undefined,
       cause: cause || undefined,
       deductInventory: true,
     });
@@ -89,7 +92,7 @@ export function LotQuickActions({ orgId, groupId }: LotQuickActionsProps) {
         <CardDescription>Log group processing or death loss — updates lot costs and head count.</CardDescription>
       </CardHeader>
       <div className="space-y-3 px-4 pb-4">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <Button
             type="button"
             variant={mode === "processing" ? "primary" : "secondary"}
@@ -104,6 +107,12 @@ export function LotQuickActions({ orgId, groupId }: LotQuickActionsProps) {
           >
             Record death
           </Button>
+          <Link
+            href={`/cattle/move?from=${groupId}&mode=remove`}
+            className="inline-flex h-12 min-h-12 items-center justify-center rounded-lg border-2 border-border-neutral bg-surface-cream px-4 text-base font-semibold text-navy hover:bg-surface-white"
+          >
+            Remove cattle
+          </Link>
         </div>
 
         {mode === "processing" ? (
@@ -177,9 +186,23 @@ export function LotQuickActions({ orgId, groupId }: LotQuickActionsProps) {
                 <Input id="deathHead" type="number" min={1} value={deathHead} onChange={(e) => setDeathHead(e.target.value)} />
               </div>
             </div>
-            <div>
-              <Label htmlFor="cause">Cause</Label>
-              <Input id="cause" value={cause} onChange={(e) => setCause(e.target.value)} placeholder="Optional" />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="deathWeight">Weight (lb)</Label>
+                <Input
+                  id="deathWeight"
+                  type="number"
+                  min={0}
+                  step="0.1"
+                  value={deathWeight}
+                  onChange={(e) => setDeathWeight(e.target.value)}
+                  placeholder="Total or avg"
+                />
+              </div>
+              <div>
+                <Label htmlFor="cause">Cause</Label>
+                <Input id="cause" value={cause} onChange={(e) => setCause(e.target.value)} placeholder="Optional" />
+              </div>
             </div>
             <Button type="submit" fullWidth disabled={loading}>
               {loading ? "Saving…" : "Record death & deduct head"}

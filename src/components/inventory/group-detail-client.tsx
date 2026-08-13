@@ -11,7 +11,6 @@ import type {
 } from "@/lib/lots/types";
 import type { LotPurchaseRecord } from "@/lib/lots/purchase-types";
 import type { LotExpenseRecord } from "@/lib/expenses/types";
-import { PROCESSING_TYPE_LABELS } from "@/lib/lots/types";
 import type { SelectOption } from "@/lib/locations/options";
 import type { RanchFieldSuggestions } from "@/lib/ranch/field-suggestions";
 import {
@@ -26,6 +25,8 @@ import { LotQuickActions } from "@/components/lots/lot-quick-actions";
 import { ReceiveCattleToLotForm } from "@/components/inventory/receive-cattle-to-lot-form";
 import { LotExpensesPanel } from "@/components/lots/lot-expenses-panel";
 import { LotPurchaseHistory } from "@/components/lots/lot-purchase-history";
+import { LotProcessingHistory } from "@/components/lots/lot-processing-history";
+import { LotMortalityHistory } from "@/components/lots/lot-mortality-history";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -131,7 +132,7 @@ export function GroupDetailClient({
         `This lot is not zeroed out (${head} head still on it). Are you sure you want to archive? It will be hidden from active lists and dashboards.`,
       );
       if (!ok) return;
-    } else if (!window.confirm(`Archive "${group.name}"?`)) {
+    } else if (!window.confirm("Archive this lot?")) {
       return;
     }
 
@@ -145,7 +146,7 @@ export function GroupDetailClient({
   }
 
   async function handleCloseLot() {
-    if (!window.confirm(`Close lot "${group.lot_number || group.name}"?`)) return;
+    if (!window.confirm("Close this lot?")) return;
     setClosing(true);
     setError(null);
     const result = await closeLot(orgId, group.id);
@@ -160,7 +161,6 @@ export function GroupDetailClient({
         <Link href="/cattle" className="text-sm font-medium text-brown hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-navy focus-visible:ring-offset-2">
           ← Lots & cattle
         </Link>
-        <p className="mt-1 text-sm text-text-secondary">{group.location_breadcrumb ?? "No location"}</p>
       </div>
 
       <LotSummaryPanel
@@ -215,47 +215,19 @@ export function GroupDetailClient({
         <MiniStat label="Deaths" value={String(lotSummary.deaths)} />
       </div>
 
-      {processingEvents.length > 0 ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Processing history</CardTitle>
-          </CardHeader>
-          <ul className="divide-y divide-border px-4 pb-4">
-            {processingEvents.map((e) => (
-              <li key={e.id} className="flex justify-between py-2 text-sm">
-                <span>
-                  {e.processed_at} ·{" "}
-                  {PROCESSING_TYPE_LABELS[e.processing_type]} · {e.head_count} hd
-                </span>
-                <span className="font-semibold tabular-nums">{money(e.total_cost)}</span>
-              </li>
-            ))}
-          </ul>
-        </Card>
-      ) : null}
+      <LotProcessingHistory
+        orgId={orgId}
+        groupId={group.id}
+        events={processingEvents}
+        canManage={canManageCattle}
+      />
 
-      {mortalityRecords.length > 0 ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Death loss</CardTitle>
-          </CardHeader>
-          <ul className="divide-y divide-border px-4 pb-4">
-            {mortalityRecords.map((d) => (
-              <li key={d.id} className="flex justify-between py-2 text-sm">
-                <span>
-                  {d.died_at} · {d.head_count} hd
-                  {d.cause ? ` · ${d.cause}` : ""}
-                </span>
-                {d.value_lost != null ? (
-                  <span className="font-semibold tabular-nums text-status-critical">
-                    {money(d.value_lost)}
-                  </span>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        </Card>
-      ) : null}
+      <LotMortalityHistory
+        orgId={orgId}
+        groupId={group.id}
+        records={mortalityRecords}
+        canManage={canManageCattle}
+      />
 
       {canManageCattle ? (
         <Button variant="outline" size="lg" fullWidth onClick={() => setEditingMeta((v) => !v)}>

@@ -50,6 +50,7 @@ export async function saveCowCalfLoss(
     cowCalfHerdId?: string;
     locationId?: string;
     disposalMethod?: string;
+    weightLbs?: number;
     notes?: string;
   },
 ): Promise<LossActionState> {
@@ -80,6 +81,7 @@ export async function saveCowCalfLoss(
         cause: input.cause ?? "unknown",
         location_id: input.locationId || null,
         disposal_method: input.disposalMethod?.trim() || null,
+        weight_lbs: input.weightLbs ?? null,
         notes: input.notes?.trim() || null,
         created_by: user.id,
       })

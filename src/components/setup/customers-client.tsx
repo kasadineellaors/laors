@@ -8,7 +8,9 @@ import {
   createCustomer,
   updateCustomer,
 } from "@/lib/actions/customers";
+import { EMPTY_PHYSICAL_ADDRESS, formatPhysicalAddress } from "@/lib/addresses/format";
 import { CustomerPortalPanel } from "@/components/setup/customer-portal-panel";
+import { PhysicalAddressFields } from "@/components/setup/physical-address-fields";
 import { SetupEditableRow } from "@/components/setup/setup-editable-row";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,8 +39,9 @@ export function CustomersClient({
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
+  const [physicalAddress, setPhysicalAddress] = useState(EMPTY_PHYSICAL_ADDRESS);
   const [yardageRate, setYardageRate] = useState("");
+  const [pastureRate, setPastureRate] = useState("");
   const [markupPercent, setMarkupPercent] = useState("");
   const [feedMarkupPercent, setFeedMarkupPercent] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -52,8 +55,9 @@ export function CustomersClient({
       name,
       email: email || undefined,
       phone: phone || undefined,
-      address: address || undefined,
+      address: formatPhysicalAddress(physicalAddress) || undefined,
       yardageRatePerHeadDay: yardageRate || undefined,
+      pastureRatePerHeadDay: pastureRate || undefined,
       medicineMarkupPercent: markupPercent || undefined,
       feedMarkupPercent: feedMarkupPercent || undefined,
     });
@@ -63,8 +67,9 @@ export function CustomersClient({
       setName("");
       setEmail("");
       setPhone("");
-      setAddress("");
+      setPhysicalAddress(EMPTY_PHYSICAL_ADDRESS);
       setYardageRate("");
+      setPastureRate("");
       setMarkupPercent("");
       setFeedMarkupPercent("");
       router.refresh();
@@ -98,12 +103,18 @@ export function CustomersClient({
                   { key: "name", label: "Name", value: c.name },
                   { key: "email", label: "Email", value: c.email ?? "" },
                   { key: "phone", label: "Phone", value: c.phone ?? "" },
-                  { key: "address", label: "Address", value: c.address ?? "" },
+                  { key: "address", label: "Physical address", value: c.address ?? "", type: "address" },
                   {
                     key: "yardageRate",
                     label: "Yardage ($/head/day)",
                     value: formatRate(c.yardage_rate_per_head_day),
                     placeholder: "0.75",
+                  },
+                  {
+                    key: "pastureRate",
+                    label: "Pasture ($/head/day)",
+                    value: formatRate(c.pasture_rate_per_head_day),
+                    placeholder: "0.50",
                   },
                   {
                     key: "markupPercent",
@@ -126,6 +137,7 @@ export function CustomersClient({
                     phone: values.phone || null,
                     address: values.address || null,
                     yardageRatePerHeadDay: values.yardageRate ?? null,
+                    pastureRatePerHeadDay: values.pastureRate ?? null,
                     medicineMarkupPercent: values.markupPercent ?? null,
                     feedMarkupPercent: values.feedMarkupPercent ?? null,
                     notes: values.notes || null,
@@ -163,25 +175,30 @@ export function CustomersClient({
             <Label htmlFor="name">Name</Label>
             <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
-          <div>
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="billing@customer.com"
-            />
-            <p className="mt-1 text-xs text-text-secondary">Used when you send invoices to this customer</p>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-3 rounded-lg border border-border-neutral bg-tan/10 p-4">
+            <p className="text-sm font-medium text-navy">Contact & mailing address</p>
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="billing@customer.com"
+              />
+              <p className="mt-1 text-xs text-text-secondary">Used when you send invoices to this customer</p>
+            </div>
             <div>
               <Label htmlFor="phone">Phone</Label>
               <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
             </div>
             <div>
-              <Label htmlFor="address">Address</Label>
-              <Input id="address" value={address} onChange={(e) => setAddress(e.target.value)} />
+              <p className="mb-2 text-sm font-medium text-navy">Physical address</p>
+              <PhysicalAddressFields
+                idPrefix="customer-address"
+                value={physicalAddress}
+                onChange={setPhysicalAddress}
+              />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -198,6 +215,20 @@ export function CustomersClient({
               />
             </div>
             <div>
+              <Label htmlFor="pasture">Pasture ($/head/day)</Label>
+              <Input
+                id="pasture"
+                type="number"
+                min={0}
+                step="0.0001"
+                value={pastureRate}
+                onChange={(e) => setPastureRate(e.target.value)}
+                placeholder="0.50"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
               <Label htmlFor="markup">Medicine markup (%)</Label>
               <Input
                 id="markup"
@@ -209,18 +240,18 @@ export function CustomersClient({
                 placeholder="15"
               />
             </div>
-          </div>
-          <div>
-            <Label htmlFor="feedMarkup">Feed markup (%)</Label>
-            <Input
-              id="feedMarkup"
-              type="number"
-              min={0}
-              step="0.01"
-              value={feedMarkupPercent}
-              onChange={(e) => setFeedMarkupPercent(e.target.value)}
-              placeholder="10"
-            />
+            <div>
+              <Label htmlFor="feedMarkup">Feed markup (%)</Label>
+              <Input
+                id="feedMarkup"
+                type="number"
+                min={0}
+                step="0.01"
+                value={feedMarkupPercent}
+                onChange={(e) => setFeedMarkupPercent(e.target.value)}
+                placeholder="10"
+              />
+            </div>
           </div>
           {error ? (
             <p className="text-sm text-status-critical" role="alert">

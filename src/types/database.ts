@@ -260,6 +260,7 @@ export interface Database {
           plural_name: string | null;
           tier: string;
           sort_order: number;
+          billing_rate_mode: string | null;
           is_active: boolean;
           created_at: string;
           updated_at: string;
@@ -271,6 +272,7 @@ export interface Database {
           plural_name?: string | null;
           tier: string;
           sort_order?: number;
+          billing_rate_mode?: string | null;
           is_active?: boolean;
         };
         Update: {
@@ -280,6 +282,7 @@ export interface Database {
           plural_name?: string | null;
           tier?: string;
           sort_order?: number;
+          billing_rate_mode?: string | null;
           is_active?: boolean;
         };
         Relationships: [];
@@ -327,6 +330,7 @@ export interface Database {
           notes: string | null;
           path: string | null;
           depth: number;
+          billing_rate_mode: string;
           is_active: boolean;
           created_at: string;
           updated_at: string;
@@ -343,6 +347,7 @@ export interface Database {
           metadata?: Json;
           notes?: string | null;
           depth?: number;
+          billing_rate_mode?: string;
           is_active?: boolean;
         };
         Update: {
@@ -357,6 +362,7 @@ export interface Database {
           metadata?: Json;
           notes?: string | null;
           is_active?: boolean;
+          billing_rate_mode?: string;
         };
         Relationships: [];
       };
@@ -489,6 +495,7 @@ export interface Database {
           shrunk_weight_lbs?: number | null;
           received_weight_lbs?: number | null;
           avg_weight_lbs?: number | null;
+          current_avg_weight_lbs?: number | null;
           purchase_price_per_lb?: number | null;
           landed_cost?: number | null;
           seller_name?: string | null;
@@ -514,6 +521,7 @@ export interface Database {
           shrunk_weight_lbs?: number | null;
           received_weight_lbs?: number | null;
           avg_weight_lbs?: number | null;
+          current_avg_weight_lbs?: number | null;
           purchase_price_per_lb?: number | null;
           landed_cost?: number | null;
           seller_name?: string | null;
@@ -712,6 +720,7 @@ export interface Database {
           is_partial: boolean;
           status: string;
           notes: string | null;
+          out_weight_lbs: number | null;
           moved_at: string;
           created_by: string | null;
           voided_at: string | null;
@@ -731,12 +740,14 @@ export interface Database {
           is_partial?: boolean;
           status?: string;
           notes?: string | null;
+          out_weight_lbs?: number | null;
           moved_at?: string;
           created_by?: string | null;
         };
         Update: {
           notes?: string | null;
           movement_reason_id?: string | null;
+          out_weight_lbs?: number | null;
           status?: string;
           voided_at?: string | null;
           voided_by?: string | null;
@@ -822,6 +833,7 @@ export interface Database {
           cause: string | null;
           disposal_method: string | null;
           value_lost: number | null;
+          weight_lbs: number | null;
           notes: string | null;
           invoiced_at: string | null;
           invoice_id: string | null;
@@ -839,6 +851,7 @@ export interface Database {
           cause?: string | null;
           disposal_method?: string | null;
           value_lost?: number | null;
+          weight_lbs?: number | null;
           notes?: string | null;
           created_by?: string | null;
           is_active?: boolean;
@@ -849,6 +862,7 @@ export interface Database {
           cause?: string | null;
           disposal_method?: string | null;
           value_lost?: number | null;
+          weight_lbs?: number | null;
           notes?: string | null;
           invoiced_at?: string | null;
           invoice_id?: string | null;
@@ -1897,6 +1911,7 @@ export interface Database {
           cause: string;
           location_id: string | null;
           disposal_method: string | null;
+          weight_lbs: number | null;
           notes: string | null;
           created_by: string | null;
           is_active: boolean;
@@ -1912,6 +1927,7 @@ export interface Database {
           cause?: string;
           location_id?: string | null;
           disposal_method?: string | null;
+          weight_lbs?: number | null;
           notes?: string | null;
           created_by?: string | null;
         };
@@ -1921,7 +1937,117 @@ export interface Database {
           cause?: string;
           location_id?: string | null;
           disposal_method?: string | null;
+          weight_lbs?: number | null;
           notes?: string | null;
+          is_active?: boolean;
+        };
+        Relationships: [];
+      };
+      cow_calf_shipping_records: {
+        Row: {
+          id: string;
+          organization_id: string;
+          shipped_at: string;
+          direction: string;
+          head_count: number;
+          weight_lbs: number | null;
+          cow_calf_herd_id: string | null;
+          cattle_group_id: string | null;
+          source_location_id: string | null;
+          destination_location_id: string | null;
+          source_name: string | null;
+          destination_name: string | null;
+          reason: string;
+          notes: string | null;
+          created_by: string | null;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          shipped_at?: string;
+          direction: string;
+          head_count?: number;
+          weight_lbs?: number | null;
+          cow_calf_herd_id?: string | null;
+          cattle_group_id?: string | null;
+          source_location_id?: string | null;
+          destination_location_id?: string | null;
+          source_name?: string | null;
+          destination_name?: string | null;
+          reason?: string;
+          notes?: string | null;
+          created_by?: string | null;
+        };
+        Update: {
+          shipped_at?: string;
+          direction?: string;
+          head_count?: number;
+          weight_lbs?: number | null;
+          cow_calf_herd_id?: string | null;
+          cattle_group_id?: string | null;
+          source_location_id?: string | null;
+          destination_location_id?: string | null;
+          source_name?: string | null;
+          destination_name?: string | null;
+          reason?: string;
+          notes?: string | null;
+          is_active?: boolean;
+        };
+        Relationships: [];
+      };
+      cattle_shipping_records: {
+        Row: {
+          id: string;
+          organization_id: string;
+          cattle_group_id: string;
+          shipped_at: string;
+          direction: string;
+          head_count: number;
+          weight_lbs: number | null;
+          source_location_id: string | null;
+          destination_location_id: string | null;
+          source_name: string | null;
+          destination_name: string | null;
+          reason: string;
+          notes: string | null;
+          inventory_adjusted: boolean;
+          created_by: string | null;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          cattle_group_id: string;
+          shipped_at?: string;
+          direction: string;
+          head_count?: number;
+          weight_lbs?: number | null;
+          source_location_id?: string | null;
+          destination_location_id?: string | null;
+          source_name?: string | null;
+          destination_name?: string | null;
+          reason?: string;
+          notes?: string | null;
+          inventory_adjusted?: boolean;
+          created_by?: string | null;
+        };
+        Update: {
+          shipped_at?: string;
+          direction?: string;
+          head_count?: number;
+          weight_lbs?: number | null;
+          source_location_id?: string | null;
+          destination_location_id?: string | null;
+          source_name?: string | null;
+          destination_name?: string | null;
+          reason?: string;
+          notes?: string | null;
+          inventory_adjusted?: boolean;
           is_active?: boolean;
         };
         Relationships: [];
@@ -1938,6 +2064,7 @@ export interface Database {
           ownership_type: string | null;
           is_ownership_group: boolean;
           yardage_rate_per_head_day: number | null;
+          pasture_rate_per_head_day: number | null;
           medicine_markup_percent: number | null;
           feed_markup_percent: number | null;
           notes: string | null;
@@ -1956,6 +2083,7 @@ export interface Database {
           ownership_type?: string | null;
           is_ownership_group?: boolean;
           yardage_rate_per_head_day?: number | null;
+          pasture_rate_per_head_day?: number | null;
           medicine_markup_percent?: number | null;
           feed_markup_percent?: number | null;
           notes?: string | null;
@@ -1969,6 +2097,7 @@ export interface Database {
           ownership_type?: string | null;
           is_ownership_group?: boolean;
           yardage_rate_per_head_day?: number | null;
+          pasture_rate_per_head_day?: number | null;
           medicine_markup_percent?: number | null;
           feed_markup_percent?: number | null;
           notes?: string | null;
@@ -2003,9 +2132,13 @@ export interface Database {
           organization_id: string;
           owner_id: string;
           cattle_group_id: string | null;
+          location_id: string | null;
           charge_date: string;
           description: string;
           amount: number;
+          quantity: number | null;
+          unit_cost: number | null;
+          individual_animal_id: string | null;
           invoiced_at: string | null;
           invoice_id: string | null;
           notes: string | null;
@@ -2018,14 +2151,23 @@ export interface Database {
           organization_id: string;
           owner_id: string;
           cattle_group_id?: string | null;
+          location_id?: string | null;
           charge_date?: string;
           description: string;
           amount: number;
+          quantity?: number | null;
+          unit_cost?: number | null;
+          individual_animal_id?: string | null;
           notes?: string | null;
         };
         Update: {
+          charge_date?: string;
           description?: string;
           amount?: number;
+          quantity?: number | null;
+          unit_cost?: number | null;
+          location_id?: string | null;
+          individual_animal_id?: string | null;
           invoiced_at?: string | null;
           invoice_id?: string | null;
           notes?: string | null;
@@ -2064,6 +2206,7 @@ export interface Database {
           phone: string | null;
           address: string | null;
           yardage_rate_per_head_day: number | null;
+          pasture_rate_per_head_day: number | null;
           medicine_markup_percent: number | null;
           feed_markup_percent: number | null;
           notes: string | null;
@@ -2079,6 +2222,7 @@ export interface Database {
           phone?: string | null;
           address?: string | null;
           yardage_rate_per_head_day?: number | null;
+          pasture_rate_per_head_day?: number | null;
           medicine_markup_percent?: number | null;
           feed_markup_percent?: number | null;
           notes?: string | null;
@@ -2089,6 +2233,7 @@ export interface Database {
           phone?: string | null;
           address?: string | null;
           yardage_rate_per_head_day?: number | null;
+          pasture_rate_per_head_day?: number | null;
           medicine_markup_percent?: number | null;
           feed_markup_percent?: number | null;
           notes?: string | null;
@@ -2439,6 +2584,7 @@ export interface Database {
           owner_id: string | null;
           notes: string | null;
           created_by: string | null;
+          billing_snapshot: Json | null;
           is_active: boolean;
           created_at: string;
           updated_at: string;
@@ -2459,6 +2605,7 @@ export interface Database {
           owner_id?: string | null;
           notes?: string | null;
           created_by?: string | null;
+          billing_snapshot?: Json | null;
         };
         Update: {
           invoice_number?: string;
@@ -2474,6 +2621,7 @@ export interface Database {
           sales_record_id?: string | null;
           notes?: string | null;
           is_active?: boolean;
+          billing_snapshot?: Json | null;
         };
         Relationships: [];
       };
@@ -2545,6 +2693,10 @@ export interface Database {
       };
       void_cattle_move: {
         Args: { p_movement_id: string };
+        Returns: string;
+      };
+      update_cattle_move: {
+        Args: { p_movement_id: string; p_payload: Json };
         Returns: string;
       };
     };

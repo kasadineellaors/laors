@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getDefaultHeadClassificationId } from "@/lib/inventory/default-classification";
-import { aggregateLotPurchases } from "@/lib/lots/purchase-rollups";
+import { syncLotPurchaseRollups } from "@/lib/lots/sync-purchase-rollups";
 import type { LotPurchaseInput } from "@/lib/lots/purchase-types";
 import type { Database } from "@/types/database";
 import type { ActionState } from "./onboarding";
@@ -69,62 +69,6 @@ function normalizePurchaseInput(input: LotPurchaseInput) {
     landed_cost: landed ?? null,
     notes: input.notes?.trim() || null,
   };
-}
-
-export async function syncLotPurchaseRollups(
-  supabase: Supabase,
-  orgId: string,
-  groupId: string,
-): Promise<{ error?: string }> {
-  const { data: rows, error: fetchError } = await supabase
-    .from("cattle_group_purchases")
-    .select("*")
-    .eq("organization_id", orgId)
-    .eq("cattle_group_id", groupId)
-    .eq("is_active", true);
-
-  if (fetchError) return { error: formatDbError(fetchError.message) };
-
-  const purchases = (rows ?? []).map((row) => ({
-    id: row.id,
-    cattle_group_id: row.cattle_group_id,
-    purchased_at: row.purchased_at,
-    arrival_date: row.arrival_date,
-    seller_name: row.seller_name,
-    source_name: row.source_name,
-    invoice_ref: row.invoice_ref,
-    head_count: Number(row.head_count),
-    pay_weight_lbs: row.pay_weight_lbs != null ? Number(row.pay_weight_lbs) : null,
-    received_weight_lbs:
-      row.received_weight_lbs != null ? Number(row.received_weight_lbs) : null,
-    purchase_price_per_lb:
-      row.purchase_price_per_lb != null ? Number(row.purchase_price_per_lb) : null,
-    landed_cost: row.landed_cost != null ? Number(row.landed_cost) : null,
-    notes: row.notes,
-    created_at: row.created_at,
-  }));
-
-  const rollup = aggregateLotPurchases(purchases);
-
-  const { error } = await supabase
-    .from("cattle_groups")
-    .update({
-      starting_head: rollup.starting_head,
-      pay_weight_lbs: rollup.pay_weight_lbs,
-      received_weight_lbs: rollup.received_weight_lbs,
-      landed_cost: rollup.landed_cost,
-      purchase_date: rollup.purchase_date,
-      arrival_date: rollup.arrival_date,
-      seller_name: rollup.seller_name,
-      source_name: rollup.source_name,
-      purchase_price_per_lb: rollup.purchase_price_per_lb,
-      avg_weight_lbs: rollup.avg_weight_lbs,
-    })
-    .eq("id", groupId)
-    .eq("organization_id", orgId);
-
-  if (error) return { error: formatDbError(error.message) };
-  return {};
 }
 
 export async function insertLotPurchase(

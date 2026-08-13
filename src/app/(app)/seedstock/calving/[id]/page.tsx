@@ -41,9 +41,7 @@ export default async function SeedstockCalvingDetailPage({
   }
 
   const [locationOptions, damOptions, sireOptions] = await Promise.all([
-    getTreePickerOptions(orgId).then((nodes) =>
-      nodes.map((n) => ({ value: n.id, label: n.breadcrumb })),
-    ),
+    getTreePickerOptions(orgId),
     listSeedstockDamOptions(orgId),
     listSeedstockSireOptions(orgId),
   ]);
@@ -58,7 +56,7 @@ export default async function SeedstockCalvingDetailPage({
         orgId={orgId}
         record={record}
         weaningRecords={weaningRecords}
-        locationOptions={locationOptions}
+        locationTree={locationOptions}
         damOptions={damOptions}
         sireOptions={sireOptions}
         canManage={canManage}

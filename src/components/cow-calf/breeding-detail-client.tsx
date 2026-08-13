@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { BreedingRecord } from "@/lib/cow-calf/breeding-types";
-import type { SelectOption } from "@/lib/locations/options";
+import type { SelectOption, TreePickerOption } from "@/lib/locations/options";
 import {
   BREEDING_METHOD_LABELS,
   PREGNANCY_STATUS_LABELS,
@@ -28,7 +28,7 @@ interface DamOption {
 interface BreedingDetailClientProps {
   orgId: string;
   record: BreedingRecord;
-  locationOptions: SelectOption[];
+  locationTree: TreePickerOption[];
   herdOptions: SelectOption[];
   bullOptions: BullOption[];
   damOptions: DamOption[];
@@ -47,7 +47,7 @@ function formatDate(iso: string) {
 export function BreedingDetailClient({
   orgId,
   record,
-  locationOptions,
+  locationTree,
   herdOptions,
   bullOptions,
   damOptions,
@@ -74,7 +74,7 @@ export function BreedingDetailClient({
       <BreedingForm
         orgId={orgId}
         record={record}
-        locationOptions={locationOptions}
+        locationTree={locationTree}
         herdOptions={herdOptions}
         bullOptions={bullOptions}
         damOptions={damOptions}

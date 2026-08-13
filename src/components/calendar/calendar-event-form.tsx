@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { SelectOption } from "@/lib/locations/options";
+import type { SelectOption, TreePickerOption } from "@/lib/locations/options";
+import { CascadingLocationField } from "@/components/locations/cascading-location-field";
 import type { CalendarEventRecord, CalendarEventType } from "@/lib/calendar/types";
 import { CALENDAR_EVENT_TYPE_LABELS } from "@/lib/calendar/types";
 import { createCalendarEvent, updateCalendarEvent } from "@/lib/actions/calendar";
@@ -13,7 +14,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 
 interface CalendarEventFormProps {
   orgId: string;
-  locationOptions: SelectOption[];
+  locationTree: TreePickerOption[];
   groupOptions: SelectOption[];
   event?: CalendarEventRecord;
   defaultDate?: string;
@@ -28,7 +29,7 @@ function toLocalDatetimeValue(iso: string, allDay: boolean) {
 
 export function CalendarEventForm({
   orgId,
-  locationOptions,
+  locationTree,
   groupOptions,
   event,
   defaultDate,
@@ -218,22 +219,16 @@ export function CalendarEventForm({
             </div>
           </div>
 
-          {locationOptions.length > 0 ? (
+          {locationTree.length > 0 ? (
             <div>
-              <Label htmlFor="location">Location (optional)</Label>
-              <select
-                id="location"
+              <Label>Location (optional)</Label>
+              <CascadingLocationField
+                idPrefix="calendar-event-location"
+                locationTree={locationTree}
                 value={locationId}
-                onChange={(e) => setLocationId(e.target.value)}
-                className={selectClass}
-              >
-                <option value="">Ranch-wide</option>
-                {locationOptions.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
+                onChange={setLocationId}
+                optional
+              />
             </div>
           ) : null}
 

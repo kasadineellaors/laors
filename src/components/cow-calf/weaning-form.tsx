@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { SelectOption } from "@/lib/locations/options";
+import type { SelectOption, TreePickerOption } from "@/lib/locations/options";
+import { CascadingLocationField } from "@/components/locations/cascading-location-field";
 import type { WeaningMethod } from "@/lib/cow-calf/exit-types";
 import { WEANING_METHOD_LABELS } from "@/lib/cow-calf/constants";
 import { saveCowCalfWeaning } from "@/lib/actions/cow-calf-weaning";
@@ -20,7 +21,7 @@ interface CalfOption {
 interface WeaningFormProps {
   orgId: string;
   herdOptions: SelectOption[];
-  locationOptions: SelectOption[];
+  locationTree: TreePickerOption[];
   calfOptions: CalfOption[];
   defaultHerdId?: string;
 }
@@ -31,7 +32,7 @@ const selectClass =
 export function CowCalfWeaningForm({
   orgId,
   herdOptions,
-  locationOptions,
+  locationTree,
   calfOptions,
   defaultHerdId,
 }: WeaningFormProps) {
@@ -128,12 +129,13 @@ export function CowCalfWeaningForm({
 
         <div>
           <Label>Destination location</Label>
-          <select className={selectClass} value={destinationLocationId} onChange={(e) => setDestinationLocationId(e.target.value)}>
-            <option value="">—</option>
-            {locationOptions.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
+          <CascadingLocationField
+            idPrefix="weaning-destination-location"
+            locationTree={locationTree}
+            value={destinationLocationId}
+            onChange={setDestinationLocationId}
+            optional
+          />
         </div>
 
         <div>

@@ -29,9 +29,7 @@ export default async function NewSeedstockCalvingPage({
   const { damId } = await searchParams;
   const orgId = session.organization!.id;
   const [locationOptions, damOptions, sireOptions] = await Promise.all([
-    getTreePickerOptions(orgId).then((nodes) =>
-      nodes.map((n) => ({ value: n.id, label: n.breadcrumb })),
-    ),
+    getTreePickerOptions(orgId),
     listSeedstockDamOptions(orgId),
     listSeedstockSireOptions(orgId),
   ]);
@@ -46,7 +44,7 @@ export default async function NewSeedstockCalvingPage({
       </div>
       <SeedstockCalvingForm
         orgId={orgId}
-        locationOptions={locationOptions}
+        locationTree={locationOptions}
         damOptions={damOptions}
         sireOptions={sireOptions}
         defaultDamId={damId}

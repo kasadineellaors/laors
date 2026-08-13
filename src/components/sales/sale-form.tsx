@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CustomerOption } from "@/lib/customers/types";
-import type { SelectOption } from "@/lib/locations/options";
+import type { SelectOption, TreePickerOption } from "@/lib/locations/options";
+import { CascadingLocationField } from "@/components/locations/cascading-location-field";
 import type { SaleRecord } from "@/lib/sales/types";
 import type { SeedstockSaleType } from "@/lib/seedstock/constants";
 import { SEEDSTOCK_SALE_TYPE_LABELS } from "@/lib/seedstock/constants";
@@ -23,7 +24,7 @@ interface PrefillAnimal {
 
 interface SaleFormProps {
   orgId: string;
-  locationOptions: SelectOption[];
+  locationTree: TreePickerOption[];
   groupOptions: SelectOption[];
   categoryOptions: SelectOption[];
   customerOptions?: CustomerOption[];
@@ -36,7 +37,7 @@ interface SaleFormProps {
 
 export function SaleForm({
   orgId,
-  locationOptions,
+  locationTree,
   groupOptions,
   categoryOptions,
   customerOptions = [],
@@ -271,22 +272,16 @@ export function SaleForm({
             <span>Deduct {headCount || "?"} head from group inventory</span>
           </label>
         ) : null}
-        {locationOptions.length > 0 ? (
+        {locationTree.length > 0 ? (
           <div>
-            <Label htmlFor="location">Location (optional)</Label>
-            <select
-              id="location"
+            <Label>Location (optional)</Label>
+            <CascadingLocationField
+              idPrefix="sale-location"
+              locationTree={locationTree}
               value={locationId}
-              onChange={(e) => setLocationId(e.target.value)}
-              className={selectClass}
-            >
-              <option value="">None</option>
-              {locationOptions.map((l) => (
-                <option key={l.value} value={l.value}>
-                  {l.label}
-                </option>
-              ))}
-            </select>
+              onChange={setLocationId}
+              optional
+            />
           </div>
         ) : null}
         <div className="grid grid-cols-2 gap-3">

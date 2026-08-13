@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { SelectOption } from "@/lib/locations/options";
+import type { SelectOption, TreePickerOption } from "@/lib/locations/options";
+import { CascadingLocationField } from "@/components/locations/cascading-location-field";
 import { createExposure } from "@/lib/actions/exposure";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +18,7 @@ interface AnimalOption {
 
 interface ExposureFormProps {
   orgId: string;
-  locationOptions: SelectOption[];
+  locationTree: TreePickerOption[];
   herdOptions: SelectOption[];
   damOptions: AnimalOption[];
   bullOptions: AnimalOption[];
@@ -29,7 +30,7 @@ const selectClass =
 
 export function CowCalfExposureForm({
   orgId,
-  locationOptions,
+  locationTree,
   herdOptions,
   damOptions,
   bullOptions,
@@ -214,18 +215,13 @@ export function CowCalfExposureForm({
 
         <div>
           <Label>Location</Label>
-          <select
-            className={selectClass}
+          <CascadingLocationField
+            idPrefix="exposure-location"
+            locationTree={locationTree}
             value={locationId}
-            onChange={(e) => setLocationId(e.target.value)}
-          >
-            <option value="">—</option>
-            {locationOptions.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
+            onChange={setLocationId}
+            optional
+          />
         </div>
 
         <div>

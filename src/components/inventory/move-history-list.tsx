@@ -3,28 +3,27 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { MovementRecord } from "@/lib/inventory/types";
-import type { SelectOption } from "@/lib/locations/options";
-import { voidCattleMove, updateMovementNotes } from "@/lib/actions/inventory";
+import type { SelectOption, TreePickerOption } from "@/lib/locations/options";
+import { voidCattleMove } from "@/lib/actions/inventory";
+import { EditCattleMovePanel } from "@/components/inventory/edit-cattle-move-panel";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils/cn";
 
 interface MoveHistoryListProps {
   orgId: string;
   movements: MovementRecord[];
   movementReasonOptions: SelectOption[];
+  locationTree: TreePickerOption[];
 }
 
 export function MoveHistoryList({
   orgId,
   movements,
   movementReasonOptions,
+  locationTree,
 }: MoveHistoryListProps) {
   const router = useRouter();
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [notes, setNotes] = useState("");
-  const [reasonId, setReasonId] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -36,18 +35,6 @@ export function MoveHistoryList({
     setLoading(false);
     if (result.error) setError(result.error);
     else router.refresh();
-  }
-
-  async function handleSaveEdit(id: string) {
-    setLoading(true);
-    setError(null);
-    const result = await updateMovementNotes(orgId, id, notes, reasonId || null);
-    setLoading(false);
-    if (result.error) setError(result.error);
-    else {
-      setEditingId(null);
-      router.refresh();
-    }
   }
 
   if (movements.length === 0) {
@@ -92,6 +79,14 @@ export function MoveHistoryList({
                       .join(" · ")}
                   </p>
                 ) : null}
+                {m.out_weight_lbs != null ? (
+                  <p className="mt-1 text-sm text-text-secondary">
+                    Outweight: {m.out_weight_lbs.toLocaleString()} lb
+                    {m.total_head > 0
+                      ? ` (${Math.round((m.out_weight_lbs / m.total_head) * 10) / 10} lb/hd)`
+                      : ""}
+                  </p>
+                ) : null}
                 {m.notes ? (
                   <p className="mt-1 text-sm italic text-text-secondary">{m.notes}</p>
                 ) : null}
@@ -103,38 +98,13 @@ export function MoveHistoryList({
 
             {m.status === "completed" ? (
               editingId === m.id ? (
-                <div className="mt-3 space-y-2 border-t border-border-neutral pt-3">
-                  <div>
-                    <Label htmlFor={`notes-${m.id}`}>Notes</Label>
-                    <Input
-                      id={`notes-${m.id}`}
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                    />
-                  </div>
-                  {movementReasonOptions.length > 0 ? (
-                    <select
-                      value={reasonId}
-                      onChange={(e) => setReasonId(e.target.value)}
-                      className="flex h-10 w-full rounded-lg border border-border-neutral bg-surface-white px-3 text-sm"
-                    >
-                      <option value="">Reason</option>
-                      {movementReasonOptions.map((r) => (
-                        <option key={r.value} value={r.value}>
-                          {r.label}
-                        </option>
-                      ))}
-                    </select>
-                  ) : null}
-                  <div className="flex gap-2">
-                    <Button size="sm" onClick={() => handleSaveEdit(m.id)} disabled={loading}>
-                      Save
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
+                <EditCattleMovePanel
+                  orgId={orgId}
+                  movement={m}
+                  locationTree={locationTree}
+                  movementReasonOptions={movementReasonOptions}
+                  onCancel={() => setEditingId(null)}
+                />
               ) : (
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Button
@@ -142,8 +112,7 @@ export function MoveHistoryList({
                     variant="outline"
                     onClick={() => {
                       setEditingId(m.id);
-                      setNotes(m.notes ?? "");
-                      setReasonId(m.movement_reason_id ?? "");
+                      setError(null);
                     }}
                   >
                     Edit

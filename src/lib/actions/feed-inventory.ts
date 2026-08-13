@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import type { Database } from "@/types/database";
 import type { FeedAdjustmentType } from "@/lib/feed/inventory-types";
 import { weightedAverageCost, weightedAverageBeforeReceipt } from "@/lib/feed/costing";
+import { feedItemQtyPerOneRationUnit } from "@/lib/feed/units";
 
 export type FeedInventoryActionState = {
   error?: string;
@@ -654,18 +655,48 @@ async function getFeedingDeductions(
   rationId: string,
   quantity: number,
 ): Promise<Array<{ feedItemId: string; delta: number }>> {
+  const { data: ration } = await supabase
+    .from("feed_rations")
+    .select("unit")
+    .eq("organization_id", orgId)
+    .eq("id", rationId)
+    .maybeSingle();
+
+  const rationUnit = ration?.unit?.trim() || "unit";
+
   const { data: ingredients } = await supabase
     .from("feed_ration_ingredients")
-    .select("feed_item_id, quantity_per_ration_unit")
+    .select("feed_item_id, quantity_per_ration_unit, inclusion_percent")
     .eq("organization_id", orgId)
     .eq("feed_ration_id", rationId);
 
   if (!ingredients?.length) return [];
 
-  return ingredients.map((i) => ({
-    feedItemId: i.feed_item_id,
-    delta: -quantity * Number(i.quantity_per_ration_unit),
-  }));
+  const itemIds = [...new Set(ingredients.map((i) => i.feed_item_id))];
+  const { data: items } = await supabase
+    .from("feed_items")
+    .select("id, unit")
+    .eq("organization_id", orgId)
+    .in("id", itemIds);
+
+  const itemUnitById = new Map((items ?? []).map((i) => [i.id, i.unit?.trim() || "unit"]));
+
+  return ingredients
+    .map((i) => {
+      const feedItemUnit = itemUnitById.get(i.feed_item_id) ?? "unit";
+      const perRationUnit = feedItemQtyPerOneRationUnit(
+        Number(i.quantity_per_ration_unit),
+        i.inclusion_percent != null ? Number(i.inclusion_percent) : null,
+        rationUnit,
+        feedItemUnit,
+      );
+      if (perRationUnit == null) return null;
+      return {
+        feedItemId: i.feed_item_id,
+        delta: -quantity * perRationUnit,
+      };
+    })
+    .filter((line): line is { feedItemId: string; delta: number } => line != null);
 }
 
 export async function syncFeedingStock(

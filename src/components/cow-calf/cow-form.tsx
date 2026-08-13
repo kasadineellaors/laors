@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { SelectOption } from "@/lib/locations/options";
+import type { SelectOption, TreePickerOption } from "@/lib/locations/options";
+import { CascadingLocationField } from "@/components/locations/cascading-location-field";
 import type { CowAnimalType, CowRecord } from "@/lib/cow-calf/types";
 import { createCow, updateCow } from "@/lib/actions/cows";
 import { ANIMAL_STATUS_LABELS, COW_TYPE_LABELS } from "@/lib/cow-calf/constants";
@@ -13,13 +14,13 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 
 interface CowFormProps {
   orgId: string;
-  locationOptions: SelectOption[];
+  locationTree: TreePickerOption[];
   groupOptions: SelectOption[];
   cow?: CowRecord;
   onSuccess?: () => void;
 }
 
-export function CowForm({ orgId, locationOptions, groupOptions, cow, onSuccess }: CowFormProps) {
+export function CowForm({ orgId, locationTree, groupOptions, cow, onSuccess }: CowFormProps) {
   const router = useRouter();
   const isEdit = Boolean(cow);
 
@@ -114,20 +115,14 @@ export function CowForm({ orgId, locationOptions, groupOptions, cow, onSuccess }
         </div>
 
         <div>
-          <Label htmlFor="location">Pasture / location</Label>
-          <select
-            id="location"
+          <Label>Pasture / location</Label>
+          <CascadingLocationField
+            idPrefix="cow-location"
+            locationTree={locationTree}
             value={locationId}
-            onChange={(e) => setLocationId(e.target.value)}
-            className="touch-target w-full rounded-lg border border-border-neutral bg-surface-white px-3 py-2"
-          >
-            <option value="">— Optional —</option>
-            {locationOptions.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
+            onChange={setLocationId}
+            optional
+          />
         </div>
 
         <div>

@@ -18,9 +18,7 @@ export default async function NewTreatmentPage() {
   const userId = session.user.id;
 
   const [locations, groups, members, medicineOptions] = await Promise.all([
-    getTreePickerOptions(orgId).then((nodes) =>
-      nodes.map((n) => ({ value: n.id, label: n.breadcrumb })),
-    ),
+    getTreePickerOptions(orgId),
     listCattleGroups(orgId).then(toFeedGroupOptions),
     listOrgMembers(orgId),
     listMedicineOptions(orgId),
@@ -39,7 +37,7 @@ export default async function NewTreatmentPage() {
       <TreatmentForm
         orgId={orgId}
         currentUserId={userId}
-        locationOptions={locations}
+        locationTree={locations}
         groupOptions={groups}
         memberOptions={members}
         medicineOptions={medicineOptions}

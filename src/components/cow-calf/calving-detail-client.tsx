@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CalvingRecord } from "@/lib/cow-calf/types";
-import type { SelectOption } from "@/lib/locations/options";
+import type { SelectOption, TreePickerOption } from "@/lib/locations/options";
 import type { ClassificationOption } from "@/lib/cow-calf/types";
 import { CALF_SEX_LABELS, CALVING_OUTCOME_LABELS } from "@/lib/cow-calf/constants";
 import { archiveCalving } from "@/lib/actions/calving";
@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 interface CalvingDetailClientProps {
   orgId: string;
   record: CalvingRecord;
-  locationOptions: SelectOption[];
+  locationTree: TreePickerOption[];
   groupOptions: SelectOption[];
   classificationOptions: ClassificationOption[];
   canManage: boolean;
@@ -31,7 +31,7 @@ function formatDate(iso: string) {
 export function CalvingDetailClient({
   orgId,
   record,
-  locationOptions,
+  locationTree,
   groupOptions,
   classificationOptions,
   canManage,
@@ -56,7 +56,7 @@ export function CalvingDetailClient({
       <CalvingForm
         orgId={orgId}
         record={record}
-        locationOptions={locationOptions}
+        locationTree={locationTree}
         groupOptions={groupOptions}
         classificationOptions={classificationOptions}
         onSuccess={() => {

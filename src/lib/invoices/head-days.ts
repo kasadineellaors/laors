@@ -168,6 +168,24 @@ async function dailyDeltasInPeriod(
   return deltas;
 }
 
+/** Integrate daily head for billing (end-of-day inventory after moves/adjustments). */
+export function integrateHeadDays(
+  periodStart: string,
+  periodEnd: string,
+  headAtStart: number,
+  dailyDeltas: Map<string, number>,
+): { headDays: number; headAtEnd: number } {
+  let head = headAtStart;
+  let headDays = 0;
+
+  for (const day of eachDay(periodStart, periodEnd)) {
+    head += dailyDeltas.get(day) ?? 0;
+    headDays += Math.max(0, head);
+  }
+
+  return { headDays, headAtEnd: head };
+}
+
 export interface GroupHeadDaysResult {
   groupId: string;
   groupName: string;
@@ -202,13 +220,12 @@ export async function computeGroupHeadDays(
   }
 
   const dailyDeltas = await dailyDeltasInPeriod(orgId, groupId, periodStart, periodEnd);
-  let head = headAtStart;
-  let headDays = 0;
-
-  for (const day of eachDay(periodStart, periodEnd)) {
-    headDays += Math.max(0, head);
-    head += dailyDeltas.get(day) ?? 0;
-  }
+  const { headDays, headAtEnd } = integrateHeadDays(
+    periodStart,
+    periodEnd,
+    headAtStart,
+    dailyDeltas,
+  );
 
   const avgHead = Math.round((headDays / dayCount) * 100) / 100;
 
@@ -218,7 +235,7 @@ export async function computeGroupHeadDays(
     headDays,
     avgHead,
     headAtStart,
-    headAtEnd: head,
+    headAtEnd,
   };
 }
 

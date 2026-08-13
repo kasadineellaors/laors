@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { SelectOption } from "@/lib/locations/options";
+import type { SelectOption, TreePickerOption } from "@/lib/locations/options";
+import { CascadingLocationField } from "@/components/locations/cascading-location-field";
 import type { OrgMemberOption } from "@/lib/tasks/types";
 import type { MedicineOption } from "@/lib/medicine/types";
 import type { TreatmentRecord } from "@/lib/health/types";
@@ -24,7 +25,7 @@ import { cn } from "@/lib/utils/cn";
 
 interface TreatmentFormProps {
   orgId: string;
-  locationOptions: SelectOption[];
+  locationTree: TreePickerOption[];
   groupOptions: SelectOption[];
   memberOptions: OrgMemberOption[];
   medicineOptions: MedicineOption[];
@@ -69,7 +70,7 @@ function initialSymptomNotes(
 
 export function TreatmentForm({
   orgId,
-  locationOptions,
+  locationTree,
   groupOptions,
   memberOptions,
   medicineOptions,
@@ -599,22 +600,16 @@ export function TreatmentForm({
               </div>
             ) : null}
           </div>
-          {locationOptions.length > 0 ? (
+          {locationTree.length > 0 ? (
             <div>
-              <Label htmlFor="location">Treatment location (optional)</Label>
-              <select
-                id="location"
+              <Label>Treatment location (optional)</Label>
+              <CascadingLocationField
+                idPrefix="treatment-location"
+                locationTree={locationTree}
                 value={locationId}
-                onChange={(e) => setLocationId(e.target.value)}
-                className={selectClass}
-              >
-                <option value="">Ranch-wide</option>
-                {locationOptions.map((l) => (
-                  <option key={l.value} value={l.value}>
-                    {l.label}
-                  </option>
-                ))}
-              </select>
+                onChange={setLocationId}
+                optional
+              />
             </div>
           ) : null}
         </section>

@@ -17,10 +17,25 @@ export default async function ReportsPage() {
     <AppPageShell>
       <AppPageHeader
         title="Reports"
-        subtitle="Monthly operations, ranch P&L, and enterprise profit views."
+        subtitle="Owner totals, monthly operations, ranch P&L, and enterprise profit views."
       />
 
       <div className="grid gap-4 sm:grid-cols-2">
+        <Card className="border-2 border-navy/20 sm:col-span-2">
+          <CardHeader>
+            <CardTitle>Owner Totals</CardTitle>
+            <CardDescription>
+              Primary owner-level reporting — current head, expenses, death loss, and head-days with
+              drill-down from owner to lot to location.
+            </CardDescription>
+          </CardHeader>
+          <Link href="/reports/owner-totals">
+            <Button fullWidth size="lg">
+              Owner Totals
+            </Button>
+          </Link>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>Operation P&amp;L</CardTitle>
@@ -46,6 +61,21 @@ export default async function ReportsPage() {
           <Link href="/reports/monthly">
             <Button fullWidth size="lg" variant="secondary">
               Monthly operations
+            </Button>
+          </Link>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Head-days</CardTitle>
+            <CardDescription>
+              Per lot, pen, and pasture vs yardage for any date range — operational data, not
+              invoicing.
+            </CardDescription>
+          </CardHeader>
+          <Link href="/reports/head-days">
+            <Button fullWidth size="lg" variant="outline">
+              Head-days report
             </Button>
           </Link>
         </Card>

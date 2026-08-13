@@ -24,9 +24,7 @@ export default async function NewBullPage() {
 
   const orgId = session.organization!.id;
   const [locations, groups] = await Promise.all([
-    getTreePickerOptions(orgId).then((nodes) =>
-      nodes.map((n) => ({ value: n.id, label: n.breadcrumb })),
-    ),
+    getTreePickerOptions(orgId),
     listCattleGroups(orgId).then((gs) =>
       gs.map((g) => ({ value: g.id, label: `${g.name} (${g.total_head} hd)` })),
     ),
@@ -40,7 +38,7 @@ export default async function NewBullPage() {
         </Link>
         <h1 className="mt-1 text-[1.75rem] font-bold leading-tight text-navy sm:text-[2rem]">Register bull</h1>
       </div>
-      <BullForm orgId={orgId} locationOptions={locations} groupOptions={groups} />
+      <BullForm orgId={orgId} locationTree={locations} groupOptions={groups} />
     </div>
   );
 }

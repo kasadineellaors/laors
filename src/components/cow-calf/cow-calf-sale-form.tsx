@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { SelectOption } from "@/lib/locations/options";
+import type { SelectOption, TreePickerOption } from "@/lib/locations/options";
+import { CascadingLocationField } from "@/components/locations/cascading-location-field";
 import type { CowCalfSaleType } from "@/lib/cow-calf/exit-types";
 import { COW_CALF_SALE_TYPE_LABELS } from "@/lib/cow-calf/constants";
 import { saveCowCalfSale } from "@/lib/actions/cow-calf-sales";
@@ -20,7 +21,7 @@ interface AnimalOption {
 interface CowCalfSaleFormProps {
   orgId: string;
   herdOptions: SelectOption[];
-  locationOptions: SelectOption[];
+  locationTree: TreePickerOption[];
   animalOptions: AnimalOption[];
   defaultHerdId?: string;
 }
@@ -31,7 +32,7 @@ const selectClass =
 export function CowCalfSaleForm({
   orgId,
   herdOptions,
-  locationOptions,
+  locationTree,
   animalOptions,
   defaultHerdId,
 }: CowCalfSaleFormProps) {
@@ -119,12 +120,13 @@ export function CowCalfSaleForm({
           </div>
           <div>
             <Label>Location</Label>
-            <select className={selectClass} value={locationId} onChange={(e) => setLocationId(e.target.value)}>
-              <option value="">—</option>
-              {locationOptions.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
+            <CascadingLocationField
+              idPrefix="cow-calf-sale-location"
+              locationTree={locationTree}
+              value={locationId}
+              onChange={setLocationId}
+              optional
+            />
           </div>
         </div>
 

@@ -30,9 +30,7 @@ export default async function CowDetailPage({
   if (!cow) notFound();
 
   const [locations, groups] = await Promise.all([
-    getTreePickerOptions(orgId).then((nodes) =>
-      nodes.map((n) => ({ value: n.id, label: n.breadcrumb })),
-    ),
+    getTreePickerOptions(orgId),
     listCattleGroups(orgId).then((gs) =>
       gs.map((g) => ({ value: g.id, label: `${g.name} (${g.total_head} hd)` })),
     ),
@@ -46,7 +44,7 @@ export default async function CowDetailPage({
       <CowDetailClient
         orgId={orgId}
         cow={cow}
-        locationOptions={locations}
+        locationTree={locations}
         groupOptions={groups}
         canManage={canManage}
       />

@@ -27,14 +27,19 @@ import { DashboardGreeting } from "@/components/dashboard/dashboard-greeting";
 import { DashboardMetricCard } from "@/components/dashboard/dashboard-metric-card";
 import { ForemanSummary, type ForemanSummaryItem } from "@/components/dashboard/foreman-summary";
 import { AlertBanner } from "@/components/dashboard/alert-banner";
-import { QuickActionGroup } from "@/components/dashboard/quick-action-group";
+import { DashboardQuickActions } from "@/components/dashboard/dashboard-quick-actions";
+import { listOwners } from "@/lib/owners/queries";
+import { listCattleGroups } from "@/lib/inventory/queries";
+import { getTreePickerOptions } from "@/lib/locations/options";
 import { EnterpriseSummaryCard } from "@/components/dashboard/enterprise-summary-card";
 import { FinancialSnapshotCard } from "@/components/dashboard/financial-snapshot-card";
 import { MonthlyPlCard } from "@/components/dashboard/monthly-pl-card";
 import { HeadByEnterpriseCard } from "@/components/dashboard/head-by-enterprise-card";
 import { RecentActivityCard } from "@/components/dashboard/recent-activity-card";
 import { OperationalAlerts } from "@/components/dashboard/operational-alerts";
+import { LotAdgCard } from "@/components/dashboard/lot-adg-card";
 import { DashboardEmptyLots } from "@/components/dashboard/dashboard-empty-lots";
+import { formatAdgLbs } from "@/lib/inventory/adg";
 import { RanchEnterpriseHub } from "@/components/dashboard/ranch-enterprise-hub";
 
 export const metadata: Metadata = {
@@ -151,6 +156,8 @@ export default async function DashboardPage() {
   const showSeedstock = hasSeedstockMode(modes);
   const showCalendar = isCalendarEnabled(org);
 
+  const canManageOwners = canManageTeam(role);
+
   const [
     totalHead,
     tree,
@@ -165,6 +172,9 @@ export default async function DashboardPage() {
     commandCenter,
     recentActivity,
     cowCalfInventory,
+    owners,
+    cattleGroups,
+    locationTree,
   ] = await Promise.all([
     getRanchTotalHeadCount(orgId),
     getLocationTreeWithRollups(orgId),
@@ -179,6 +189,9 @@ export default async function DashboardPage() {
     getDashboardCommandCenter(orgId),
     listAuditLog(orgId, 5),
     showDualEnterprise ? getEnterpriseInventorySummary(orgId) : Promise.resolve(null),
+    canManageOwners ? listOwners(orgId) : Promise.resolve([]),
+    canManageOwners ? listCattleGroups(orgId) : Promise.resolve([]),
+    canManageOwners ? getTreePickerOptions(orgId) : Promise.resolve([]),
   ]);
 
   const propertyCount = tree.length;
@@ -243,15 +256,58 @@ export default async function DashboardPage() {
       : []),
   ];
 
+  const lotOptions = cattleGroups.map((g) => ({ id: g.id, name: g.name }));
+  const locationOptions = locationTree.flatMap(function flatten(
+    node: (typeof locationTree)[number],
+  ): Array<{ id: string; label: string }> {
+    const self = [{ id: node.id, label: node.name }];
+    const kids = (node.children ?? []).flatMap(flatten);
+    return [...self, ...kids];
+  });
+
   return (
     <div className="space-y-8">
       <DashboardGreeting fullName={session.profile?.full_name} />
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <DashboardMetricCard
           label="Head on feed"
           value={commandCenter.total_open_head.toLocaleString()}
           context={hasLots ? `${commandCenter.active_lots} active lots` : undefined}
+        />
+        <DashboardMetricCard
+          label="Ranch ADG"
+          value={formatAdgLbs(commandCenter.operation_adg_lbs)}
+          context={
+            commandCenter.operation_adg_lot_count > 0
+              ? `${commandCenter.operation_adg_lot_count} lot${commandCenter.operation_adg_lot_count === 1 ? "" : "s"} tracked`
+              : "Need weight in + current wt"
+          }
+          tone={
+            commandCenter.operation_adg_lbs != null && commandCenter.operation_adg_lbs < 0
+              ? "warning"
+              : "default"
+          }
+        />
+        <DashboardMetricCard
+          label="Death loss"
+          value={
+            commandCenter.death_loss_placed_head > 0
+              ? `${commandCenter.death_loss_pct}%`
+              : "—"
+          }
+          context={
+            commandCenter.death_loss_placed_head > 0
+              ? `${commandCenter.death_loss_deaths} dead · ${commandCenter.deaths_this_month} this month`
+              : "No placed head on open lots"
+          }
+          tone={
+            commandCenter.death_loss_pct >= 3
+              ? "critical"
+              : commandCenter.death_loss_pct >= 1.5
+                ? "warning"
+                : "default"
+          }
         />
         <DashboardMetricCard
           label="Open tasks"
@@ -323,11 +379,15 @@ export default async function DashboardPage() {
         ) : null}
       </section>
 
-      <section className="space-y-6 rounded-[var(--radius-card)] border border-border-neutral bg-surface-white p-5 shadow-[var(--shadow-card)]">
-        <h2 className="text-lg font-bold text-navy">Quick Actions</h2>
-        <QuickActionGroup title="Daily Operations" actions={dailyActions} />
-        <QuickActionGroup title="Business" actions={businessActions} />
-      </section>
+      <DashboardQuickActions
+        orgId={orgId}
+        dailyActions={dailyActions}
+        businessActions={businessActions}
+        showMiscCharge={canManageOwners}
+        ownerOptions={owners}
+        lotOptions={lotOptions}
+        locationOptions={locationOptions}
+      />
 
       {!hasLots ? (
         <DashboardEmptyLots />
@@ -357,6 +417,13 @@ export default async function DashboardPage() {
           />
           <HeadByEnterpriseCard rows={commandCenter.head_by_enterprise} />
         </div>
+      ) : null}
+
+      {hasLots && commandCenter.lot_adg_rows.length > 0 ? (
+        <LotAdgCard
+          operationAdgLbs={commandCenter.operation_adg_lbs}
+          rows={commandCenter.lot_adg_rows}
+        />
       ) : null}
 
       {showCowCalf && calvingSummary.thisMonth > 0 ? (

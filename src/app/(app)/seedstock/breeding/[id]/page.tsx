@@ -33,9 +33,7 @@ export default async function SeedstockBreedingDetailPage({
   if (!record) notFound();
 
   const [locations, sires, dams] = await Promise.all([
-    getTreePickerOptions(orgId).then((nodes) =>
-      nodes.map((n) => ({ value: n.id, label: n.breadcrumb })),
-    ),
+    getTreePickerOptions(orgId),
     listSeedstockSireOptions(orgId),
     listSeedstockDamOptions(orgId),
   ]);
@@ -51,7 +49,7 @@ export default async function SeedstockBreedingDetailPage({
       <SeedstockBreedingDetailClient
         orgId={orgId}
         record={record}
-        locationOptions={locations}
+        locationTree={locations}
         sireOptions={sires}
         damOptions={dams}
         canManage={canManage}

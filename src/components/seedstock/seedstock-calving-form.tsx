@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { SelectOption } from "@/lib/locations/options";
+import type { SelectOption, TreePickerOption } from "@/lib/locations/options";
+import { CascadingLocationField } from "@/components/locations/cascading-location-field";
 import type {
   AssistanceType,
   CalvingRecord,
@@ -30,7 +31,7 @@ interface AnimalOption {
 
 interface SeedstockCalvingFormProps {
   orgId: string;
-  locationOptions: SelectOption[];
+  locationTree: TreePickerOption[];
   damOptions: AnimalOption[];
   sireOptions: AnimalOption[];
   defaultDamId?: string;
@@ -43,7 +44,7 @@ const selectClass =
 
 export function SeedstockCalvingForm({
   orgId,
-  locationOptions,
+  locationTree,
   damOptions,
   sireOptions,
   defaultDamId,
@@ -151,13 +152,14 @@ export function SeedstockCalvingForm({
           <Input id="calvedAt" type="date" value={calvedAt} onChange={(e) => setCalvedAt(e.target.value)} required />
         </div>
         <div>
-          <Label htmlFor="location">Location</Label>
-          <select id="location" className={selectClass} value={locationId} onChange={(e) => setLocationId(e.target.value)}>
-            <option value="">—</option>
-            {locationOptions.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
+          <Label>Location</Label>
+          <CascadingLocationField
+            idPrefix="seedstock-calving-location"
+            locationTree={locationTree}
+            value={locationId}
+            onChange={setLocationId}
+            optional
+          />
         </div>
       </div>
 

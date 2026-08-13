@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import type { SelectOption } from "@/lib/locations/options";
+import type { SelectOption, TreePickerOption } from "@/lib/locations/options";
 import type { OrgMemberOption } from "@/lib/tasks/types";
 import type { FeedRationOption, FeedingRecord } from "@/lib/feed/types";
 import { archiveFeeding } from "@/lib/actions/feed";
@@ -15,7 +15,7 @@ interface FeedingDetailClientProps {
   feeding: FeedingRecord;
   rationOptions: FeedRationOption[];
   rationUnitCosts?: Record<string, number>;
-  locationOptions: SelectOption[];
+  locationTree: TreePickerOption[];
   groupOptions: SelectOption[];
   ownerOptions: SelectOption[];
   memberOptions: OrgMemberOption[];
@@ -59,7 +59,7 @@ export function FeedingDetailClient({
   feeding,
   rationOptions,
   rationUnitCosts,
-  locationOptions,
+  locationTree,
   groupOptions,
   ownerOptions,
   memberOptions,
@@ -93,7 +93,7 @@ export function FeedingDetailClient({
           feeding={feeding}
           rationOptions={rationOptions}
           rationUnitCosts={rationUnitCosts}
-          locationOptions={locationOptions}
+          locationTree={locationTree}
           groupOptions={groupOptions}
           ownerOptions={ownerOptions}
           memberOptions={memberOptions}

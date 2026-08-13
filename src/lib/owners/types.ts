@@ -8,6 +8,7 @@ export interface OwnerRecord {
   ownership_type: string | null;
   is_ownership_group: boolean;
   yardage_rate_per_head_day: number | null;
+  pasture_rate_per_head_day: number | null;
   medicine_markup_percent: number | null;
   feed_markup_percent: number | null;
   notes: string | null;
@@ -29,6 +30,7 @@ export interface OwnerOption {
   address: string | null;
   is_ownership_group: boolean;
   yardage_rate_per_head_day: number | null;
+  pasture_rate_per_head_day: number | null;
   medicine_markup_percent: number | null;
   feed_markup_percent: number | null;
 }

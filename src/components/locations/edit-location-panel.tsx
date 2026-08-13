@@ -6,6 +6,7 @@ import Link from "next/link";
 import type { LocationTreeNode } from "@/lib/locations/types";
 import type { LocationCattleGroup } from "@/lib/locations/rollups";
 import { updateLocation, archiveLocation } from "@/lib/actions/ranch-config";
+import { LOCATION_BILLING_OVERRIDE_OPTIONS } from "@/lib/locations/billing-mode";
 import { formatNodeCapacity, getLocationTypeLabel } from "@/lib/locations/display";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,6 +51,9 @@ export function EditLocationPanel({
   const [name, setName] = useState(location.name);
   const [acres, setAcres] = useState(location.acres?.toString() ?? "");
   const [capacity, setCapacity] = useState(location.capacity_head?.toString() ?? "");
+  const [billingRateMode, setBillingRateMode] = useState(
+    (location as { billing_rate_mode?: string }).billing_rate_mode ?? "inherit",
+  );
   const [error, setError] = useState<string | null>(null);
   const [acresError, setAcresError] = useState<string | undefined>();
   const [capacityError, setCapacityError] = useState<string | undefined>();
@@ -59,6 +63,9 @@ export function EditLocationPanel({
     location.location_type.tier,
     location.location_type.name,
   );
+  const isLocationTier = location.location_type.tier === "location";
+  const selectClass =
+    "flex h-12 w-full rounded-lg border-2 border-border-neutral bg-surface-white px-4 text-base";
   const capacityDisplay = formatNodeCapacity(location);
 
   async function handleSave(e: React.FormEvent) {
@@ -76,6 +83,7 @@ export function EditLocationPanel({
       name,
       acres: acres.trim() ? Number(acres) : null,
       capacityHead: capacity.trim() ? Number(capacity) : null,
+      billingRateMode: billingRateMode as "inherit" | "pasture" | "yardage",
     });
     setLoading(false);
     if (result.error) {
@@ -219,6 +227,26 @@ export function EditLocationPanel({
             ) : null}
           </div>
         </div>
+        {isLocationTier ? (
+          <div>
+            <Label htmlFor="editBillingMode">Billing rate</Label>
+            <select
+              id="editBillingMode"
+              value={billingRateMode}
+              onChange={(e) => setBillingRateMode(e.target.value)}
+              className={selectClass}
+            >
+              {LOCATION_BILLING_OVERRIDE_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-text-secondary">
+              Override the location type default when this pen bills differently.
+            </p>
+          </div>
+        ) : null}
         {error ? (
           <p className="text-sm text-status-critical" role="alert">
             {error}

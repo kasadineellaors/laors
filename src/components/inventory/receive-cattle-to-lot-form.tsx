@@ -38,6 +38,7 @@ export function ReceiveCattleToLotForm({
   const [invoiceRef, setInvoiceRef] = useState("");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const head = parseInt(headCount, 10);
@@ -71,6 +72,7 @@ export function ReceiveCattleToLotForm({
 
     setLoading(true);
     setError(null);
+    setSuccess(null);
     const result = await receiveCattleToLot(orgId, groupId, {
       headCount: count,
       purchaseDate,
@@ -91,6 +93,7 @@ export function ReceiveCattleToLotForm({
     }
 
     setOpen(false);
+    setSuccess(result.success ?? `Received ${count} head`);
     setHeadCount("");
     setPayWeight("");
     setReceivedWeight("");
@@ -114,11 +117,27 @@ export function ReceiveCattleToLotForm({
       </CardHeader>
       <div className="px-4 pb-4">
         {!open ? (
-          <Button type="button" fullWidth size="lg" onClick={() => setOpen(true)}>
-            Receive to this lot
-          </Button>
+          <>
+            <Button
+              type="button"
+              fullWidth
+              size="lg"
+              onClick={() => {
+                setOpen(true);
+                setError(null);
+                setSuccess(null);
+              }}
+            >
+              Receive to this lot
+            </Button>
+            {success ? (
+              <p className="mt-2 text-sm font-medium text-status-success" role="status">
+                {success}
+              </p>
+            ) : null}
+          </>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="receiveDate">Purchase / arrival date</Label>

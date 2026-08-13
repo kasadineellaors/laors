@@ -34,9 +34,7 @@ export default async function CalvingDetailPage({
   if (!record) notFound();
 
   const [locations, groups, classifications] = await Promise.all([
-    getTreePickerOptions(orgId).then((nodes) =>
-      nodes.map((n) => ({ value: n.id, label: n.breadcrumb })),
-    ),
+    getTreePickerOptions(orgId),
     listCattleGroups(orgId).then((gs) =>
       gs.map((g) => ({ value: g.id, label: `${g.name} (${g.total_head} hd)` })),
     ),
@@ -54,7 +52,7 @@ export default async function CalvingDetailPage({
       <CalvingDetailClient
         orgId={orgId}
         record={record}
-        locationOptions={locations}
+        locationTree={locations}
         groupOptions={groups}
         classificationOptions={classifications}
         canManage={canManage}

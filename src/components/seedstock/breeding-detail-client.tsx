@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { BreedingRecord } from "@/lib/cow-calf/breeding-types";
-import type { SelectOption } from "@/lib/locations/options";
+import type { SelectOption, TreePickerOption } from "@/lib/locations/options";
 import {
   BREEDING_METHOD_LABELS,
   PREGNANCY_STATUS_LABELS,
@@ -21,7 +21,7 @@ interface AnimalOption {
 interface SeedstockBreedingDetailClientProps {
   orgId: string;
   record: BreedingRecord;
-  locationOptions: SelectOption[];
+  locationTree: TreePickerOption[];
   sireOptions: AnimalOption[];
   damOptions: AnimalOption[];
   canManage: boolean;
@@ -39,7 +39,7 @@ function formatDate(iso: string) {
 export function SeedstockBreedingDetailClient({
   orgId,
   record,
-  locationOptions,
+  locationTree,
   sireOptions,
   damOptions,
   canManage,
@@ -64,7 +64,7 @@ export function SeedstockBreedingDetailClient({
       <SeedstockBreedingForm
         orgId={orgId}
         record={record}
-        locationOptions={locationOptions}
+        locationTree={locationTree}
         sireOptions={sireOptions}
         damOptions={damOptions}
         onSuccess={() => {

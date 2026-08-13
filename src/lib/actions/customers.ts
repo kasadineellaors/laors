@@ -66,6 +66,7 @@ export async function createCustomer(
     phone?: string;
     address?: string;
     yardageRatePerHeadDay?: string;
+    pastureRatePerHeadDay?: string;
     medicineMarkupPercent?: string;
     feedMarkupPercent?: string;
     notes?: string;
@@ -80,6 +81,10 @@ export async function createCustomer(
   const yardage = parseOptionalRate(input.yardageRatePerHeadDay);
   if (yardage === undefined && input.yardageRatePerHeadDay?.trim()) {
     return { error: "Enter a valid yardage rate" };
+  }
+  const pasture = parseOptionalRate(input.pastureRatePerHeadDay);
+  if (pasture === undefined && input.pastureRatePerHeadDay?.trim()) {
+    return { error: "Enter a valid pasture rate" };
   }
   const markup = parseOptionalRate(input.medicineMarkupPercent);
   if (markup === undefined && input.medicineMarkupPercent?.trim()) {
@@ -102,6 +107,7 @@ export async function createCustomer(
         phone: input.phone?.trim() || null,
         address: input.address?.trim() || null,
         yardage_rate_per_head_day: yardage ?? null,
+        pasture_rate_per_head_day: pasture ?? null,
         medicine_markup_percent: markup ?? null,
         feed_markup_percent: feedMarkup ?? null,
         notes: input.notes?.trim() || null,
@@ -126,6 +132,7 @@ export async function updateCustomer(
     phone?: string | null;
     address?: string | null;
     yardageRatePerHeadDay?: string | null;
+    pastureRatePerHeadDay?: string | null;
     medicineMarkupPercent?: string | null;
     feedMarkupPercent?: string | null;
     notes?: string | null;
@@ -156,6 +163,15 @@ export async function updateCustomer(
         const n = parseFloat(input.yardageRatePerHeadDay);
         if (Number.isNaN(n) || n < 0) return { error: "Enter a valid yardage rate" };
         updates.yardage_rate_per_head_day = n;
+      }
+    }
+    if (input.pastureRatePerHeadDay !== undefined) {
+      if (!input.pastureRatePerHeadDay?.trim()) {
+        updates.pasture_rate_per_head_day = null;
+      } else {
+        const n = parseFloat(input.pastureRatePerHeadDay);
+        if (Number.isNaN(n) || n < 0) return { error: "Enter a valid pasture rate" };
+        updates.pasture_rate_per_head_day = n;
       }
     }
     if (input.medicineMarkupPercent !== undefined) {

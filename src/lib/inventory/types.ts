@@ -24,6 +24,8 @@ export interface CattleGroupSummary {
   feedings_today: number;
   withdrawal_active: boolean;
   head_discrepancy: boolean;
+  mortality_deaths: number;
+  mortality_value_lost: number;
   current_avg_weight_lbs: number | null;
   lot_number: string | null;
   enterprise_type: string;
@@ -61,6 +63,11 @@ export interface MovementRecord {
   total_head: number;
   is_partial: boolean;
   notes: string | null;
+  out_weight_lbs: number | null;
+  source_group_id: string;
+  destination_group_id: string;
+  source_location_id: string | null;
+  destination_location_id: string;
   source_group_name: string;
   destination_group_name: string;
   source_location_name: string | null;

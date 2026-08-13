@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { SelectOption } from "@/lib/locations/options";
+import type { SelectOption, TreePickerOption } from "@/lib/locations/options";
+import { CascadingLocationField } from "@/components/locations/cascading-location-field";
 import type { BreedingRecord } from "@/lib/cow-calf/breeding-types";
 import type { BreedingMethod, PregnancyStatus } from "@/lib/cow-calf/breeding-types";
 import {
@@ -30,7 +31,7 @@ interface DamOption {
 
 interface BreedingFormProps {
   orgId: string;
-  locationOptions: SelectOption[];
+  locationTree: TreePickerOption[];
   herdOptions: SelectOption[];
   bullOptions: BullOption[];
   damOptions: DamOption[];
@@ -44,7 +45,7 @@ const selectClass =
 
 export function BreedingForm({
   orgId,
-  locationOptions,
+  locationTree,
   herdOptions,
   bullOptions,
   damOptions,
@@ -176,20 +177,14 @@ export function BreedingForm({
         </div>
 
         <div>
-          <Label htmlFor="location">Location</Label>
-          <select
-            id="location"
+          <Label>Location</Label>
+          <CascadingLocationField
+            idPrefix="breeding-location"
+            locationTree={locationTree}
             value={locationId}
-            onChange={(e) => setLocationId(e.target.value)}
-            className={selectClass}
-          >
-            <option value="">— Optional —</option>
-            {locationOptions.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
+            onChange={setLocationId}
+            optional
+          />
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">

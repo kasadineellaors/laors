@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { SelectOption } from "@/lib/locations/options";
+import type { SelectOption, TreePickerOption } from "@/lib/locations/options";
+import { CascadingLocationField } from "@/components/locations/cascading-location-field";
 import type { LossCause } from "@/lib/cow-calf/exit-types";
 import { LOSS_CAUSE_LABELS } from "@/lib/cow-calf/constants";
 import { saveCowCalfLoss } from "@/lib/actions/cow-calf-loss";
@@ -20,7 +21,7 @@ interface AnimalOption {
 interface LossFormProps {
   orgId: string;
   herdOptions: SelectOption[];
-  locationOptions: SelectOption[];
+  locationTree: TreePickerOption[];
   animalOptions: AnimalOption[];
   defaultAnimalId?: string;
   defaultHerdId?: string;
@@ -32,7 +33,7 @@ const selectClass =
 export function CowCalfLossForm({
   orgId,
   herdOptions,
-  locationOptions,
+  locationTree,
   animalOptions,
   defaultAnimalId,
   defaultHerdId,
@@ -52,6 +53,7 @@ export function CowCalfLossForm({
   }
   const [locationId, setLocationId] = useState("");
   const [disposal, setDisposal] = useState("");
+  const [weightLbs, setWeightLbs] = useState("");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -72,6 +74,7 @@ export function CowCalfLossForm({
       cowCalfHerdId: herdId || undefined,
       locationId: locationId || undefined,
       disposalMethod: disposal,
+      weightLbs: weightLbs.trim() ? parseFloat(weightLbs) : undefined,
       notes,
     });
 
@@ -131,12 +134,32 @@ export function CowCalfLossForm({
           </div>
           <div>
             <Label>Location</Label>
-            <select className={selectClass} value={locationId} onChange={(e) => setLocationId(e.target.value)}>
-              <option value="">—</option>
-              {locationOptions.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
+            <CascadingLocationField
+              idPrefix="loss-location"
+              locationTree={locationTree}
+              value={locationId}
+              onChange={setLocationId}
+              optional
+            />
+          </div>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <Label>Head count</Label>
+            <Input type="number" min={1} value={1} disabled className="bg-tan/20" />
+            <p className="mt-1 text-xs text-text-secondary">One animal per loss record</p>
+          </div>
+          <div>
+            <Label>Weight (lb)</Label>
+            <Input
+              type="number"
+              min={0}
+              step="0.1"
+              value={weightLbs}
+              onChange={(e) => setWeightLbs(e.target.value)}
+              placeholder="Live or carcass weight"
+            />
           </div>
         </div>
 

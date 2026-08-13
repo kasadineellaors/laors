@@ -20,9 +20,7 @@ export default async function NewCowCalfSalePage({
   const orgId = session.organization!.id;
 
   const [locations, herds, animals] = await Promise.all([
-    getTreePickerOptions(orgId).then((nodes) =>
-      nodes.map((n) => ({ value: n.id, label: n.breadcrumb })),
-    ),
+    getTreePickerOptions(orgId),
     listCowCalfHerdOptions(orgId),
     listCowCalfAnimalOptions(orgId, ["cow", "heifer", "bull", "other"]),
   ]);
@@ -40,7 +38,7 @@ export default async function NewCowCalfSalePage({
       <CowCalfSaleForm
         orgId={orgId}
         herdOptions={herds}
-        locationOptions={locations}
+        locationTree={locations}
         animalOptions={filteredAnimals}
         defaultHerdId={herd}
       />

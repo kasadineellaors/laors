@@ -32,9 +32,7 @@ export default async function NewCowCalfFeedPage({
   const orgId = session.organization!.id;
 
   const [locations, groups, owners, members, rationOptions, herd] = await Promise.all([
-    getTreePickerOptions(orgId).then((nodes) =>
-      nodes.map((n) => ({ value: n.id, label: n.breadcrumb })),
-    ),
+    getTreePickerOptions(orgId),
     listCattleGroups(orgId).then(toFeedGroupOptions),
     listOwnerOptions(orgId).then(ownersToSelectOptions),
     listOrgMembers(orgId),
@@ -69,7 +67,7 @@ export default async function NewCowCalfFeedPage({
           orgId={orgId}
           rationOptions={rationOptions}
           rationUnitCosts={rationUnitCosts}
-          locationOptions={locations}
+          locationTree={locations}
           groupOptions={groups}
           ownerOptions={owners}
           memberOptions={members}

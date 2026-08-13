@@ -25,9 +25,7 @@ export default async function SaleDetailPage({
   if (!sale) notFound();
 
   const [locations, categories, customerOptions, fieldSuggestions] = await Promise.all([
-    getTreePickerOptions(orgId).then((nodes) =>
-      nodes.map((n) => ({ value: n.id, label: n.breadcrumb })),
-    ),
+    getTreePickerOptions(orgId),
     getRanchOptions(orgId, "financial_categories").then((opts) =>
       opts.filter((o) => o.meta?.category_type === "income"),
     ),
@@ -42,7 +40,7 @@ export default async function SaleDetailPage({
     <SaleDetailClient
       orgId={orgId}
       sale={sale}
-      locationOptions={locations}
+      locationTree={locations}
       categoryOptions={categories}
       customerOptions={customerOptions}
       buyerSuggestions={fieldSuggestions.buyers}

@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { SelectOption } from "@/lib/locations/options";
+import type { SelectOption, TreePickerOption } from "@/lib/locations/options";
+import { CascadingLocationField } from "@/components/locations/cascading-location-field";
 import { createCattleGroup } from "@/lib/actions/inventory";
 import { computeAvgWeightIn, perHeadAvg, shrinkPct } from "@/lib/lots/purchase-weights";
 import { ENTERPRISE_LABELS, type EnterpriseType } from "@/lib/lots/types";
@@ -15,7 +16,7 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 
 interface CreateGroupFormProps {
   orgId: string;
-  locationOptions: SelectOption[];
+  locationTree: TreePickerOption[];
   ownerOptions: SelectOption[];
   lotLabelOptions: SelectOption[];
   fieldSuggestions: Pick<RanchFieldSuggestions, "sellers" | "sources">;
@@ -23,7 +24,7 @@ interface CreateGroupFormProps {
 
 export function CreateGroupForm({
   orgId,
-  locationOptions,
+  locationTree,
   ownerOptions,
   lotLabelOptions,
   fieldSuggestions,
@@ -34,7 +35,7 @@ export function CreateGroupForm({
 
   const [lotLabel, setLotLabel] = useState("");
   const [enterpriseType, setEnterpriseType] = useState<EnterpriseType>("stocker");
-  const [locationId, setLocationId] = useState(locationOptions[0]?.value ?? "");
+  const [locationId, setLocationId] = useState("");
   const [ownerId, setOwnerId] = useState("");
   const [purchaseDate, setPurchaseDate] = useState(today);
   const [arrivalDate, setArrivalDate] = useState(today);
@@ -80,6 +81,12 @@ export function CreateGroupForm({
     const trimmedLot = lotLabel.trim();
     if (!trimmedLot) {
       setError("Select or enter a lot name");
+      setLoading(false);
+      return;
+    }
+
+    if (!locationId) {
+      setError("Select a pen or pasture for this lot");
       setLoading(false);
       return;
     }
@@ -130,7 +137,7 @@ export function CreateGroupForm({
           health, sales, and billing automatically.
         </CardDescription>
       </CardHeader>
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <Label htmlFor="lotLabel">Lot</Label>
@@ -210,24 +217,26 @@ export function CreateGroupForm({
           </div>
         </div>
         <div>
-          <Label htmlFor="locationId">Pen / pasture</Label>
-          <select
-            id="locationId"
-            value={locationId}
-            onChange={(e) => setLocationId(e.target.value)}
-            required
-            className={selectClass}
-          >
-            {locationOptions.length === 0 ? (
-              <option value="">Add locations in Ranch Setup first</option>
-            ) : (
-              locationOptions.map((loc) => (
-                <option key={loc.value} value={loc.value}>
-                  {loc.label}
-                </option>
-              ))
-            )}
-          </select>
+          <Label>Pen / pasture</Label>
+          {locationTree.length === 0 ? (
+            <p className="text-sm text-text-secondary">Add locations in Ranch Setup first</p>
+          ) : (
+            <>
+              <CascadingLocationField
+                idPrefix="create-group-location"
+                locationTree={locationTree}
+                value={locationId}
+                onChange={setLocationId}
+                required
+                parentLabel="Pen / pasture"
+              />
+              {!locationId ? (
+                <p className="mt-1 text-xs text-status-warning">
+                  Choose the property, then the pen or pasture where these cattle will start.
+                </p>
+              ) : null}
+            </>
+          )}
         </div>
         {ownerOptions.length > 0 ? (
           <div>
@@ -342,8 +351,8 @@ export function CreateGroupForm({
             {error}
           </p>
         ) : null}
-        <Button type="submit" fullWidth size="xl" disabled={loading || !locationId}>
-          {loading ? "Saving…" : "Create lot"}
+        <Button type="submit" fullWidth size="xl" disabled={loading || locationTree.length === 0}>
+          {loading ? "Saving…" : "Receive cattle"}
         </Button>
       </form>
     </Card>

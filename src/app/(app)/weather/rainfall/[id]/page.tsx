@@ -21,11 +21,9 @@ export default async function RainfallDetailPage({
   const record = await getRainfall(orgId, id);
   if (!record) notFound();
 
-  const locations = await getTreePickerOptions(orgId).then((nodes) =>
-    nodes.map((n) => ({ value: n.id, label: n.breadcrumb })),
-  );
+  const locations = await getTreePickerOptions(orgId);
 
   return (
-    <RainfallDetailClient orgId={orgId} record={record} locationOptions={locations} />
+    <RainfallDetailClient orgId={orgId} record={record} locationTree={locations} />
   );
 }

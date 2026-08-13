@@ -37,9 +37,7 @@ export default async function NewSalePage({
     : null;
 
   const [locations, groups, categories, customerOptions, fieldSuggestions] = await Promise.all([
-    getTreePickerOptions(orgId).then((nodes) =>
-      nodes.map((n) => ({ value: n.id, label: n.breadcrumb })),
-    ),
+    getTreePickerOptions(orgId),
     listCattleGroups(orgId).then((gs) =>
       gs.map((g) => ({
         value: g.id,
@@ -68,7 +66,7 @@ export default async function NewSalePage({
       </div>
       <SaleForm
         orgId={orgId}
-        locationOptions={locations}
+        locationTree={locations}
         groupOptions={groups}
         categoryOptions={categories}
         customerOptions={customerOptions}

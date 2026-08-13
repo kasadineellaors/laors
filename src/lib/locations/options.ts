@@ -43,7 +43,7 @@ export async function getRanchOptions(
     case "location_types": {
       const { data } = await supabase
         .from("location_types")
-        .select("id, name, plural_name, tier")
+        .select("id, name, plural_name, tier, billing_rate_mode")
         .eq("organization_id", orgId)
         .eq("is_active", true)
         .order("sort_order")
@@ -51,7 +51,12 @@ export async function getRanchOptions(
       return (data ?? []).map((r) => ({
         value: r.id,
         label: r.name,
-        meta: { tier: r.tier, plural_name: r.plural_name },
+        meta: {
+          tier: r.tier,
+          plural_name: r.plural_name,
+          billing_rate_mode:
+            (r as { billing_rate_mode?: string | null }).billing_rate_mode ?? null,
+        },
       }));
     }
     case "locations_property_tier": {
