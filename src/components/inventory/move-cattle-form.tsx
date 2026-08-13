@@ -29,6 +29,7 @@ interface MoveCattleFormProps {
   movementReasonOptions: SelectOption[];
   initialSourceGroupId?: string;
   initialMode?: "move" | "remove";
+  onSuccess?: () => void;
 }
 
 function initialSourceLocationState(
@@ -51,6 +52,7 @@ export function MoveCattleForm({
   movementReasonOptions,
   initialSourceGroupId,
   initialMode = "move",
+  onSuccess,
 }: MoveCattleFormProps) {
   const router = useRouter();
   const [operation, setOperation] = useState<"move" | "remove">(initialMode);
@@ -168,6 +170,11 @@ export function MoveCattleForm({
           setError(result.error);
           return;
         }
+        if (onSuccess) {
+          onSuccess();
+          router.refresh();
+          return;
+        }
         router.push(`/cattle/groups/${sourceGroupId}`);
         router.refresh();
         return;
@@ -195,6 +202,11 @@ export function MoveCattleForm({
 
       if (result.error) {
         setError(result.error);
+        return;
+      }
+      if (onSuccess) {
+        onSuccess();
+        router.refresh();
         return;
       }
       router.push("/cattle/moves");

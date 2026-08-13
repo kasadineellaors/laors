@@ -1,13 +1,20 @@
 "use client";
 
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useCallback, useMemo, useState } from "react";
 import Link from "next/link";
+import type { CattleGroupSummary } from "@/lib/inventory/types";
+import type { SelectOption, TreePickerOption } from "@/lib/locations/options";
+import type { OrgMemberOption } from "@/lib/tasks/types";
+import type { MedicineOption } from "@/lib/medicine/types";
 import type { OwnerRecord } from "@/lib/owners/types";
 import type { OwnerTotalsReport } from "@/lib/reports/owner-totals-types";
+import type { FeedRationOption } from "@/lib/feed/types";
 import { fetchOwnerTotalsReport } from "@/lib/actions/reports";
-import { QuickActionGroup } from "@/components/dashboard/quick-action-group";
-import { quickAddHideLabel } from "@/components/dashboard/quick-add-label";
+import { QuickAddSection, type QuickAddItem } from "@/components/dashboard/quick-add-section";
 import { MiscChargeQuickForm } from "@/components/reports/misc-charge-quick-form";
+import { TreatmentForm } from "@/components/health/treatment-form";
+import { FeedingForm } from "@/components/feed/feeding-form";
+import { MoveCattleForm } from "@/components/inventory/move-cattle-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,9 +23,19 @@ import { EmptyState } from "@/components/ui/empty-state";
 
 interface OwnerTotalsReportClientProps {
   orgId: string;
+  currentUserId: string;
   ownerOptions: OwnerRecord[];
   lotOptions: Array<{ id: string; name: string }>;
   locationOptions: Array<{ id: string; label: string }>;
+  locationTree: TreePickerOption[];
+  activeGroups: CattleGroupSummary[];
+  groupOptions: SelectOption[];
+  memberOptions: OrgMemberOption[];
+  medicineOptions: MedicineOption[];
+  rationOptions: FeedRationOption[];
+  rationUnitCosts: Record<string, number>;
+  feedingOwnerOptions: SelectOption[];
+  movementReasonOptions: SelectOption[];
   initialPeriodStart: string;
   initialPeriodEnd: string;
 }
@@ -67,9 +84,19 @@ const TABLE_HEAD = (
 
 export function OwnerTotalsReportClient({
   orgId,
+  currentUserId,
   ownerOptions,
   lotOptions,
   locationOptions,
+  locationTree,
+  activeGroups,
+  groupOptions,
+  memberOptions,
+  medicineOptions,
+  rationOptions,
+  rationUnitCosts,
+  feedingOwnerOptions,
+  movementReasonOptions,
   initialPeriodStart,
   initialPeriodEnd,
 }: OwnerTotalsReportClientProps) {
@@ -83,54 +110,14 @@ export function OwnerTotalsReportClient({
   const [report, setReport] = useState<OwnerTotalsReport | null>(null);
   const [expandedOwners, setExpandedOwners] = useState<Set<string>>(new Set());
   const [expandedLots, setExpandedLots] = useState<Set<string>>(new Set());
-  const [showMiscForm, setShowMiscForm] = useState(false);
+  const [activeQuickAddId, setActiveQuickAddId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const closePanel = () => setActiveQuickAddId(null);
+
   const selectClass =
     "flex h-12 w-full rounded-lg border-2 border-border-neutral bg-surface-white px-4 text-base";
-
-  const miscAddLabel = "Add Miscellaneous Charge";
-
-  const quickActions = useMemo(() => {
-    const qs = new URLSearchParams();
-    if (ownerId) qs.set("owner", ownerId);
-    if (lotId) qs.set("group", lotId);
-    const suffix = qs.toString() ? `?${qs.toString()}` : "";
-    return [
-      { id: "add-cattle", label: "Add Cattle", href: `/cattle/new${suffix}`, variant: "primary" as const },
-      { id: "move", label: "Move Cattle", href: `/cattle/move${lotId ? `?from=${lotId}` : ""}` },
-      {
-        id: "remove",
-        label: "Remove Cattle",
-        href: `/cattle/move${lotId ? `?from=${lotId}&mode=remove` : "?mode=remove"}`,
-      },
-      {
-        id: "treatment",
-        label: "Record Treatment",
-        href: `/health/treatments/new${lotId ? `?group=${lotId}` : ""}`,
-      },
-      { id: "feed", label: "Record Feed", href: `/feed/log/new${lotId ? `?group=${lotId}` : ""}` },
-      {
-        id: "death",
-        label: "Record Death Loss",
-        href: lotId ? `/cattle/groups/${lotId}` : "/cow-calf/loss/new",
-      },
-      { id: "ship", label: "Ship Cattle", href: `/cow-calf/shipping/new${suffix}` },
-      { id: "sell", label: "Sell Cattle", href: `/sales/new${lotId ? `?group=${lotId}` : ""}` },
-      {
-        id: "invoice",
-        label: "Create Invoice",
-        href: `/invoices/generate${ownerId ? `?owner=${ownerId}` : ""}`,
-      },
-      {
-        id: "misc-charge",
-        label: showMiscForm ? quickAddHideLabel(miscAddLabel) : miscAddLabel,
-        variant: showMiscForm ? ("primary" as const) : undefined,
-        onClick: () => setShowMiscForm((v) => !v),
-      },
-    ];
-  }, [ownerId, lotId, showMiscForm]);
 
   async function handleLoad() {
     setLoading(true);
@@ -155,6 +142,165 @@ export function OwnerTotalsReportClient({
     setExpandedLots(new Set());
   }
 
+  const afterSave = useCallback(() => {
+    closePanel();
+    if (report) void handleLoad();
+  }, [report, periodStart, periodEnd, ownerId, lotId, locationId, lotStatus, search, orgId]);
+
+  const miscAddLabel = "Add Miscellaneous Charge";
+
+  const quickAddItems = useMemo((): QuickAddItem[] => {
+    const qs = new URLSearchParams();
+    if (ownerId) qs.set("owner", ownerId);
+    if (lotId) qs.set("group", lotId);
+    const suffix = qs.toString() ? `?${qs.toString()}` : "";
+    const feedPrefill = lotId ? { groupId: lotId } : undefined;
+    const moveFromLot = lotId || undefined;
+
+    return [
+      {
+        type: "link",
+        id: "add-cattle",
+        addLabel: "Add Cattle",
+        href: `/cattle/new${suffix}`,
+        variant: "primary",
+      },
+      ...(activeGroups.length > 0
+        ? [
+            {
+              type: "panel" as const,
+              id: "move",
+              addLabel: "Move Cattle",
+              panel: (
+                <MoveCattleForm
+                  orgId={orgId}
+                  groups={activeGroups}
+                  locationTree={locationTree}
+                  movementReasonOptions={movementReasonOptions}
+                  initialSourceGroupId={moveFromLot}
+                  initialMode="move"
+                  onSuccess={afterSave}
+                />
+              ),
+            },
+            {
+              type: "panel" as const,
+              id: "remove",
+              addLabel: "Remove Cattle",
+              panel: (
+                <MoveCattleForm
+                  orgId={orgId}
+                  groups={activeGroups}
+                  locationTree={locationTree}
+                  movementReasonOptions={movementReasonOptions}
+                  initialSourceGroupId={moveFromLot}
+                  initialMode="remove"
+                  onSuccess={afterSave}
+                />
+              ),
+            },
+          ]
+        : [
+            {
+              type: "link" as const,
+              id: "move",
+              addLabel: "Move Cattle",
+              href: `/cattle/move${lotId ? `?from=${lotId}` : ""}`,
+            },
+            {
+              type: "link" as const,
+              id: "remove",
+              addLabel: "Remove Cattle",
+              href: `/cattle/move${lotId ? `?from=${lotId}&mode=remove` : "?mode=remove"}`,
+            },
+          ]),
+      {
+        type: "panel",
+        id: "treatment",
+        addLabel: "Record Treatment",
+        panel: (
+          <TreatmentForm
+            orgId={orgId}
+            currentUserId={currentUserId}
+            locationTree={locationTree}
+            groupOptions={groupOptions}
+            memberOptions={memberOptions}
+            medicineOptions={medicineOptions}
+            onSuccess={afterSave}
+          />
+        ),
+      },
+      {
+        type: "panel",
+        id: "feed",
+        addLabel: "Record Feed",
+        panel: (
+          <FeedingForm
+            orgId={orgId}
+            rationOptions={rationOptions}
+            rationUnitCosts={rationUnitCosts}
+            locationTree={locationTree}
+            groupOptions={groupOptions}
+            ownerOptions={feedingOwnerOptions}
+            memberOptions={memberOptions}
+            prefill={feedPrefill}
+            onSuccess={afterSave}
+          />
+        ),
+      },
+      {
+        type: "link",
+        id: "death",
+        addLabel: "Record Death Loss",
+        href: lotId ? `/cattle/groups/${lotId}` : "/cow-calf/loss/new",
+      },
+      { type: "link", id: "ship", addLabel: "Ship Cattle", href: `/cow-calf/shipping/new${suffix}` },
+      { type: "link", id: "sell", addLabel: "Sell Cattle", href: `/sales/new${lotId ? `?group=${lotId}` : ""}` },
+      {
+        type: "link",
+        id: "invoice",
+        addLabel: "Create Invoice",
+        href: `/invoices/generate${ownerId ? `?owner=${ownerId}` : ""}`,
+      },
+      {
+        type: "panel",
+        id: "misc-charge",
+        addLabel: miscAddLabel,
+        panel: (
+          <MiscChargeQuickForm
+            orgId={orgId}
+            ownerOptions={ownerOptions}
+            lotOptions={lotOptions}
+            locationOptions={locationOptions}
+            defaultOwnerId={ownerId}
+            defaultLotId={lotId}
+            defaultLocationId={locationId}
+            onSaved={afterSave}
+          />
+        ),
+      },
+    ];
+  }, [
+    ownerId,
+    lotId,
+    locationId,
+    orgId,
+    currentUserId,
+    ownerOptions,
+    lotOptions,
+    locationOptions,
+    locationTree,
+    activeGroups,
+    groupOptions,
+    memberOptions,
+    medicineOptions,
+    rationOptions,
+    rationUnitCosts,
+    feedingOwnerOptions,
+    movementReasonOptions,
+    afterSave,
+  ]);
+
   function toggleOwner(id: string) {
     setExpandedOwners((prev) => {
       const next = new Set(prev);
@@ -175,22 +321,12 @@ export function OwnerTotalsReportClient({
 
   return (
     <div className="space-y-6">
-      <QuickActionGroup title="Quick Actions" actions={quickActions} />
-      {showMiscForm ? (
-        <MiscChargeQuickForm
-          orgId={orgId}
-          ownerOptions={ownerOptions}
-          lotOptions={lotOptions}
-          locationOptions={locationOptions}
-          defaultOwnerId={ownerId}
-          defaultLotId={lotId}
-          defaultLocationId={locationId}
-          onSaved={() => {
-            setShowMiscForm(false);
-            if (report) void handleLoad();
-          }}
-        />
-      ) : null}
+      <QuickAddSection
+        title="Quick Actions"
+        items={quickAddItems}
+        activePanelId={activeQuickAddId}
+        onActivePanelChange={setActiveQuickAddId}
+      />
 
       <Card>
         <CardHeader>
