@@ -26,28 +26,24 @@ export function DashboardQuickActions({
 }: DashboardQuickActionsProps) {
   const [showMiscForm, setShowMiscForm] = useState(false);
 
-  const businessWithMisc = showMiscCharge
-    ? [
-        ...businessActions,
-        {
-          label: showMiscForm ? "Hide misc charge" : "Miscellaneous Charge",
-          onClick: () => setShowMiscForm((v) => !v),
-        },
-      ]
-    : businessActions;
+  const miscAction = {
+    label: showMiscForm ? "Hide misc charge" : "Miscellaneous Charge",
+    onClick: () => setShowMiscForm((v) => !v),
+  };
+
+  const dailyWithMisc = showMiscCharge ? [...dailyActions, miscAction] : dailyActions;
 
   return (
     <section className="space-y-6 rounded-[var(--radius-card)] border border-border-neutral bg-surface-white p-5 shadow-[var(--shadow-card)]">
       <h2 className="text-lg font-bold text-navy">Quick Actions</h2>
-      <QuickActionGroup title="Daily Operations" actions={dailyActions} />
-      <QuickActionGroup title="Business" actions={businessWithMisc} />
+      <QuickActionGroup title="Daily Operations" actions={dailyWithMisc} />
+      <QuickActionGroup title="Business" actions={businessActions} />
       {showMiscForm ? (
         <MiscChargeQuickForm
           orgId={orgId}
           ownerOptions={ownerOptions}
           lotOptions={lotOptions}
           locationOptions={locationOptions}
-          onSaved={() => setShowMiscForm(false)}
         />
       ) : null}
     </section>

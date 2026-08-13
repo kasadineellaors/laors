@@ -41,6 +41,7 @@ export function MiscChargeQuickForm({
   const [unitCost, setUnitCost] = useState("");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const selectClass =
@@ -64,6 +65,7 @@ export function MiscChargeQuickForm({
     }
     setLoading(true);
     setError(null);
+    setSuccess(null);
     const result = await createOwnerMiscCharge(orgId, {
       ownerId,
       cattleGroupId: lotId || undefined,
@@ -80,6 +82,12 @@ export function MiscChargeQuickForm({
       setError(result.error);
       return;
     }
+    setSuccess(result.success ?? "Misc charge saved");
+    setDescription("");
+    setAmount("");
+    setQuantity("");
+    setUnitCost("");
+    setNotes("");
     router.refresh();
     onSaved?.();
   }
@@ -104,13 +112,11 @@ export function MiscChargeQuickForm({
               required
             >
               <option value="">Select owner…</option>
-              {ownerOptions
-                .filter((o) => !o.is_ownership_group)
-                .map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.name}
-                  </option>
-                ))}
+              {ownerOptions.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.is_ownership_group ? `${o.name} (group)` : o.name}
+                </option>
+              ))}
             </select>
           </div>
           <div>
@@ -208,6 +214,11 @@ export function MiscChargeQuickForm({
           <Label htmlFor="misc-notes">Notes</Label>
           <Input id="misc-notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
         </div>
+        {success ? (
+          <p className="text-sm font-medium text-status-success" role="status">
+            {success}
+          </p>
+        ) : null}
         {error ? (
           <p className="text-sm text-status-critical" role="alert">
             {error}

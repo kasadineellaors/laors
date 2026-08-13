@@ -805,7 +805,26 @@ export async function recordCattleRemoval(
     });
 
     if (shipError) {
-      return { error: `${formatDbError(shipError.message)} — ${DB_PHASE48_HINT}` };
+      const missingShippingTable =
+        /cattle_shipping_records|schema cache/i.test(shipError.message);
+      if (!missingShippingTable) {
+        return { error: `${formatDbError(shipError.message)} — ${DB_PHASE48_HINT}` };
+      }
+
+      const deltaOnly = await applySaleHeadDelta(
+        orgId,
+        input.sourceGroupId,
+        -input.headCount,
+        `Removed from ranch — ${reason}${input.notes?.trim() ? ` — ${input.notes.trim()}` : ""}`,
+      );
+      if (deltaOnly.error) return { error: deltaOnly.error };
+      revalidateInventory();
+      revalidatePath("/reports/owner-totals");
+      revalidatePath("/feedyard");
+      return {
+        success:
+          "Cattle removed from inventory. Run supabase/RUN_PHASE48.sql to log shipping records.",
+      };
     }
 
     const delta = await applySaleHeadDelta(

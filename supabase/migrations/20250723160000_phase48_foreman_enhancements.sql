@@ -12,8 +12,20 @@ ALTER TABLE public.cow_calf_loss_records
 ALTER TABLE public.owner_misc_charges
   ADD COLUMN IF NOT EXISTS location_id UUID REFERENCES public.locations(id) ON DELETE SET NULL,
   ADD COLUMN IF NOT EXISTS quantity NUMERIC(12, 4),
-  ADD COLUMN IF NOT EXISTS unit_cost NUMERIC(12, 4),
-  ADD COLUMN IF NOT EXISTS individual_animal_id UUID REFERENCES public.individual_animals(id) ON DELETE SET NULL;
+  ADD COLUMN IF NOT EXISTS unit_cost NUMERIC(12, 4);
+
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'individual_animals'
+  ) THEN
+    ALTER TABLE public.owner_misc_charges
+      ADD COLUMN IF NOT EXISTS individual_animal_id UUID
+        REFERENCES public.individual_animals(id) ON DELETE SET NULL;
+  END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS owner_misc_charges_location_idx
   ON public.owner_misc_charges(location_id)

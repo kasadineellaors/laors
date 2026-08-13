@@ -14,12 +14,25 @@ export type OwnerActionState = {
 };
 
 const DB_HINT = "Run supabase/RUN_PHASE33.sql in Supabase SQL Editor, then retry.";
+const DB_PHASE48_HINT =
+  "Run supabase/RUN_PHASE48.sql in Supabase SQL Editor for misc charge fields, then retry.";
 
 function formatDbError(message: string): string {
   if (message.includes("owners") || message.includes("schema cache")) {
     return `${message} — ${DB_HINT}`;
   }
+  if (
+    message.includes("owner_misc_charges") ||
+    message.includes("location_id") ||
+    message.includes("unit_cost")
+  ) {
+    return `${message} — ${DB_PHASE48_HINT}`;
+  }
   return message;
+}
+
+function isPhase48ColumnError(message: string): boolean {
+  return /location_id|quantity|unit_cost|owner_misc_charges|schema cache/i.test(message);
 }
 
 function revalidateOwners() {
@@ -314,21 +327,35 @@ export async function createOwnerMiscCharge(
 
   try {
     const supabase = await requireManager(orgId);
-    const { error } = await supabase.from("owner_misc_charges").insert({
+    const chargeDate = input.chargeDate || new Date().toISOString().slice(0, 10);
+    const notes = input.notes?.trim() || null;
+
+    const baseRow = {
       organization_id: orgId,
       owner_id: input.ownerId,
       cattle_group_id: input.cattleGroupId || null,
-      location_id: input.locationId || null,
-      charge_date: input.chargeDate || new Date().toISOString().slice(0, 10),
+      charge_date: chargeDate,
       description,
       amount,
+      notes,
+    };
+
+    const extendedRow = {
+      ...baseRow,
+      location_id: input.locationId || null,
       quantity,
       unit_cost: unitCost,
-      notes: input.notes?.trim() || null,
-    });
+    };
+
+    let { error } = await supabase.from("owner_misc_charges").insert(extendedRow);
+    if (error && isPhase48ColumnError(error.message)) {
+      ({ error } = await supabase.from("owner_misc_charges").insert(baseRow));
+    }
+
     if (error) return { error: formatDbError(error.message) };
     revalidatePath("/invoices");
     revalidatePath("/reports/owner-totals");
+    revalidatePath("/dashboard");
     revalidateOwners();
     return { success: "Misc charge logged" };
   } catch (e) {

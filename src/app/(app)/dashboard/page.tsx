@@ -156,7 +156,7 @@ export default async function DashboardPage() {
   const showSeedstock = hasSeedstockMode(modes);
   const showCalendar = isCalendarEnabled(org);
 
-  const canManageOwners = canManageTeam(role);
+  const canManageOwners = canManageInvoices(role);
 
   const [
     totalHead,
