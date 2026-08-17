@@ -17,6 +17,7 @@ export const metadata: Metadata = {
   description:
     "Cattle-first operating system for cow-calf, stocker, and seedstock operations.",
   applicationName: "LAORS",
+  manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

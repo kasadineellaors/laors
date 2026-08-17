@@ -51,6 +51,10 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/invoices") ||
     pathname.startsWith("/weather") ||
     pathname.startsWith("/calendar") ||
+    pathname.startsWith("/reports") ||
+    pathname.startsWith("/feedyard") ||
+    pathname.startsWith("/portal") ||
+    pathname.startsWith("/share") ||
     pathname.startsWith("/app");
 
   if (!user && isProtectedRoute) {

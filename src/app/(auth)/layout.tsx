@@ -14,6 +14,11 @@ export default function AuthLayout({
         <div className="w-full max-w-md">{children}</div>
       </main>
       <footer className="px-6 py-4 text-center text-xs text-text-secondary">
+        <nav className="mb-2 flex flex-wrap justify-center gap-x-3 gap-y-1">
+          <a href="/privacy" className="hover:text-brown hover:underline">Privacy</a>
+          <a href="/terms" className="hover:text-brown hover:underline">Terms</a>
+          <a href="/support" className="hover:text-brown hover:underline">Support</a>
+        </nav>
         LAORS — Livestock &amp; Agricultural Operations Resource System
       </footer>
     </div>

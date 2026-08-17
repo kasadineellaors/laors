@@ -6,7 +6,7 @@ export async function GET() {
     commit: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "local",
     ref: process.env.VERCEL_GIT_COMMIT_REF ?? "local",
     deployedAt: process.env.VERCEL_DEPLOYMENT_ID ? new Date().toISOString() : null,
-    expectedLatest: "quick-add-panels",
+    expectedLatest: "app-store-prep",
     bundle: [
       "owner-totals",
       "misc-charges",

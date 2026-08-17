@@ -127,6 +127,11 @@ export default async function SetupPage() {
           Records & Administration
         </h2>
         <div className="grid gap-2 sm:grid-cols-2">
+          <ManageNavRow
+            href="/setup/account"
+            title="Account"
+            description="Profile, privacy links, and delete your login."
+          />
           {isManager ? (
             <ManageNavRow
               href="/setup/audit"

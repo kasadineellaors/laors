@@ -365,6 +365,46 @@ export async function signOut() {
   redirect("/login");
 }
 
+/** Permanently delete the signed-in user (Apple App Store account-deletion requirement). */
+export async function deleteMyAccount(password: string): Promise<AuthActionState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user?.email) {
+    return { error: "You must be signed in to delete your account." };
+  }
+
+  if (!password.trim()) {
+    return { error: "Enter your password to confirm deletion." };
+  }
+
+  const { error: reauthError } = await supabase.auth.signInWithPassword({
+    email: user.email,
+    password,
+  });
+  if (reauthError) {
+    return { error: "Password incorrect. Account was not deleted." };
+  }
+
+  const admin = createAdminClient();
+  if (!admin) {
+    return {
+      error:
+        "Account deletion is not configured on this server. Contact support@laorsranch.com for help.",
+    };
+  }
+
+  const { error: deleteError } = await admin.auth.admin.deleteUser(user.id);
+  if (deleteError) {
+    return { error: deleteError.message };
+  }
+
+  await supabase.auth.signOut();
+  redirect("/login?deleted=1");
+}
+
 const onboardingRanchSchema = z.object({
   ranchName: z.string().min(1, "Ranch name is required"),
   state: z.string().optional(),

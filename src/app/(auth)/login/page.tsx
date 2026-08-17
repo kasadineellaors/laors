@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ redirect?: string; error?: string; reason?: string }>;
+  searchParams: Promise<{ redirect?: string; error?: string; reason?: string; deleted?: string }>;
 }) {
   const params = await searchParams;
   const redirectTo =
@@ -44,6 +44,11 @@ export default async function LoginPage({
             <p className="text-xs text-text-secondary">Details: {params.reason}</p>
           ) : null}
         </div>
+      ) : null}
+      {params.deleted === "1" ? (
+        <p className="mb-4 rounded-lg bg-tan/40 px-3 py-2 text-center text-sm text-text-secondary">
+          Your account was deleted.
+        </p>
       ) : null}
       <LoginForm redirectTo={redirectTo} />
       <p className="mt-4 text-center text-sm">

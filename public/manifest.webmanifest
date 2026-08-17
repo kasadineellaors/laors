@@ -1,0 +1,30 @@
+{
+  "name": "LAORS — The Foreman",
+  "short_name": "LAORS",
+  "description": "Cattle-first operating system for ranch operations.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#f5f0e8",
+  "theme_color": "#27425d",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
