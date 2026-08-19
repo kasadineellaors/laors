@@ -46,6 +46,7 @@ In Xcode: select Team, Archive, upload to App Store Connect / TestFlight.
 | `npm run mobile:init` | Add iOS + Android platforms (first time) |
 | `npm run cap:sync` | Sync config to native projects |
 | `npm run cap:ios` | Open Xcode |
+| `./scripts/ios-app-store-upload.sh` | Archive + upload to TestFlight (after signing setup) |
 | `npm run cap:android` | Open Android Studio |
 
 ## App icons
@@ -61,6 +62,21 @@ npm run cap:sync
 
 Site URL: `https://www.laorsranch.com`  
 Redirect URLs: `https://www.laorsranch.com/**`, `https://www.laorsranch.com/auth/callback`
+
+## Signing setup (one time)
+
+Apple blocks fully automated uploads until **one** of these is done:
+
+**Option A — fastest (30 sec in Xcode)**  
+1. **Xcode → Settings → Accounts** → your Apple ID → **Manage Certificates**  
+2. Click **+** → **Apple Distribution**  
+3. Run: `./scripts/ios-app-store-upload.sh`
+
+**Option B — test on phone first**  
+1. Plug in iPhone → select it in Xcode → **Product → Run**  
+2. Then **Product → Archive** (or run the script above)
+
+Team ID: `N6Z7ZA35T8` · Bundle ID: `com.laorsranch.laors`
 
 ## App Store Connect checklist
 
